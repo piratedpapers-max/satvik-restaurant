@@ -252,7 +252,7 @@ async function loadTodayOrders(){
 function generateToken(){return Math.random().toString(36).substring(2,10)+Math.random().toString(36).substring(2,10);}
 async function generateTokens(){
   const count=parseInt(document.getElementById('tableCount').value)||12;
-  const siteUrl="https://satvik-restaurant-two.vercel.app";
+  const siteUrl="https://satvik-restaurant-gamma.vercel.app";
   const btn=document.getElementById('genBtn');btn.disabled=true;btn.textContent='Generating...';
   try{
     const tokens=[];
