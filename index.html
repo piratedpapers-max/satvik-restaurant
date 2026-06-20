@@ -107,6 +107,14 @@ main{padding:14px 14px 0;}
 .bill-total{display:flex;justify-content:space-between;font-family:'Yatra One',sans-serif;font-size:19px;color:var(--brown);padding-top:10px;margin-top:8px;border-top:2px solid var(--line);}
 .bill-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:8px;flex-wrap:wrap;gap:4px;}
 .review-box{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;margin-bottom:10px;}
+.phone-box{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px;display:none;}
+.phone-box.show{display:block;}
+.phone-box.sent{display:none;}
+.phone-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;text-align:center;}
+.phone-row{display:flex;gap:8px;}
+.phone-input{flex:1;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'Poppins',sans-serif;background:#fff;}
+.phone-send-btn{background:#25D366;color:#fff;border:none;padding:11px 16px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;font-family:'Poppins',sans-serif;}
+.phone-skip{text-align:center;font-size:11px;color:var(--muted);margin-top:8px;cursor:pointer;text-decoration:underline;}
 .review-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;}
 .review-stars{font-size:28px;letter-spacing:3px;margin-bottom:12px;}
 .review-btn{display:block;width:100%;padding:13px;background:var(--gold);color:var(--steel);border:none;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;font-family:'Poppins',sans-serif;}
@@ -181,6 +189,14 @@ main{padding:14px 14px 0;}
       <div id="trackBillLines"></div>
       <div class="bill-total"><span>Total</span><span id="trackBillTotal">₹0</span></div>
       <div class="bill-meta"><span>Table <span id="trackTable">—</span></span><span id="trackTime"></span><span id="trackOrderNum"></span></div>
+    </div>
+    <div class="phone-box" id="phoneBox">
+      <div class="phone-title">📱 Get your bill on WhatsApp? (optional)</div>
+      <div class="phone-row">
+        <input type="tel" class="phone-input" id="phoneInput" placeholder="Your WhatsApp number" maxlength="10"/>
+        <button class="phone-send-btn" id="phoneSendBtn">Send</button>
+      </div>
+      <div class="phone-skip" id="phoneSkip">No thanks</div>
     </div>
     <button class="order-btn" id="orderMoreBtn" onclick="closeTracking()" style="margin-bottom:10px">➕ Order More Items</button>
     <div class="review-box">
@@ -334,6 +350,11 @@ function updateStatusUI(status){
   document.getElementById('statusSteps').style.setProperty('--progress',Math.min(idx/(steps.length-1)*100,100)+'%');
   const orderMoreBtn=document.getElementById('orderMoreBtn');
   if(orderMoreBtn) orderMoreBtn.style.display=(status==='bill_pending'||status==='served')?'none':'flex';
+  const phoneBox=document.getElementById('phoneBox');
+  const alreadySent=localStorage.getItem(STORAGE_KEY+'_phone_sent');
+  if(phoneBox && !alreadySent){
+    phoneBox.classList.toggle('show',['ready','bill_pending','served'].includes(status));
+  }
 }
 function updateTrackBanner(status){
   const banner=document.getElementById('trackBanner'),icon=document.getElementById('tbIcon'),top=document.getElementById('tbTop');
@@ -349,6 +370,43 @@ function openTracking(){document.getElementById('trackPage').classList.add('show
 function closeTracking(){document.getElementById('trackPage').classList.remove('show');}
 const toastEl=document.getElementById('toast');
 function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
+/* ===== PHONE / WHATSAPP BILL ===== */
+document.getElementById('phoneSkip').addEventListener('click',()=>{
+  localStorage.setItem(STORAGE_KEY+'_phone_sent','1');
+  document.getElementById('phoneBox').classList.remove('show');
+});
+document.getElementById('phoneSendBtn').addEventListener('click',async()=>{
+  const phone=document.getElementById('phoneInput').value.trim();
+  if(!/^[6-9]\d{9}$/.test(phone)){
+    toast('Enter a valid 10-digit number',true);
+    return;
+  }
+  try{
+    // Save phone number against the most recent active order
+    if(activeOrderIds.length){
+      await sb.from('orders').update({customer_phone:phone}).eq('id',activeOrderIds[activeOrderIds.length-1]);
+    }
+    // Build WhatsApp message from current bill
+    const billLines=document.querySelectorAll('#trackBillLines .bill-line');
+    let msg=`🙏 *${RDATA.restaurantName||'Satvik Restaurant'}*\n${RDATA.restaurantSub||''}\n\n*Your Bill — Table ${TABLE}*\n`;
+    billLines.forEach(line=>{
+      const name=line.querySelector('.bill-line-name')?.textContent||'';
+      const qty=line.querySelector('.bill-line-qty')?.textContent||'';
+      const price=line.querySelector('.bill-line-price')?.textContent||'';
+      msg+=`${name} ${qty} — ${price}\n`;
+    });
+    const total=document.getElementById('trackBillTotal').textContent;
+    msg+=`\n*Total: ${total}*\n\nThank you for dining with us! 🙏`;
+    if(RDATA.googleReview) msg+=`\n\n⭐ Loved the food? Rate us: ${RDATA.googleReview}`;
+    msg+=`\n\n🎉 See you again soon!`;
+    const waUrl=`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(waUrl,'_blank');
+    localStorage.setItem(STORAGE_KEY+'_phone_sent','1');
+    document.getElementById('phoneBox').classList.remove('show');
+    toast('✅ Opening WhatsApp...');
+  }catch(e){console.error(e);toast('Could not send. Try again.',true);}
+});
+
 init();
 </script>
 </body>

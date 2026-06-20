@@ -30,6 +30,42 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .clock{font-size:12px;color:var(--muted);font-weight:600;}
 .lock-btn{background:none;border:1px solid var(--line);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Poppins',sans-serif;}
+.new-order-btn{background:var(--green);color:#fff;border:none;padding:8px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;}
+
+/* NEW ORDER MODAL */
+.no-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:none;align-items:center;justify-content:center;padding:16px;}
+.no-modal-bg.show{display:flex;}
+.no-modal{background:#fff;color:#1A1208;border-radius:14px;padding:0;max-width:480px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;}
+.no-modal-hdr{background:var(--green);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+.no-modal-hdr h3{font-family:'Yatra One',sans-serif;font-size:18px;}
+.no-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;}
+.no-modal-body{padding:16px 20px;overflow-y:auto;flex:1;}
+.no-label{font-size:11px;font-weight:700;color:#7A6E5F;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:14px;}
+.no-label:first-child{margin-top:0;}
+.no-input{width:100%;padding:10px 12px;border:1.5px solid #E5DCC8;border-radius:9px;font-size:14px;font-family:'Poppins',sans-serif;}
+.no-cat-tabs{display:flex;gap:6px;overflow-x:auto;padding:4px 0;margin-bottom:10px;}
+.no-cat-tab{flex:0 0 auto;background:#F5F0E8;border:1px solid #E5DCC8;color:#7A6E5F;font-size:11px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;}
+.no-cat-tab.active{background:#4A7C59;border-color:#4A7C59;color:#fff;}
+.no-item-row{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid #F0E8D0;}
+.no-item-name{flex:1;font-size:13px;font-weight:600;}
+.no-item-price{font-size:12px;color:#7A6E5F;width:50px;}
+.no-item-qty{display:flex;align-items:center;gap:6px;}
+.no-qty-btn{width:26px;height:26px;border-radius:6px;border:1px solid #4A7C59;background:#fff;color:#4A7C59;font-weight:700;cursor:pointer;}
+.no-qty-val{min-width:18px;text-align:center;font-weight:700;font-size:13px;}
+.no-cart-summary{background:#FDFAF3;border-top:2px solid #E5DCC8;padding:14px 20px;}
+.no-cart-total{display:flex;justify-content:space-between;font-family:'Yatra One',sans-serif;font-size:18px;color:#6B3F1E;margin-bottom:10px;}
+.no-submit-btn{width:100%;padding:13px;background:#4A7C59;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;}
+.no-submit-btn:disabled{background:#ccc;cursor:not-allowed;}
+
+/* PRINT BILL */
+.bill-action-btn{background:#34495E;color:#fff;}
+.wa-action-btn{background:#25D366;color:#fff;}
+@media print{
+  body *{visibility:hidden;}
+  #printArea,#printArea *{visibility:visible;}
+  #printArea{position:fixed;top:0;left:0;width:100%;padding:10px;}
+}
+#printArea{display:none;}
 
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line);}
@@ -120,6 +156,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 <header>
   <div class="hl"><h1>💰 Counter & Billing</h1><p>Satvik Restaurant · Varanasi</p></div>
   <div class="hr">
+    <button class="new-order-btn" onclick="openNewOrderModal()">➕ New Order</button>
     <div class="ldot" id="ldot"></div>
     <span class="clock" id="clock"></span>
     <button class="lock-btn" onclick="logout()">🔒 Lock</button>
@@ -160,6 +197,44 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 <div class="watermark">Powered by HK Digital Solutions</div>
 <div class="toast" id="toast"></div>
 
+<!-- New Order Modal -->
+<div class="no-modal-bg" id="noModalBg">
+  <div class="no-modal">
+    <div class="no-modal-hdr">
+      <h3>➕ New Order (Walk-in)</h3>
+      <button class="no-close" onclick="closeNewOrderModal()">&times;</button>
+    </div>
+    <div class="no-modal-body">
+      <div class="no-label">Table Number</div>
+      <input type="text" class="no-input" id="noTableNum" placeholder="e.g. 5"/>
+      <div class="no-label">Menu</div>
+      <div class="no-cat-tabs" id="noCatTabs"></div>
+      <div id="noItemsList"></div>
+    </div>
+    <div class="no-cart-summary">
+      <div class="no-cart-total"><span>Total</span><span id="noCartTotal">₹0</span></div>
+      <button class="no-submit-btn" id="noSubmitBtn" disabled onclick="submitNewOrder()">Send to Kitchen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Area (hidden, shown only when printing) -->
+<div id="printArea">
+  <div style="text-align:center;margin-bottom:10px;">
+    <div style="font-weight:700;font-size:16px" id="printRestName">Satvik Restaurant</div>
+    <div style="font-size:11px" id="printRestSub">Pure Veg · Varanasi</div>
+  </div>
+  <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;margin:8px 0;font-size:12px">
+    <div style="display:flex;justify-content:space-between"><span id="printTable">Table —</span><span id="printDate"></span></div>
+  </div>
+  <div id="printLines" style="font-size:12px"></div>
+  <div style="border-top:1px dashed #000;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">
+    <span>TOTAL</span><span id="printTotal">₹0</span>
+  </div>
+  <div style="text-align:center;margin-top:14px;font-size:11px">Thank you for dining with us! 🙏</div>
+  <div style="text-align:center;margin-top:6px;font-size:9px">Powered by HK Digital Solutions</div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
@@ -169,6 +244,8 @@ const COUNTER_PASSWORD="counter2026"; // ← Change this to a secure password
 
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},paidToday=[],payBreakdown={cash:0,upi:0,card:0};
+let MENU_DATA=null,RESTAURANT_INFO={name:'Satvik Restaurant',sub:'Pure Veg · Varanasi',review:''};
+let noCart={}; // new order cart: {itemKey: {item, qty}}
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 
 /* AUDIO */
@@ -222,6 +299,16 @@ async function loadAll(){
     payBreakdown={cash:0,upi:0,card:0};
     paidData.forEach(o=>{if(o.payment_method&&payBreakdown[o.payment_method]!==undefined)payBreakdown[o.payment_method]+=(o.total||0);});
   }
+
+  // Load menu + restaurant info for counter ordering and print/WhatsApp
+  try{
+    const {data:rdata}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    if(rdata?.data?.menu?.length){
+      MENU_DATA=rdata.data.menu;
+      RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
+    }
+  }catch(e){console.error('Menu load error:',e);}
+
   render();updateStats();
 }
 
@@ -317,10 +404,15 @@ function tableCard(tno,tbl,type){
   const ids=tbl.orders.map(o=>o.id);
   const isBill=type==='bill';
   const statusInfo=isBill?'':`<div style="font-size:9px;color:var(--muted);margin-top:2px">${[...tbl.statuses].join(', ')}</div>`;
+  const allItemsJson=JSON.stringify(allItems).replace(/'/g,"&#39;");
   const actions=isBill?`<div style="display:flex;gap:5px;padding:8px 12px;border-top:1px solid var(--line)">
     <button class="pay-btn-full pay-btn-cash" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","cash")'>💵 Cash</button>
     <button class="pay-btn-full pay-btn-upi" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","upi")'>📱 UPI</button>
     <button class="pay-btn-full pay-btn-card" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","card")'>💳 Card</button>
+  </div>
+  <div style="display:flex;gap:5px;padding:0 12px 10px">
+    <button class="pay-btn-full bill-action-btn" onclick='printTableBill("${tno}",${allItemsJson},${grandTotal})'>🖨️ Print</button>
+    <button class="pay-btn-full wa-action-btn" onclick='sendWhatsAppBill("${tno}",${allItemsJson},${grandTotal})'>📱 WhatsApp</button>
   </div>`:'';
   return `<div class="tcard ${type}">
     <div class="tcard-top">
@@ -372,6 +464,122 @@ function updateStats(){
   document.getElementById('pCash').textContent='₹'+payBreakdown.cash;
   document.getElementById('pUPI').textContent='₹'+payBreakdown.upi;
   document.getElementById('pCard').textContent='₹'+payBreakdown.card;
+}
+
+/* ===== NEW ORDER (Counter Entry for Walk-ins) ===== */
+function openNewOrderModal(){
+  if(!MENU_DATA){toast('Menu still loading, try again in a moment.',true);return;}
+  noCart={};
+  document.getElementById('noTableNum').value='';
+  renderNoCatTabs();
+  document.getElementById('noModalBg').classList.add('show');
+}
+function closeNewOrderModal(){document.getElementById('noModalBg').classList.remove('show');}
+
+function renderNoCatTabs(){
+  const tabsEl=document.getElementById('noCatTabs');
+  tabsEl.innerHTML=MENU_DATA.map((cat,i)=>`<button class="no-cat-tab ${i===0?'active':''}" onclick="selectNoCat(${i})">${cat.category}</button>`).join('');
+  selectNoCat(0);
+}
+function selectNoCat(idx){
+  document.querySelectorAll('.no-cat-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const cat=MENU_DATA[idx];
+  const listEl=document.getElementById('noItemsList');
+  listEl.innerHTML=(cat.items||[]).filter(it=>it.available!==false).map(item=>{
+    const key=cat.category+'::'+item.name;
+    const qty=noCart[key]?.qty||0;
+    return `<div class="no-item-row">
+      <div class="no-item-name">${item.name}</div>
+      <div class="no-item-price">₹${item.price}</div>
+      <div class="no-item-qty">
+        <button class="no-qty-btn" onclick="noChangeQty('${key.replace(/'/g,"\\'")}',${idx},-1)">−</button>
+        <span class="no-qty-val" id="noqv-${btoa(key)}">${qty}</span>
+        <button class="no-qty-btn" onclick="noChangeQty('${key.replace(/'/g,"\\'")}',${idx},1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function noChangeQty(key,catIdx,delta){
+  const cat=MENU_DATA[catIdx];
+  const itemName=key.split('::')[1];
+  const item=cat.items.find(i=>i.name===itemName);
+  if(!item)return;
+  const cur=noCart[key]?.qty||0;
+  const next=Math.max(0,cur+delta);
+  if(next===0) delete noCart[key];
+  else noCart[key]={item,qty:next};
+  const qvEl=document.getElementById('noqv-'+btoa(key));
+  if(qvEl) qvEl.textContent=next;
+  updateNoCartTotal();
+}
+function updateNoCartTotal(){
+  const total=Object.values(noCart).reduce((s,c)=>s+c.item.price*c.qty,0);
+  const count=Object.values(noCart).reduce((s,c)=>s+c.qty,0);
+  document.getElementById('noCartTotal').textContent='₹'+total;
+  const tableVal=document.getElementById('noTableNum').value.trim();
+  document.getElementById('noSubmitBtn').disabled=!(count>0&&tableVal);
+}
+document.getElementById('noTableNum').addEventListener('input',updateNoCartTotal);
+
+async function getNextOrderNumCounter(){
+  const today=new Date();if(today.getHours()<6)today.setDate(today.getDate()-1);
+  const dateStr=today.toISOString().slice(0,10);const counterId=RESTAURANT_ID+'_'+dateStr;
+  try{
+    const {data}=await sb.from('order_counter').select('count').eq('id',counterId).single();
+    if(data){const n=data.count+1;await sb.from('order_counter').update({count:n,updated_at:new Date().toISOString()}).eq('id',counterId);return n;}
+    else{await sb.from('order_counter').insert([{id:counterId,count:1,date:dateStr}]);return 1;}
+  }catch(e){return Math.floor(Math.random()*900)+100;}
+}
+
+async function submitNewOrder(){
+  const tableNo=document.getElementById('noTableNum').value.trim();
+  const items=Object.values(noCart);
+  if(!tableNo||!items.length)return;
+  const btn=document.getElementById('noSubmitBtn');
+  btn.disabled=true;btn.textContent='Sending...';
+  try{
+    const orderNum=await getNextOrderNumCounter();
+    const total=items.reduce((s,c)=>s+c.item.price*c.qty,0);
+    const order={
+      restaurant_id:RESTAURANT_ID,table_no:tableNo,
+      items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),
+      total,note:'Order taken at counter',status:'new',order_num:orderNum,
+      payment_status:'pending',placed_at:new Date().toISOString()
+    };
+    const {error}=await sb.from('orders').insert([order]);
+    if(error)throw error;
+    toast(`✅ Order #${orderNum} sent to kitchen — Table ${tableNo}`);
+    closeNewOrderModal();
+  }catch(e){console.error(e);toast('Error: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='Send to Kitchen';}
+}
+
+/* ===== PRINT BILL ===== */
+function printTableBill(tableNo,allItems,grandTotal){
+  document.getElementById('printRestName').textContent=RESTAURANT_INFO.name;
+  document.getElementById('printRestSub').textContent=RESTAURANT_INFO.sub;
+  document.getElementById('printTable').textContent='Table '+tableNo;
+  document.getElementById('printDate').textContent=new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('printLines').innerHTML=Object.values(allItems).map(i=>
+    `<div style="display:flex;justify-content:space-between;padding:2px 0"><span>${i.name} ×${i.qty}</span><span>₹${i.total}</span></div>`
+  ).join('');
+  document.getElementById('printTotal').textContent='₹'+grandTotal;
+  window.print();
+}
+
+/* ===== WHATSAPP BILL (from counter) ===== */
+function sendWhatsAppBill(tableNo,allItems,grandTotal){
+  const phone=prompt('Enter customer WhatsApp number (10 digits):');
+  if(!phone||!/^[6-9]\d{9}$/.test(phone.trim())){
+    if(phone!==null) toast('Invalid number — must be 10 digits.',true);
+    return;
+  }
+  let msg=`🙏 *${RESTAURANT_INFO.name}*\n${RESTAURANT_INFO.sub}\n\n*Your Bill — Table ${tableNo}*\n`;
+  Object.values(allItems).forEach(i=>{msg+=`${i.name} ×${i.qty} — ₹${i.total}\n`;});
+  msg+=`\n*Total: ₹${grandTotal}*\n\nThank you for dining with us! 🙏`;
+  if(RESTAURANT_INFO.review) msg+=`\n\n⭐ Loved the food? Rate us: ${RESTAURANT_INFO.review}`;
+  msg+=`\n\n🎉 See you again soon!`;
+  window.open(`https://wa.me/91${phone.trim()}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 const toastEl=document.getElementById('toast');
