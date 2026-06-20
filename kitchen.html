@@ -125,18 +125,40 @@ const RESTAURANT_ID="satvik";
 const KITCHEN_PIN="1234"; // ← Change this
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},soundOn=true,pinInput='';
+let audioCtx=null;
+function primeAudio(){
+  if(!audioCtx){
+    try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  }
+  if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+}
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
-function pk(k){if(pinInput.length>=4)return;pinInput+=k;updateDots();}
+function pk(k){primeAudio();if(pinInput.length>=4)return;pinInput+=k;updateDots();}
 function pd(){pinInput=pinInput.slice(0,-1);updateDots();document.getElementById('pinErr').textContent='';}
 function pe(){
+  primeAudio();
   if(pinInput===KITCHEN_PIN){sessionStorage.setItem('k_auth','1');document.getElementById('pinScreen').classList.add('hide');loadOrders();subscribe();}
   else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinInput='';updateDots();}
 }
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
 function logout(){sessionStorage.removeItem('k_auth');pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
-if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();});}
+if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();});}
+document.addEventListener('click',primeAudio,{once:true});
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
-function beep(f=660){if(!soundOn)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[0,200,400].forEach(d=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;g.gain.setValueAtTime(0.25,ctx.currentTime+d/1000);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d/1000+0.18);o.start(ctx.currentTime+d/1000);o.stop(ctx.currentTime+d/1000+0.2);});}catch(e){}}
+function beep(f=660){
+  if(!soundOn)return;
+  try{
+    if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    [0,200,400].forEach(d=>{
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
+      g.gain.setValueAtTime(0.3,audioCtx.currentTime+d/1000);
+      g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.18);
+      o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.2);
+    });
+  }catch(e){console.error('Beep error:',e);}
+}
 function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';b.classList.toggle('on',soundOn);}
 async function loadOrders(){
   const today=new Date();today.setHours(0,0,0,0);

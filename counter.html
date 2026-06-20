@@ -171,8 +171,30 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},paidToday=[],payBreakdown={cash:0,upi:0,card:0};
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 
+/* AUDIO */
+let audioCtx=null;
+function primeAudio(){
+  if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+  if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+}
+function beep(f=660){
+  try{
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    [0,200,400].forEach(d=>{
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
+      g.gain.setValueAtTime(0.3,audioCtx.currentTime+d/1000);
+      g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.18);
+      o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.2);
+    });
+  }catch(e){console.error('Beep error:',e);}
+}
+document.addEventListener('click',primeAudio,{once:true});
+
 /* LOGIN */
 function tryLogin(){
+  primeAudio();
   const val=document.getElementById('loginPass').value;
   if(val===COUNTER_PASSWORD){
     sessionStorage.setItem('counter_auth','1');
@@ -182,7 +204,7 @@ function tryLogin(){
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 function logout(){sessionStorage.removeItem('counter_auth');document.getElementById('loginScreen').classList.remove('hide');document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent='';}
-if(sessionStorage.getItem('counter_auth')==='1'){document.getElementById('loginScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadAll();subscribe();});}
+if(sessionStorage.getItem('counter_auth')==='1'){document.getElementById('loginScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadAll();subscribe();primeAudio();});}
 
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
 
@@ -209,8 +231,8 @@ function subscribe(){
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
       if(!['served'].includes(p.new.status)){
         orders[p.new.id]=p.new;
-        if(p.new.status==='waiter')showWaiterAlert(p.new.table_no);
-        if(p.new.status==='bill_pending')toast(`🧾 Bill ready — Table ${p.new.table_no}`);
+        if(p.new.status==='waiter'){beep(440);showWaiterAlert(p.new.table_no);}
+        if(p.new.status==='bill_pending'){beep(550);toast(`🧾 Bill ready — Table ${p.new.table_no}`);}
         render();updateStats();
       }
     })
@@ -223,7 +245,7 @@ function subscribe(){
         delete orders[p.new.id];
       }else{
         orders[p.new.id]=p.new;
-        if(p.new.status==='bill_pending')toast(`🧾 Bill ready — Table ${p.new.table_no}`);
+        if(p.new.status==='bill_pending'){beep(550);toast(`🧾 Bill ready — Table ${p.new.table_no}`);}
       }
       render();updateStats();
     })

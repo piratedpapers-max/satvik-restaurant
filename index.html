@@ -182,6 +182,7 @@ main{padding:14px 14px 0;}
       <div class="bill-total"><span>Total</span><span id="trackBillTotal">₹0</span></div>
       <div class="bill-meta"><span>Table <span id="trackTable">—</span></span><span id="trackTime"></span><span id="trackOrderNum"></span></div>
     </div>
+    <button class="order-btn" id="orderMoreBtn" onclick="closeTracking()" style="margin-bottom:10px">➕ Order More Items</button>
     <div class="review-box">
       <div class="review-title">Enjoyed dining with us? Rate us! 🙏</div>
       <div class="review-stars">⭐⭐⭐⭐⭐</div>
@@ -299,6 +300,7 @@ document.getElementById('placeBtn').addEventListener('click',async()=>{
     Object.keys(cart).forEach(k=>delete cart[k]);
     document.querySelectorAll('.qzone').forEach(z=>{const key=z.dataset.key;if(key){const parts=key.split('::');const cat=RDATA.menu.find(c=>c.category===parts[0]);const item=cat?.items.find(i=>i.name===parts[1]);if(item)renderQty(z,key,item);}});
     updateBar();closeD();subscribeToOrders();await loadTableBill();openTracking();toast('✅ Order #'+orderNum+' sent to kitchen!');
+    btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';
   }catch(e){console.error(e);toast('Could not place order. Please try again.',true);btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';}
 });
 document.getElementById('waiterBtn').addEventListener('click',async()=>{
@@ -330,6 +332,8 @@ function updateStatusUI(status){
   document.getElementById('trackStatus').textContent=l.txt;document.getElementById('trackSub').textContent=l.sub;
   steps.forEach((s,i)=>{const el=document.getElementById('step-'+s);if(!el)return;el.className='step';if(i<idx)el.classList.add('done');else if(i===idx)el.classList.add('active');});
   document.getElementById('statusSteps').style.setProperty('--progress',Math.min(idx/(steps.length-1)*100,100)+'%');
+  const orderMoreBtn=document.getElementById('orderMoreBtn');
+  if(orderMoreBtn) orderMoreBtn.style.display=(status==='bill_pending'||status==='served')?'none':'flex';
 }
 function updateTrackBanner(status){
   const banner=document.getElementById('trackBanner'),icon=document.getElementById('tbIcon'),top=document.getElementById('tbTop');
