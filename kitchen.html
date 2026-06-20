@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Satvik — Kitchen</title>
+<style>
+:root{--bg:#0F0F0F;--card:#1A1A1A;--card2:#222;--line:#2A2A2A;--text:#F0EDE8;--muted:#555;--green:#4A7C59;--gold:#D4A017;--orange:#E67E22;--red:#C0392B;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--bg);color:var(--text);font-family:'Poppins',sans-serif;min-height:100vh;}
+.pin-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:800;padding:30px;}
+.pin-screen.hide{display:none;}
+.pin-logo{font-family:'Yatra One',sans-serif;font-size:26px;color:var(--gold);margin-bottom:4px;}
+.pin-role{font-size:11px;color:var(--green);letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:28px;}
+.pin-display{display:flex;gap:10px;margin-bottom:22px;}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);background:transparent;transition:all .2s;}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;width:100%;}
+.pin-btn{background:var(--card);border:1px solid var(--line);color:var(--text);font-size:20px;font-weight:600;padding:18px;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;text-align:center;transition:all .15s;}
+.pin-btn:active{background:var(--card2);transform:scale(.95);}
+.pin-btn.del{font-size:16px;color:var(--muted);}
+.pin-btn.enter{background:var(--green);color:#fff;font-size:14px;}
+.pin-err{color:var(--red);font-size:12px;margin-top:12px;min-height:18px;}
+.pin-wm{position:absolute;bottom:20px;font-size:10px;color:#333;}
+header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--green);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.hl h1{font-family:'Yatra One',sans-serif;color:var(--gold);font-size:19px;}
+.hl p{font-size:10px;color:var(--green);letter-spacing:2px;text-transform:uppercase;font-weight:600;}
+.hr{display:flex;align-items:center;gap:8px;}
+.ldot{width:8px;height:8px;background:#27AE60;border-radius:50%;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ltext{font-size:10px;color:#27AE60;font-weight:700;letter-spacing:1px;}
+.clock{font-size:12px;color:var(--muted);font-weight:600;}
+.sbtn{background:var(--card2);border:1px solid var(--line);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Poppins',sans-serif;}
+.sbtn.on{border-color:var(--green);color:var(--green);}
+.lock-btn{background:none;border:1px solid var(--line);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Poppins',sans-serif;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line);}
+.stat{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;}
+.sv{font-size:20px;font-weight:700;color:var(--gold);}
+.sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:1px;}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;}
+@media(max-width:700px){.board{grid-template-columns:1fr;}}
+.col{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;}
+.col-hdr{padding:10px 12px;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.col-new .col-hdr{background:#1A1200;color:var(--gold);border-bottom:2px solid var(--gold);}
+.col-cooking .col-hdr{background:#1A0C00;color:var(--orange);border-bottom:2px solid var(--orange);}
+.col-ready .col-hdr{background:#0A1A0C;color:#27AE60;border-bottom:2px solid #27AE60;}
+.col-body{flex:1;padding:8px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:70vh;}
+.ccnt{background:rgba(255,255,255,.1);padding:1px 7px;border-radius:999px;font-size:11px;}
+.ocard{background:var(--card2);border-radius:8px;overflow:hidden;animation:fadeIn .25s ease;border-left:3px solid transparent;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ocard.new{border-left-color:var(--gold);}
+.ocard.cooking{border-left-color:var(--orange);}
+.ocard.ready{border-left-color:#27AE60;}
+.ocard.waiter{border-left-color:var(--red);}
+.ocard-top{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);}
+.otable{font-family:'Yatra One',sans-serif;font-size:15px;color:var(--gold);}
+.ometa{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.otime{font-size:10px;color:var(--muted);}
+.onum{font-size:10px;color:var(--gold);font-weight:700;}
+.oitems{padding:6px 10px;}
+.oitem{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--line);font-size:12px;}
+.oitem:last-child{border:none;}
+.oqty{background:var(--gold);color:#111;font-weight:700;font-size:10px;width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.oname{flex:1;font-weight:500;}
+.onote{padding:0 10px 6px;font-size:10px;color:var(--muted);font-style:italic;}
+.ofoot{padding:6px 10px;border-top:1px solid var(--line);display:flex;gap:5px;align-items:center;}
+.ototal{font-weight:700;font-size:12px;color:var(--gold);flex:1;}
+.abtn{border:none;border-radius:6px;padding:6px 12px;font-weight:700;font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;}
+.abtn-cook{background:var(--orange);color:#fff;}
+.abtn-ready{background:#27AE60;color:#fff;}
+.abtn-dismiss{background:#333;color:#aaa;}
+.waiter-alert{background:var(--red);color:#fff;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.waiter-alert.hide{display:none;}
+.empty-col{text-align:center;padding:30px 10px;color:var(--muted);font-size:11px;}
+.watermark{text-align:center;padding:10px;font-size:10px;color:#333;}
+.toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;}
+.toast.show{transform:translate(-50%,0);}
+</style>
+</head>
+<body>
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-logo">Kitchen Screen</div>
+  <div class="pin-role">Satvik Restaurant · Varanasi</div>
+  <div class="pin-display">
+    <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pk('1')">1</button><button class="pin-btn" onclick="pk('2')">2</button><button class="pin-btn" onclick="pk('3')">3</button>
+    <button class="pin-btn" onclick="pk('4')">4</button><button class="pin-btn" onclick="pk('5')">5</button><button class="pin-btn" onclick="pk('6')">6</button>
+    <button class="pin-btn" onclick="pk('7')">7</button><button class="pin-btn" onclick="pk('8')">8</button><button class="pin-btn" onclick="pk('9')">9</button>
+    <button class="pin-btn del" onclick="pd()">⌫</button><button class="pin-btn" onclick="pk('0')">0</button><button class="pin-btn enter" onclick="pe()">✓</button>
+  </div>
+  <div class="pin-err" id="pinErr"></div>
+  <div class="pin-wm">Powered by HK Digital Solutions</div>
+</div>
+<div class="waiter-alert hide" id="waiterAlert">🙋 WAITER NEEDED — <span id="waiterTable"></span> — Tap to dismiss</div>
+<header>
+  <div class="hl"><h1>🍳 Kitchen</h1><p>Satvik Restaurant · Varanasi</p></div>
+  <div class="hr">
+    <div class="ldot" id="ldot"></div><span class="ltext">LIVE</span>
+    <button class="sbtn on" id="sndBtn" onclick="toggleSound()">🔔</button>
+    <span class="clock" id="clock"></span>
+    <button class="lock-btn" onclick="logout()">🔒</button>
+  </div>
+</header>
+<div class="stats">
+  <div class="stat"><div class="sv" id="sNew">0</div><div class="sl">New</div></div>
+  <div class="stat"><div class="sv" id="sCook">0</div><div class="sl">Cooking</div></div>
+  <div class="stat"><div class="sv" id="sReady">0</div><div class="sl">Ready</div></div>
+  <div class="stat"><div class="sv" id="sWaiter">0</div><div class="sl">Waiter</div></div>
+</div>
+<div class="board">
+  <div class="col col-new"><div class="col-hdr">🆕 New Orders <span class="ccnt" id="cntNew">0</span></div><div class="col-body" id="colNew"><div class="empty-col">No new orders</div></div></div>
+  <div class="col col-cooking"><div class="col-hdr">🔥 Cooking <span class="ccnt" id="cntCook">0</span></div><div class="col-body" id="colCook"><div class="empty-col">Nothing cooking</div></div></div>
+  <div class="col col-ready"><div class="col-hdr">✅ Ready to Serve <span class="ccnt" id="cntReady">0</span></div><div class="col-body" id="colReady"><div class="empty-col">Nothing ready</div></div></div>
+</div>
+<div class="watermark">Powered by HK Digital Solutions</div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
+const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
+const RESTAURANT_ID="satvik";
+const KITCHEN_PIN="1234"; // ← Change this
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let orders={},soundOn=true,pinInput='';
+const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
+function pk(k){if(pinInput.length>=4)return;pinInput+=k;updateDots();}
+function pd(){pinInput=pinInput.slice(0,-1);updateDots();document.getElementById('pinErr').textContent='';}
+function pe(){
+  if(pinInput===KITCHEN_PIN){sessionStorage.setItem('k_auth','1');document.getElementById('pinScreen').classList.add('hide');loadOrders();subscribe();}
+  else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinInput='';updateDots();}
+}
+function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
+function logout(){sessionStorage.removeItem('k_auth');pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
+if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();});}
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
+function beep(f=660){if(!soundOn)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[0,200,400].forEach(d=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=f;g.gain.setValueAtTime(0.25,ctx.currentTime+d/1000);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+d/1000+0.18);o.start(ctx.currentTime+d/1000);o.stop(ctx.currentTime+d/1000+0.2);});}catch(e){}}
+function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';b.classList.toggle('on',soundOn);}
+async function loadOrders(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const {data}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID)
+    .in('status',['new','cooking','ready','waiter']).gte('placed_at',today.toISOString()).order('placed_at',{ascending:true});
+  if(data){orders={};data.forEach(o=>{orders[o.id]=o;});}
+  render();
+}
+function subscribe(){
+  sb.channel('kitchen-v5').on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
+    if(!['served','dismissed','bill_pending'].includes(p.new.status)){
+      orders[p.new.id]=p.new;
+      if(p.new.status==='waiter'){beep(440);showWaiterAlert(p.new.table_no);}
+      else beep(660);
+      render();toast(p.new.status==='waiter'?`🙋 Waiter — Table ${p.new.table_no}`:`🆕 Order #${p.new.order_num||'?'} — Table ${p.new.table_no}`);
+    }
+  }).on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
+    if(['dismissed','bill_pending','served'].includes(p.new.status)){delete orders[p.new.id];}
+    else{orders[p.new.id]=p.new;}
+    render();
+  }).subscribe(s=>{document.getElementById('ldot').style.background=s==='SUBSCRIBED'?'#27AE60':'#E74C3C';});
+}
+function showWaiterAlert(tableNo){
+  const alert=document.getElementById('waiterAlert');
+  document.getElementById('waiterTable').textContent=`Table ${tableNo}`;
+  alert.classList.remove('hide');
+  alert.onclick=()=>alert.classList.add('hide');
+  setTimeout(()=>alert.classList.add('hide'),10000);
+}
+function render(){
+  const all=Object.values(orders).sort((a,b)=>new Date(a.placed_at)-new Date(b.placed_at));
+  const byS={new:[],cooking:[],ready:[],waiter:[]};
+  all.forEach(o=>{if(byS[o.status])byS[o.status].push(o);});
+  document.getElementById('sNew').textContent=byS.new.length;
+  document.getElementById('sCook').textContent=byS.cooking.length;
+  document.getElementById('sReady').textContent=byS.ready.length;
+  document.getElementById('sWaiter').textContent=byS.waiter.length;
+  document.getElementById('cntNew').textContent=byS.new.length;
+  document.getElementById('cntCook').textContent=byS.cooking.length;
+  document.getElementById('cntReady').textContent=byS.ready.length;
+  const renderCol=(status,colId,emptyTxt)=>{
+    const list=byS[status]||[];
+    document.getElementById(colId).innerHTML=list.length===0?`<div class="empty-col">${emptyTxt}</div>`:list.map(o=>oCard(o)).join('');
+  };
+  renderCol('new','colNew','No new orders');
+  renderCol('cooking','colCook','Nothing cooking');
+  renderCol('ready','colReady','Nothing ready');
+}
+function oCard(o){
+  const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const isWaiter=o.status==='waiter';
+  let actions='';
+  if(isWaiter) actions=`<button class="abtn abtn-dismiss" onclick="doStatus('${o.id}','dismissed')">✓ Done</button>`;
+  else if(o.status==='new') actions=`<button class="abtn abtn-cook" onclick="doStatus('${o.id}','cooking')">🔥 Start Cooking</button>`;
+  else if(o.status==='cooking') actions=`<button class="abtn abtn-ready" onclick="doStatus('${o.id}','ready')">✅ Mark Ready</button>`;
+  else if(o.status==='ready') actions=`<button class="abtn abtn-dismiss" style="background:#27AE60;color:#fff" onclick="doStatus('${o.id}','bill_pending')">🧾 Send to Counter</button>`;
+  return `<div class="ocard ${o.status}"><div class="ocard-top"><div class="otable">Table ${o.table_no}</div><div class="ometa"><div class="otime">${time}</div>${o.order_num>0?`<div class="onum">#${o.order_num}</div>`:''}</div></div><div class="oitems">${(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>${o.note?`<div class="onote">📝 "${o.note}"</div>`:''}<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div></div>`;
+}
+async function doStatus(id,status){
+  const {error}=await sb.from('orders').update({status}).eq('id',id);
+  if(error){toast('Error: '+error.message);return;}
+  if(orders[id]){
+    if(['dismissed','bill_pending','served'].includes(status))delete orders[id];
+    else orders[id].status=status;
+    render();
+  }
+}
+const toastEl=document.getElementById('toast');
+function toast(text){toastEl.textContent=text;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3500);}
+</script>
+</body>
+</html>

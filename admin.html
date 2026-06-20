@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Satvik — Admin</title>
+<style>
+:root{--green:#4A7C59;--gold:#D4A017;--brown:#6B3F1E;--cream:#FDFAF3;--steel:#1E1E1E;--paper:#FFFEF9;--line:#E5DCC8;--ink:#1A1208;--muted:#7A6E5F;--red:#C0392B;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:var(--cream);color:var(--ink);font-family:'Poppins',sans-serif;}
+body{padding-bottom:100px;}
+header{background:var(--steel);color:#fff;padding:16px 18px;border-bottom:3px solid var(--green);}
+header h1{font-family:'Yatra One',sans-serif;color:var(--gold);font-size:20px;}
+header p{font-size:10px;color:var(--green);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-top:1px;}
+.login-box{max-width:340px;margin:60px auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:26px 22px;text-align:center;}
+.login-box h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:20px;margin-bottom:5px;}
+.login-box p{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.login-box input{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;margin-bottom:10px;font-family:'Poppins',sans-serif;}
+.login-box button{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;}
+.login-err{color:var(--red);font-size:12px;margin-top:6px;display:none;}
+main{max-width:720px;margin:0 auto;padding:18px 14px;}
+.kitchen-link{display:block;background:var(--steel);color:var(--gold);text-decoration:none;padding:13px;border-radius:11px;text-align:center;font-weight:700;font-size:13px;margin-bottom:14px;}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;}
+.panel h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:17px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.panel h2::after{content:"";flex:1;height:1px;background:repeating-linear-gradient(to right,var(--line) 0 5px,transparent 5px 10px);}
+label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;margin-top:12px;}
+label:first-of-type{margin-top:0;}
+input[type="text"],input[type="number"],textarea{width:100%;padding:10px 11px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'Poppins',sans-serif;background:#fff;}
+textarea{resize:vertical;min-height:55px;}
+.hint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5;}
+/* TOKEN GENERATOR */
+.token-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:10px;}
+.token-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
+.token-table-num{font-family:'Yatra One',sans-serif;font-size:18px;color:var(--brown);margin-bottom:4px;}
+.token-url{font-size:9px;color:var(--muted);word-break:break-all;margin:6px 0;background:var(--cream);padding:5px;border-radius:5px;font-family:monospace;}
+.copy-btn{background:var(--green);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;}
+.gen-btn{background:var(--green);color:#fff;border:none;border-radius:9px;padding:11px 20px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;margin-top:10px;}
+.gen-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+/* TODAY'S ORDERS */
+.orders-summary{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.os-card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px 14px;flex:1;min-width:90px;text-align:center;}
+.os-val{font-family:'Yatra One',sans-serif;font-size:18px;color:var(--brown);}
+.os-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.refresh-btn{background:none;border:1.5px solid var(--line);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'Poppins',sans-serif;align-self:center;}
+.refresh-btn:hover{border-color:var(--green);color:var(--green);}
+.orders-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;}
+.orders-table th{background:var(--steel);color:var(--gold);padding:8px 10px;text-align:left;font-size:11px;letter-spacing:.5px;}
+.orders-table td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+.orders-table tr:last-child td{border:none;}
+.orders-table tr:hover td{background:#f9f6ee;}
+.o-status{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;}
+.o-status.new{background:#FEF3C7;color:#92400E;}
+.o-status.cooking{background:#FED7AA;color:#C2410C;}
+.o-status.ready{background:#D1FAE5;color:#065F46;}
+.o-status.bill_pending{background:#EDE9FE;color:#5B21B6;}
+.o-status.served{background:#E5E7EB;color:#374151;}
+.o-status.paid{background:#D1FAE5;color:#065F46;}
+.no-orders{text-align:center;padding:24px;color:var(--muted);font-size:13px;}
+/* ANALYTICS */
+.a-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+@media(min-width:500px){.a-grid{grid-template-columns:repeat(4,1fr);}}
+.a-card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
+.a-val{font-family:'Yatra One',sans-serif;font-size:20px;color:var(--brown);}
+.a-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.a-sub{font-size:11px;color:var(--green);font-weight:600;margin-top:3px;}
+.top-dishes{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;}
+.td-title{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:15px;margin-bottom:10px;}
+.td-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
+.td-row:last-child{border:none;}
+.td-rank{font-weight:700;font-size:12px;color:var(--gold);width:20px;}
+.td-name{flex:1;font-size:12px;font-weight:600;}
+.td-bar-wrap{width:70px;height:5px;background:var(--line);border-radius:3px;}
+.td-bar{height:5px;background:var(--green);border-radius:3px;}
+.td-count{font-size:11px;color:var(--muted);}
+/* MENU */
+.cat-block{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:#fff;}
+.cat-hdr{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cat-hdr input{flex:1;font-weight:700;font-size:14px;}
+.ibtn{background:none;border:1.5px solid var(--line);border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.ibtn.d{color:var(--red);border-color:var(--red);}
+.item-row{display:grid;gap:6px;border:1px dashed var(--line);border-radius:8px;padding:8px;margin-bottom:6px;background:var(--cream);}
+.item-top{display:flex;gap:6px;align-items:center;}
+.item-top input[type="text"]{flex:1;}
+.item-top input[type="number"]{width:80px;}
+.item-bot{display:flex;gap:14px;align-items:center;}
+.item-bot label{margin:0;display:flex;align-items:center;gap:4px;text-transform:none;letter-spacing:0;font-weight:600;font-size:11px;color:var(--ink);cursor:pointer;}
+.item-bot input[type="checkbox"]{width:14px;height:14px;cursor:pointer;}
+.item-row textarea{font-size:12px;min-height:36px;}
+.add-item-btn{width:100%;padding:8px;border:1.5px dashed var(--green);background:none;color:var(--green);border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;margin-top:4px;}
+.add-cat-btn{width:100%;padding:9px;border:1.5px dashed var(--brown);background:none;color:var(--brown);border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;}
+.save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--steel);padding:12px 14px;display:flex;gap:8px;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,.25);}
+.save-bar button{flex:1;padding:13px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;}
+.save-btn{background:var(--gold);color:var(--steel);}
+.save-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+.preview-btn{background:transparent;border:1.5px solid #fff;color:#fff;}
+.toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:12px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.toast.show{transform:translate(-50%,0);}
+.toast.err{background:var(--red);}
+.hidden{display:none!important;}
+.loading{position:fixed;inset:0;background:var(--cream);display:flex;align-items:center;justify-content:center;z-index:500;}
+.spin{width:32px;height:32px;border:3px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.watermark{text-align:center;padding:14px;font-size:10.5px;color:var(--muted);letter-spacing:.5px;}
+.watermark a{color:var(--muted);text-decoration:none;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="loading hidden" id="loading"><div class="spin"></div></div>
+<div class="login-box" id="loginBox">
+  <h2>Admin Login</h2><p>Menu Manager</p>
+  <input type="password" id="loginPass" placeholder="Enter admin password"/>
+  <button id="loginBtn">Login</button>
+  <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
+</div>
+<div id="adminPanel" class="hidden">
+  <header><h1>Satvik Restaurant — Admin</h1><p>Menu Manager & Analytics</p></header>
+  <main>
+    <a class="kitchen-link" href="kitchen.html" target="_blank">🍳 Kitchen Screen →</a><a class="kitchen-link" style="background:#4A0E6B;margin-top:6px" href="counter.html" target="_blank">💰 Counter & Billing →</a>
+    <div class="panel">
+      <h2>📋 Today's Orders</h2>
+      <div class="orders-summary">
+        <div class="os-card"><div class="os-val" id="oTotal">—</div><div class="os-lbl">Total Orders</div></div>
+        <div class="os-card"><div class="os-val" id="oActive">—</div><div class="os-lbl">Active</div></div>
+        <div class="os-card"><div class="os-val" id="oRevenue">—</div><div class="os-lbl">Revenue</div></div>
+        <button class="refresh-btn" onclick="loadTodayOrders()">↻ Refresh</button>
+      </div>
+      <div id="ordersTableWrap"><div class="no-orders">Loading orders...</div></div>
+    </div>
+    <div class="panel">
+      <h2>📊 Analytics</h2>
+      <div class="a-grid">
+        <div class="a-card"><div class="a-val" id="aTR">₹0</div><div class="a-lbl">Today Revenue</div><div class="a-sub" id="aTO">0 orders</div></div>
+        <div class="a-card"><div class="a-val" id="aMR">₹0</div><div class="a-lbl">This Month</div><div class="a-sub" id="aMO">0 orders</div></div>
+        <div class="a-card"><div class="a-val" id="aAV">₹0</div><div class="a-lbl">Avg Order</div><div class="a-sub">Per order</div></div>
+        <div class="a-card"><div class="a-val" id="aBT">—</div><div class="a-lbl">Busiest Table</div><div class="a-sub">Today</div></div>
+      </div>
+      <div class="top-dishes">
+        <div class="td-title">🏆 Most Ordered Today</div>
+        <div id="topDishes"><div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Loading...</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>🔐 Secure QR Codes</h2>
+      <p class="hint">Each table gets a unique secure link. Customers cannot change their table number. Generating new tokens replaces old ones — reprint QR codes after regenerating.</p>
+      <label>Number of Tables</label>
+      <input type="number" id="tableCount" value="12" min="1" max="50"/>
+
+      <button class="gen-btn" id="genBtn" onclick="generateTokens()">🔑 Generate Secure QR Links</button>
+      <div class="token-grid" id="tokenGrid"></div>
+    </div>
+    <div class="panel">
+      <h2>Restaurant Settings</h2>
+      <label>Restaurant Name</label><input type="text" id="rName"/>
+      <label>Subtitle</label><input type="text" id="rSub"/>
+      <label>WhatsApp Number (with country code)</label><input type="text" id="rWA"/>
+      <label>Google Review Link</label><input type="text" id="rGR"/>
+      <p class="hint">Get from Google Business Profile → Get more reviews → Copy link</p>
+    </div>
+    <div class="panel">
+      <h2>⭐ Today's Special</h2>
+      <label>Special offer (leave empty to hide)</label>
+      <input type="text" id="rSpecial" placeholder="e.g. Banarasi Thali — Today only ₹199!"/>
+    </div>
+    <div class="panel">
+      <h2>Menu</h2>
+      <div id="cats"></div>
+      <button class="add-cat-btn" id="addCat">+ Add Category</button>
+    </div>
+  </main>
+  <div class="save-bar">
+    <button class="preview-btn" id="previewBtn">Preview</button>
+    <button class="save-btn" id="saveBtn">Save Changes</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="watermark">Powered by <a href="#" target="_blank">HK Digital Solutions</a></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
+const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
+const RESTAURANT_ID="satvik";
+const ADMIN_PASSWORD="satvik2026";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let DATA=null;
+const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
+document.getElementById('loginBtn').addEventListener('click',tryLogin);
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
+function tryLogin(){
+  if(document.getElementById('loginPass').value===ADMIN_PASSWORD){
+    document.getElementById('loginBox').classList.add('hidden');document.getElementById('adminPanel').classList.remove('hidden');document.getElementById('loading').classList.remove('hidden');loadAll();
+  }else{document.getElementById('loginErr').style.display='block';}
+}
+async function loadAll(){await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders()]);document.getElementById('loading').classList.add('hidden');setInterval(loadTodayOrders,30000);}
+async function loadMenuData(){
+  try{const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();if(error)throw error;DATA=(data?.data?.menu?.length)?data.data:getDefault();}catch(e){DATA=getDefault();}
+  renderForm();
+}
+async function loadAnalytics(){
+  const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  try{
+    const {data:td}=await sb.from('orders').select('total,items,table_no').eq('restaurant_id',RESTAURANT_ID).eq('payment_status','paid').gte('placed_at',todayStart.toISOString());
+    const {data:md}=await sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('payment_status','paid').gte('placed_at',monthStart.toISOString());
+    const tr=(td||[]).reduce((s,o)=>s+(o.total||0),0);const mr=(md||[]).reduce((s,o)=>s+(o.total||0),0);
+    const tc=(td||[]).length;const mc=(md||[]).length;const av=tc>0?Math.round(tr/tc):0;
+    const tblCounts={};(td||[]).forEach(o=>{if(o.table_no)tblCounts[o.table_no]=(tblCounts[o.table_no]||0)+1;});
+    const topTbl=Object.entries(tblCounts).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('aTR').textContent='₹'+tr;document.getElementById('aTO').textContent=tc+' orders';
+    document.getElementById('aMR').textContent='₹'+mr;document.getElementById('aMO').textContent=mc+' orders';
+    document.getElementById('aAV').textContent='₹'+av;document.getElementById('aBT').textContent=topTbl?'T'+topTbl[0]:'—';
+    const dishCounts={};(td||[]).forEach(o=>{(o.items||[]).forEach(i=>{if(i.name&&!i.name.includes('WAITER')){dishCounts[i.name]=(dishCounts[i.name]||0)+i.qty;}});});
+    const topDishes=Object.entries(dishCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const maxC=topDishes[0]?topDishes[0][1]:1;
+    document.getElementById('topDishes').innerHTML=topDishes.length===0?`<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">No paid orders today yet</div>`:topDishes.map(([name,count],i)=>`<div class="td-row"><div class="td-rank">${i+1}</div><div class="td-name">${name}</div><div class="td-bar-wrap"><div class="td-bar" style="width:${Math.round(count/maxC*100)}%"></div></div><div class="td-count">${count}x</div></div>`).join('');
+  }catch(e){console.error(e);}
+}
+async function loadTodayOrders(){
+  const wrap=document.getElementById('ordersTableWrap');
+  try{
+    const today=new Date();
+    const dayStart=new Date(today);dayStart.setHours(0,0,0,0);
+    const {data,error}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID).gte('placed_at',dayStart.toISOString()).order('placed_at',{ascending:false});
+    if(error)throw error;
+    const orders=(data||[]).filter(o=>o.payment_status!=='na');
+    const active=orders.filter(o=>o.payment_status!=='paid');
+    const revenue=orders.filter(o=>o.payment_status==='paid').reduce((s,o)=>s+(o.total||0),0);
+    document.getElementById('oTotal').textContent=orders.length;
+    document.getElementById('oActive').textContent=active.length;
+    document.getElementById('oRevenue').textContent='₹'+revenue;
+    if(!orders.length){wrap.innerHTML='<div class="no-orders">No orders yet today 🍽️</div>';return;}
+    const statusLabel={new:'New',cooking:'Cooking',ready:'Ready',bill_pending:'Bill',served:'Served',paid:'Paid'};
+    wrap.innerHTML=`<table class="orders-table">
+      <thead><tr><th>#</th><th>Table</th><th>Items</th><th>Total</th><th>Status</th><th>Time</th></tr></thead>
+      <tbody>${orders.map(o=>{
+        const items=(o.items||[]).filter(i=>!i.name.includes('WAITER'));
+        const itemStr=items.map(i=>`${i.name} ×${i.qty}`).join(', ');
+        const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        const st=o.payment_status==='paid'?'paid':(o.status||'new');
+        const stLabel=statusLabel[st]||st;
+        return `<tr>
+          <td><strong>#${o.order_num||'—'}</strong></td>
+          <td><strong>T${o.table_no}</strong></td>
+          <td><div style="font-size:11px">${itemStr||'—'}</div>${o.note?`<div style="color:#C2410C;font-size:10px;margin-top:2px">📝 ${o.note}</div>`:''}</td>
+          <td><strong>₹${o.total||0}</strong></td>
+          <td><span class="o-status ${st}">${stLabel}</span></td>
+          <td style="color:var(--muted);white-space:nowrap">${time}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }catch(e){wrap.innerHTML='<div class="no-orders">Could not load orders.</div>';console.error(e);}
+}
+function generateToken(){return Math.random().toString(36).substring(2,10)+Math.random().toString(36).substring(2,10);}
+async function generateTokens(){
+  const count=parseInt(document.getElementById('tableCount').value)||12;
+  const siteUrl="https://satvik-restaurant-two.vercel.app";
+  const btn=document.getElementById('genBtn');btn.disabled=true;btn.textContent='Generating...';
+  try{
+    const tokens=[];
+    for(let i=1;i<=count;i++){
+      const token=generateToken();tokens.push({token,restaurant_id:RESTAURANT_ID,table_no:String(i)});
+    }
+    // Delete old tokens first so URLs always match Supabase
+    await sb.from('table_tokens').delete().eq('restaurant_id',RESTAURANT_ID);
+    const {error}=await sb.from('table_tokens').insert(tokens);
+    if(error)throw error;
+    const grid=document.getElementById('tokenGrid');
+    grid.innerHTML=tokens.map((t,i)=>{
+      const url=`${siteUrl}/?t=${t.token}`;
+      return `<div class="token-card"><div class="token-table-num">Table ${i+1}</div><div class="token-url">${url}</div><button class="copy-btn" onclick="copyUrl('${url}',this)">📋 Copy Link</button></div>`;
+    }).join('');
+    showToast('✅ Secure links generated! Copy each link to create QR codes.');
+  }catch(e){showToast('Error: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='🔑 Generate Secure QR Links';}
+}
+function copyUrl(url,btn){navigator.clipboard.writeText(url).then(()=>{btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent='📋 Copy Link',2000);});}
+function getDefault(){return{restaurantName:"Satvik Restaurant",restaurantSub:"Pure Veg · Varanasi",whatsapp:"918102806404",googleReview:"https://search.google.com/local/writereview?placeid=ChIJYW8Zam8v6DkRZ7yzsvX56N0",todaySpecial:"",menu:[{category:"Starters",items:[{name:"Veg Manchurian",desc:"Crispy veggie balls",price:140,veg:true,available:true}]},{category:"Main Course",items:[{name:"Dal Tadka",desc:"Lentils with ghee tempering",price:150,veg:true,available:true}]}]};}
+function renderForm(){
+  document.getElementById('rName').value=DATA.restaurantName||'';document.getElementById('rSub').value=DATA.restaurantSub||'';
+  document.getElementById('rWA').value=DATA.whatsapp||'';document.getElementById('rGR').value=DATA.googleReview||'';
+  document.getElementById('rSpecial').value=DATA.todaySpecial||'';
+  const cats=document.getElementById('cats');cats.innerHTML='';(DATA.menu||[]).forEach(cat=>renderCat(cat));
+}
+function renderCat(cat){
+  const b=document.createElement('div');b.className='cat-block';
+  b.innerHTML=`<div class="cat-hdr"><input type="text" class="cname" value="${esc(cat.category)}" placeholder="Category"/><button class="ibtn d">🗑</button></div><div class="ic"></div><button class="add-item-btn">+ Add Item</button>`;
+  const cont=b.querySelector('.ic');(cat.items||[]).forEach(item=>cont.appendChild(renderItem(item)));
+  b.querySelector('.add-item-btn').addEventListener('click',()=>cont.appendChild(renderItem({name:'',desc:'',price:0,veg:true,available:true})));
+  b.querySelector('.ibtn.d').addEventListener('click',()=>{if(confirm('Delete category?'))b.remove();});
+  document.getElementById('cats').appendChild(b);
+}
+function renderItem(item){
+  const r=document.createElement('div');r.className='item-row';
+  r.innerHTML=`<div class="item-top"><input type="text" class="iname" value="${esc(item.name)}" placeholder="Dish name"/><input type="number" class="iprice" value="${item.price||0}" placeholder="₹"/><button class="ibtn d">✕</button></div><textarea class="idesc" placeholder="Description">${item.desc||''}</textarea><div class="item-bot"><label><input type="checkbox" class="iveg" ${item.veg?'checked':''}/> Veg</label><label><input type="checkbox" class="iavail" ${item.available!==false?'checked':''}/> Available</label></div>`;
+  r.querySelector('.ibtn.d').addEventListener('click',()=>r.remove());return r;
+}
+document.getElementById('addCat').addEventListener('click',()=>renderCat({category:'',items:[]}));
+function esc(s){return s?String(s).replace(/"/g,'&quot;'):'';}
+function collectData(){
+  const menu=[];
+  document.querySelectorAll('.cat-block').forEach(b=>{
+    const category=b.querySelector('.cname').value.trim();if(!category)return;
+    const items=[];b.querySelectorAll('.item-row').forEach(r=>{const name=r.querySelector('.iname').value.trim();if(!name)return;items.push({name,desc:r.querySelector('.idesc').value.trim(),price:parseFloat(r.querySelector('.iprice').value)||0,veg:r.querySelector('.iveg').checked,available:r.querySelector('.iavail').checked});});
+    menu.push({category,items});
+  });
+  return{restaurantName:document.getElementById('rName').value.trim(),restaurantSub:document.getElementById('rSub').value.trim(),whatsapp:document.getElementById('rWA').value.trim(),googleReview:document.getElementById('rGR').value.trim(),todaySpecial:document.getElementById('rSpecial').value.trim(),menu};
+}
+document.getElementById('saveBtn').addEventListener('click',async()=>{
+  const saveBtn=document.getElementById('saveBtn');saveBtn.disabled=true;saveBtn.textContent='Saving...';
+  const d=collectData();
+  try{const {error}=await sb.from('restaurant_data').update({data:d,updated_at:new Date().toISOString()}).eq('id',RESTAURANT_ID);if(error)throw error;DATA=d;showToast('✅ Saved!');}
+  catch(e){showToast('Save failed: '+e.message,true);}
+  finally{saveBtn.disabled=false;saveBtn.textContent='Save Changes';}
+});
+document.getElementById('previewBtn').addEventListener('click',()=>window.open('index.html?t=preview','_blank'));
+const toastEl=document.getElementById('toast');
+function showToast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
