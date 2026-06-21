@@ -231,12 +231,14 @@ async function validateToken(){
 function showInvalid(){document.getElementById('loading').classList.add('hide');document.getElementById('invalidPage').classList.add('show');}
 
 async function getNextOrderNum(){
-  const today=new Date();if(today.getHours()<6)today.setDate(today.getDate()-1);
-  const dateStr=today.toISOString().slice(0,10);const counterId=RESTAURANT_ID+'_'+dateStr;
-  try{const {data}=await sb.from('order_counter').select('count').eq('id',counterId).single();
-    if(data){const n=data.count+1;await sb.from('order_counter').update({count:n,updated_at:new Date().toISOString()}).eq('id',counterId);return n;}
-    else{await sb.from('order_counter').insert([{id:counterId,count:1,date:dateStr}]);return 1;}
-  }catch(e){return Math.floor(Math.random()*900)+100;}
+  try{
+    const {data,error}=await sb.rpc('get_next_order_num',{p_restaurant_id:RESTAURANT_ID});
+    if(error)throw error;
+    return data;
+  }catch(e){
+    console.error('Order number error:',e);
+    return Math.floor(Math.random()*900)+100;
+  }
 }
 
 async function init(){
@@ -362,9 +364,17 @@ function updateTrackBanner(status){
   const map={new:{icon:'⏳',txt:'Order received — kitchen confirming',cls:''},cooking:{icon:'🔥',txt:'Your food is being cooked!',cls:'cooking'},ready:{icon:'✅',txt:'Your food is ready!',cls:'ready'},bill_pending:{icon:'🧾',txt:'Bill ready — please pay',cls:'bill_pending'}};
   const m=map[status]||map.new;banner.className='track-banner show '+m.cls;icon.textContent=m.icon;top.textContent=m.txt;
 }
+let customerPollTimer=null;
 function subscribeToOrders(){
-  if(orderChannel)sb.removeChannel(orderChannel);if(!activeOrderIds.length)return;
-  orderChannel=sb.channel('track-'+TABLE+'-'+Date.now()).on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders'},async p=>{if(activeOrderIds.includes(p.new.id))await loadTableBill();}).subscribe();
+  if(orderChannel)sb.removeChannel(orderChannel);
+  if(customerPollTimer){clearInterval(customerPollTimer);customerPollTimer=null;}
+  if(!activeOrderIds.length)return;
+  orderChannel=sb.channel('track-'+TABLE+'-'+Date.now())
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders'},async p=>{if(activeOrderIds.includes(p.new.id))await loadTableBill();})
+    .subscribe();
+  // Safety net: even if realtime push is missed (weak signal, brief disconnect),
+  // quietly re-check status every 10 seconds so the customer never sees stale info for long
+  customerPollTimer=setInterval(()=>{ if(activeOrderIds.length) loadTableBill(); },10000);
 }
 function openTracking(){document.getElementById('trackPage').classList.add('show');}
 function closeTracking(){document.getElementById('trackPage').classList.remove('show');}

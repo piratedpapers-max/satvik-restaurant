@@ -126,6 +126,9 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 
 /* WAITER ALERTS */
 .waiter-bar{background:var(--red);display:none;padding:10px 16px;font-size:13px;font-weight:700;align-items:center;gap:8px;cursor:pointer;}
+.conn-alert{background:#B8860B;color:#fff;padding:10px 16px;font-size:13px;font-weight:700;text-align:center;animation:connPulse 1s infinite;}
+.conn-alert.hide{display:none;}
+@keyframes connPulse{0%,100%{opacity:1}50%{opacity:.6}}
 .waiter-bar.show{display:flex;}
 
 /* WATERMARK */
@@ -151,6 +154,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
   <div class="login-wm">Powered by HK Digital Solutions</div>
 </div>
 
+<div class="conn-alert hide" id="connAlert">⚠️ CONNECTION LOST — Reconnecting... Bills may not be showing live.</div>
 <div class="waiter-bar" id="waiterBar" onclick="dismissWaiter()">
   🙋 WAITER NEEDED — <span id="waiterTableTxt"></span> — Tap to dismiss
 </div>
@@ -208,7 +212,8 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
     </div>
     <div class="no-modal-body">
       <div class="no-label">Table Number</div>
-      <input type="text" class="no-input" id="noTableNum" placeholder="e.g. 5"/>
+      <input type="text" inputmode="numeric" class="no-input" id="noTableNum" placeholder="e.g. 5" maxlength="3"/>
+      <div style="font-size:11px;color:#7A6E5F;margin-top:4px">Enter table number only (e.g. 5, not "Table 5")</div>
       <div class="no-label">Menu</div>
       <div class="no-cat-tabs" id="noCatTabs"></div>
       <div id="noItemsList"></div>
@@ -349,8 +354,14 @@ async function loadAll(){
 }
 
 /* REALTIME */
+let counterChannel=null;
+let counterWasDisconnected=false;
+let counterReconnectPollTimer=null;
+
 function subscribe(){
-  sb.channel('counter-v5')
+  if(counterChannel){ sb.removeChannel(counterChannel); counterChannel=null; }
+
+  counterChannel = sb.channel('counter-v6-'+Date.now())
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
       if(!['served'].includes(p.new.status)){
         orders[p.new.id]=p.new;
@@ -361,8 +372,12 @@ function subscribe(){
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
       if(p.new.status==='served'&&p.new.payment_status==='paid'){
-        paidToday.push({total:p.new.total,payment_method:p.new.payment_method});
-        if(p.new.payment_method&&payBreakdown[p.new.payment_method]!==undefined)payBreakdown[p.new.payment_method]+=(p.new.total||0);
+        // Guard against double-counting if this update event somehow fires more than once
+        const alreadyCounted = paidToday.some(o=>o._id===p.new.id);
+        if(!alreadyCounted){
+          paidToday.push({total:p.new.total,payment_method:p.new.payment_method,_id:p.new.id});
+          if(p.new.payment_method&&payBreakdown[p.new.payment_method]!==undefined)payBreakdown[p.new.payment_method]+=(p.new.total||0);
+        }
         delete orders[p.new.id];
       }else if(p.new.status==='dismissed'){
         delete orders[p.new.id];
@@ -372,8 +387,36 @@ function subscribe(){
       }
       render();updateStats();
     })
-    .subscribe(s=>{document.getElementById('ldot').style.background=s==='SUBSCRIBED'?'#27AE60':'#E74C3C';});
+    .subscribe(async s=>{
+      const dot=document.getElementById('ldot');
+      const banner=document.getElementById('connAlert');
+      if(s==='SUBSCRIBED'){
+        dot.style.background='#27AE60';
+        banner.classList.add('hide');
+        if(counterReconnectPollTimer){ clearInterval(counterReconnectPollTimer); counterReconnectPollTimer=null; }
+        if(counterWasDisconnected){
+          console.log('Reconnected - refetching counter data to recover any missed events');
+          await loadAll();
+          beep(550);
+          toast('✅ Reconnected — data refreshed');
+          counterWasDisconnected=false;
+        }
+      } else {
+        dot.style.background='#E74C3C';
+        banner.classList.remove('hide');
+        counterWasDisconnected=true;
+        if(!counterReconnectPollTimer){
+          counterReconnectPollTimer=setInterval(()=>{ loadAll(); }, 8000);
+        }
+      }
+    });
 }
+
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && sessionStorage.getItem('counter_auth')==='1'){
+    loadAll();
+  }
+});
 
 /* WAITER ALERT */
 let waiterOrderId=null;
@@ -464,7 +507,22 @@ function tableCard(tno,tbl,type){
 }
 
 /* CONFIRM PAYMENT */
+const paymentInFlight = new Set(); // tracks order IDs currently being paid, blocks duplicate taps
+
 async function confirmPay(ids,tableNo,method){
+  // Block if any of these orders already has a payment in progress
+  const blocked = ids.some(id=>paymentInFlight.has(id));
+  if(blocked){
+    toast('Payment already processing for this table...',true);
+    return;
+  }
+  ids.forEach(id=>paymentInFlight.add(id));
+
+  // Visually disable all payment buttons on this card immediately so taps can't repeat
+  document.querySelectorAll(`[onclick*="${ids[0]}"]`).forEach(btn=>{
+    if(btn.classList.contains('pay-btn-full')){ btn.disabled=true; btn.style.opacity='0.5'; }
+  });
+
   try{
     for(const id of ids){
       const {error}=await sb.from('orders').update({
@@ -482,6 +540,8 @@ async function confirmPay(ids,tableNo,method){
   }catch(e){
     console.error(e);
     toast('Payment error: '+e.message,true);
+  }finally{
+    ids.forEach(id=>paymentInFlight.delete(id));
   }
 }
 
@@ -572,18 +632,24 @@ function updateNoCartTotal(){
   const count=Object.values(noCart).reduce((s,c)=>s+c.qty,0);
   document.getElementById('noCartTotal').textContent='₹'+total;
   const tableVal=document.getElementById('noTableNum').value.trim();
-  document.getElementById('noSubmitBtn').disabled=!(count>0&&tableVal);
+  const isValidTable=/^[0-9]{1,3}$/.test(tableVal);
+  document.getElementById('noSubmitBtn').disabled=!(count>0&&isValidTable);
 }
-document.getElementById('noTableNum').addEventListener('input',updateNoCartTotal);
+document.getElementById('noTableNum').addEventListener('input',e=>{
+  // Strip any non-digit characters as the user types
+  e.target.value=e.target.value.replace(/[^0-9]/g,'');
+  updateNoCartTotal();
+});
 
 async function getNextOrderNumCounter(){
-  const today=new Date();if(today.getHours()<6)today.setDate(today.getDate()-1);
-  const dateStr=today.toISOString().slice(0,10);const counterId=RESTAURANT_ID+'_'+dateStr;
   try{
-    const {data}=await sb.from('order_counter').select('count').eq('id',counterId).single();
-    if(data){const n=data.count+1;await sb.from('order_counter').update({count:n,updated_at:new Date().toISOString()}).eq('id',counterId);return n;}
-    else{await sb.from('order_counter').insert([{id:counterId,count:1,date:dateStr}]);return 1;}
-  }catch(e){return Math.floor(Math.random()*900)+100;}
+    const {data,error}=await sb.rpc('get_next_order_num',{p_restaurant_id:RESTAURANT_ID});
+    if(error)throw error;
+    return data;
+  }catch(e){
+    console.error('Order number error:',e);
+    return Math.floor(Math.random()*900)+100;
+  }
 }
 
 async function submitNewOrder(){

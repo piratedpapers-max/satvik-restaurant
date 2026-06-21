@@ -71,6 +71,9 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 .abtn-ready{background:#27AE60;color:#fff;}
 .abtn-dismiss{background:#333;color:#aaa;}
 .waiter-alert{background:var(--red);color:#fff;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.conn-alert{background:#B8860B;color:#fff;padding:10px 16px;font-size:13px;font-weight:700;text-align:center;animation:connPulse 1s infinite;}
+.conn-alert.hide{display:none;}
+@keyframes connPulse{0%,100%{opacity:1}50%{opacity:.6}}
 .waiter-alert.hide{display:none;}
 .empty-col{text-align:center;padding:30px 10px;color:var(--muted);font-size:11px;}
 .watermark{text-align:center;padding:10px;font-size:10px;color:#333;}
@@ -95,6 +98,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
   <div class="pin-err" id="pinErr"></div>
   <div class="pin-wm">Powered by HK Digital Solutions</div>
 </div>
+<div class="conn-alert hide" id="connAlert">⚠️ CONNECTION LOST — Reconnecting... Orders may not be showing live.</div>
 <div class="waiter-alert hide" id="waiterAlert">🙋 WAITER NEEDED — <span id="waiterTable"></span> — Tap to dismiss</div>
 <header>
   <div class="hl"><h1>🍳 Kitchen</h1><p>Satvik Restaurant · Varanasi</p></div>
@@ -180,20 +184,62 @@ async function loadOrders(){
   if(data){orders={};data.forEach(o=>{orders[o.id]=o;});}
   render();
 }
+let kitchenChannel=null;
+let wasDisconnected=false;
+let reconnectPollTimer=null;
+
 function subscribe(){
-  sb.channel('kitchen-v5').on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
-    if(!['served','dismissed','bill_pending'].includes(p.new.status)){
-      orders[p.new.id]=p.new;
-      if(p.new.status==='waiter'){beep(440);showWaiterAlert(p.new.table_no);}
-      else beep(660);
-      render();toast(p.new.status==='waiter'?`🙋 Waiter — Table ${p.new.table_no}`:`🆕 Order #${p.new.order_num||'?'} — Table ${p.new.table_no}`);
-    }
-  }).on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
-    if(['dismissed','bill_pending','served'].includes(p.new.status)){delete orders[p.new.id];}
-    else{orders[p.new.id]=p.new;}
-    render();
-  }).subscribe(s=>{document.getElementById('ldot').style.background=s==='SUBSCRIBED'?'#27AE60':'#E74C3C';});
+  // Guard: never allow more than one active subscription
+  if(kitchenChannel){ sb.removeChannel(kitchenChannel); kitchenChannel=null; }
+
+  kitchenChannel = sb.channel('kitchen-v6-'+Date.now())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
+      if(!['served','dismissed','bill_pending'].includes(p.new.status)){
+        orders[p.new.id]=p.new;
+        if(p.new.status==='waiter'){beep(440);showWaiterAlert(p.new.table_no);}
+        else beep(660);
+        render();toast(p.new.status==='waiter'?`🙋 Waiter — Table ${p.new.table_no}`:`🆕 Order #${p.new.order_num||'?'} — Table ${p.new.table_no}`);
+      }
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
+      if(['dismissed','bill_pending','served'].includes(p.new.status)){delete orders[p.new.id];}
+      else{orders[p.new.id]=p.new;}
+      render();
+    })
+    .subscribe(async s=>{
+      const dot=document.getElementById('ldot');
+      const banner=document.getElementById('connAlert');
+      if(s==='SUBSCRIBED'){
+        dot.style.background='#27AE60';
+        banner.classList.add('hide');
+        if(reconnectPollTimer){ clearInterval(reconnectPollTimer); reconnectPollTimer=null; }
+        if(wasDisconnected){
+          // Connection was lost and is now restored - re-fetch everything to recover any missed orders
+          console.log('Reconnected - refetching orders to recover any missed events');
+          await loadOrders();
+          beep(660);
+          toast('✅ Reconnected — orders refreshed');
+          wasDisconnected=false;
+        }
+      } else {
+        dot.style.background='#E74C3C';
+        banner.classList.remove('hide');
+        wasDisconnected=true;
+        // While disconnected, poll every 8 seconds as a safety net so orders still appear
+        // even if realtime reconnection itself is delayed
+        if(!reconnectPollTimer){
+          reconnectPollTimer=setInterval(()=>{ loadOrders(); }, 8000);
+        }
+      }
+    });
 }
+
+// Also re-sync whenever the tab/screen becomes visible again (covers tablet sleep/wake)
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && sessionStorage.getItem('k_auth')==='1'){
+    loadOrders();
+  }
+});
 function showWaiterAlert(tableNo){
   const alert=document.getElementById('waiterAlert');
   document.getElementById('waiterTable').textContent=`Table ${tableNo}`;
