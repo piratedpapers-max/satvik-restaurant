@@ -60,11 +60,13 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 /* PRINT BILL */
 .bill-action-btn{background:#34495E;color:#fff;}
 .wa-action-btn{background:#25D366;color:#fff;}
-#printArea{position:absolute;left:-9999px;top:0;width:300px;color:#000;background:#fff;}
+#printArea{position:absolute;left:-9999px;top:0;width:280px;color:#000;background:#fff;font-family:'Courier New',monospace;}
 @media print{
+  @page{margin:0;size:80mm auto;}
+  body{margin:0;}
   body *{visibility:hidden;}
   #printArea,#printArea *{visibility:visible;}
-  #printArea{position:fixed;left:0;top:0;width:100%;padding:10px;}
+  #printArea{position:fixed;left:0;top:0;width:100%;max-width:80mm;padding:4mm;font-family:'Courier New',monospace;font-size:12px;line-height:1.4;}
 }
 
 /* STATS */
@@ -238,19 +240,24 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 </div>
 
 <div id="printArea">
-  <div style="text-align:center;margin-bottom:10px;">
-    <div style="font-weight:700;font-size:16px" id="printRestName">Satvik Restaurant</div>
-    <div style="font-size:11px" id="printRestSub">Pure Veg · Varanasi</div>
+  <div style="text-align:center;margin-bottom:6px;">
+    <div style="font-weight:700;font-size:15px;letter-spacing:0.5px" id="printRestName">Satvik Restaurant</div>
+    <div style="font-size:11px" id="printRestSub">Pure Veg - Varanasi</div>
   </div>
-  <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;margin:8px 0;font-size:12px">
-    <div style="display:flex;justify-content:space-between"><span id="printTable">Table —</span><span id="printDate"></span></div>
+  <div style="border-top:1px dashed #000;margin:6px 0"></div>
+  <div style="display:flex;justify-content:space-between;font-size:12px">
+    <span id="printTable">Table —</span><span id="printDate"></span>
   </div>
+  <div style="border-top:1px dashed #000;margin:6px 0"></div>
   <div id="printLines" style="font-size:12px"></div>
-  <div style="border-top:1px dashed #000;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:700;font-size:14px">
-    <span>TOTAL</span><span id="printTotal">₹0</span>
+  <div style="border-top:1px dashed #000;margin:6px 0"></div>
+  <div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px">
+    <span>TOTAL</span><span id="printTotal">Rs 0</span>
   </div>
-  <div style="text-align:center;margin-top:14px;font-size:11px">Thank you for dining with us! 🙏</div>
-  <div style="text-align:center;margin-top:6px;font-size:9px">Powered by HK Digital Solutions</div>
+  <div style="border-top:1px dashed #000;margin:6px 0"></div>
+  <div style="text-align:center;margin-top:8px;font-size:11px">Thank you for dining with us!</div>
+  <div style="text-align:center;margin-top:10px;font-size:9px">Powered by HK Digital Solutions</div>
+  <div style="margin-top:6px"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -270,22 +277,31 @@ const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://
 let audioCtx=null;
 function primeAudio(){
   if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
-  if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+  if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
 }
 function beep(f=660){
   try{
     if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended')audioCtx.resume();
-    [0,200,400].forEach(d=>{
-      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-      o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
-      g.gain.setValueAtTime(0.3,audioCtx.currentTime+d/1000);
-      g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.18);
-      o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.2);
-    });
+    const playTone=()=>{
+      [0,200,400].forEach(d=>{
+        const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+        o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
+        g.gain.setValueAtTime(0.3,audioCtx.currentTime+d/1000);
+        g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.18);
+        o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.2);
+      });
+    };
+    if(audioCtx.state==='suspended'){
+      audioCtx.resume().then(playTone).catch(e=>console.error('Resume failed:',e));
+    }else{
+      playTone();
+    }
   }catch(e){console.error('Beep error:',e);}
 }
-document.addEventListener('click',primeAudio,{once:true});
+document.addEventListener('click',primeAudio);
+document.addEventListener('touchstart',primeAudio);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)primeAudio();});
+setInterval(primeAudio,15000);
 
 /* LOGIN */
 function tryLogin(){
@@ -596,13 +612,16 @@ async function submitNewOrder(){
 /* ===== PRINT BILL ===== */
 function printTableBill(tableNo,allItems,grandTotal){
   document.getElementById('printRestName').textContent=RESTAURANT_INFO.name;
-  document.getElementById('printRestSub').textContent=RESTAURANT_INFO.sub;
+  document.getElementById('printRestSub').textContent=(RESTAURANT_INFO.sub||'').replace(/·/g,'-');
   document.getElementById('printTable').textContent='Table '+tableNo;
   document.getElementById('printDate').textContent=new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   document.getElementById('printLines').innerHTML=Object.values(allItems).map(i=>
-    `<div style="display:flex;justify-content:space-between;padding:2px 0"><span>${i.name} ×${i.qty}</span><span>₹${i.total}</span></div>`
+    `<div style="display:flex;justify-content:space-between;padding:2px 0;gap:8px">
+      <span style="flex:1">${i.name} x${i.qty}</span>
+      <span style="white-space:nowrap">Rs ${i.total}</span>
+    </div>`
   ).join('');
-  document.getElementById('printTotal').textContent='₹'+grandTotal;
+  document.getElementById('printTotal').textContent='Rs '+grandTotal;
   window.print();
 }
 

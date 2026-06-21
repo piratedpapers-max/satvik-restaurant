@@ -130,7 +130,7 @@ function primeAudio(){
   if(!audioCtx){
     try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
   }
-  if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume();
+  if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume().catch(()=>{});
 }
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 function pk(k){primeAudio();if(pinInput.length>=4)return;pinInput+=k;updateDots();}
@@ -143,20 +143,32 @@ function pe(){
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
 function logout(){sessionStorage.removeItem('k_auth');pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
 if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();});}
-document.addEventListener('click',primeAudio,{once:true});
+// Re-prime audio on EVERY click/tap (not just once) so it survives context suspension during idle periods
+document.addEventListener('click',primeAudio);
+document.addEventListener('touchstart',primeAudio);
+// Re-prime when tab becomes visible again (kitchen tablets often sleep/wake)
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)primeAudio();});
+// Periodically check and resume in case it got suspended silently
+setInterval(primeAudio,15000);
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
 function beep(f=660){
   if(!soundOn)return;
   try{
     if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended') audioCtx.resume();
-    [0,200,400].forEach(d=>{
-      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-      o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
-      g.gain.setValueAtTime(0.3,audioCtx.currentTime+d/1000);
-      g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.18);
-      o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.2);
-    });
+    const playTone=()=>{
+      [0,200,400].forEach(d=>{
+        const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+        o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
+        g.gain.setValueAtTime(0.3,audioCtx.currentTime+d/1000);
+        g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.18);
+        o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.2);
+      });
+    };
+    if(audioCtx.state==='suspended'){
+      audioCtx.resume().then(playTone).catch(e=>console.error('Resume failed:',e));
+    }else{
+      playTone();
+    }
   }catch(e){console.error('Beep error:',e);}
 }
 function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';b.classList.toggle('on',soundOn);}
