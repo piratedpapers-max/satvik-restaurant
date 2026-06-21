@@ -60,12 +60,12 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 /* PRINT BILL */
 .bill-action-btn{background:#34495E;color:#fff;}
 .wa-action-btn{background:#25D366;color:#fff;}
+#printArea{position:absolute;left:-9999px;top:0;width:300px;color:#000;background:#fff;}
 @media print{
   body *{visibility:hidden;}
   #printArea,#printArea *{visibility:visible;}
-  #printArea{position:fixed;top:0;left:0;width:100%;padding:10px;}
+  #printArea{position:fixed;left:0;top:0;width:100%;padding:10px;}
 }
-#printArea{display:none;}
 
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line);}
@@ -320,7 +320,9 @@ async function loadAll(){
 
   // Load menu + restaurant info for counter ordering and print/WhatsApp
   try{
-    const {data:rdata}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    const {data:rdata,error:menuErr}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    console.log('Background menu load:',{rdata,menuErr});
+    if(menuErr) console.error('Background menu load error:',menuErr);
     if(rdata?.data?.menu?.length){
       MENU_DATA=rdata.data.menu;
       RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
@@ -490,17 +492,19 @@ async function openNewOrderModal(){
     toast('Loading menu...');
     try{
       const {data:rdata,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-      if(error)throw error;
+      console.log('Menu fetch result:',{rdata,error});
+      if(error){console.error('Supabase error:',error);throw error;}
       if(rdata?.data?.menu?.length){
         MENU_DATA=rdata.data.menu;
         RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
       }else{
+        console.warn('Menu data structure was:',rdata);
         toast('No menu found. Please add menu items in Admin panel first.',true);
         return;
       }
     }catch(e){
       console.error('Menu fetch error:',e);
-      toast('Could not load menu: '+e.message,true);
+      toast('Could not load menu: '+(e.message||JSON.stringify(e)),true);
       return;
     }
   }
