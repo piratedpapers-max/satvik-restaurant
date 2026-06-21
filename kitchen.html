@@ -46,24 +46,27 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 .col-ready .col-hdr{background:#0A1A0C;color:#27AE60;border-bottom:2px solid #27AE60;}
 .col-body{flex:1;padding:8px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:70vh;}
 .ccnt{background:rgba(255,255,255,.1);padding:1px 7px;border-radius:999px;font-size:11px;}
-.ocard{background:var(--card2);border-radius:8px;overflow:hidden;animation:fadeIn .25s ease;border-left:3px solid transparent;}
+.ocard{background:var(--card2);border-radius:8px;overflow:hidden;animation:fadeIn .25s ease;border-left:3px solid transparent;display:flex;flex-direction:column;max-height:380px;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .ocard.new{border-left-color:var(--gold);}
 .ocard.cooking{border-left-color:var(--orange);}
 .ocard.ready{border-left-color:#27AE60;}
 .ocard.waiter{border-left-color:var(--red);}
-.ocard-top{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);}
+.ocard-top{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);flex:0 0 auto;}
 .otable{font-family:'Yatra One',sans-serif;font-size:15px;color:var(--gold);}
 .ometa{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
 .otime{font-size:10px;color:var(--muted);}
 .onum{font-size:10px;color:var(--gold);font-weight:700;}
-.oitems{padding:6px 10px;}
+.oitems{padding:6px 10px;overflow-y:auto;flex:1 1 auto;min-height:0;}
+.oitems::-webkit-scrollbar{width:6px;}
+.oitems::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+.oitem-count-badge{display:none;background:rgba(212,160,23,.15);color:var(--gold);font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;}
 .oitem{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--line);font-size:12px;}
 .oitem:last-child{border:none;}
 .oqty{background:var(--gold);color:#111;font-weight:700;font-size:10px;width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 .oname{flex:1;font-weight:500;}
-.onote{padding:0 10px 6px;font-size:10px;color:var(--muted);font-style:italic;}
-.ofoot{padding:6px 10px;border-top:1px solid var(--line);display:flex;gap:5px;align-items:center;}
+.onote{padding:0 10px 6px;font-size:10px;color:var(--muted);font-style:italic;flex:0 0 auto;}
+.ofoot{padding:6px 10px;border-top:1px solid var(--line);display:flex;gap:5px;align-items:center;flex:0 0 auto;background:var(--card2);}
 .ototal{font-weight:700;font-size:12px;color:var(--gold);flex:1;}
 .abtn{border:none;border-radius:6px;padding:6px 12px;font-weight:700;font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;}
 .abtn-cook{background:var(--orange);color:#fff;}
@@ -222,12 +225,13 @@ function render(){
 function oCard(o){
   const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
   const isWaiter=o.status==='waiter';
+  const itemCount=(o.items||[]).length;
   let actions='';
   if(isWaiter) actions=`<button class="abtn abtn-dismiss" onclick="doStatus('${o.id}','dismissed')">✓ Done</button>`;
   else if(o.status==='new') actions=`<button class="abtn abtn-cook" onclick="doStatus('${o.id}','cooking')">🔥 Start Cooking</button>`;
   else if(o.status==='cooking') actions=`<button class="abtn abtn-ready" onclick="doStatus('${o.id}','ready')">✅ Mark Ready</button>`;
   else if(o.status==='ready') actions=`<button class="abtn abtn-dismiss" style="background:#27AE60;color:#fff" onclick="doStatus('${o.id}','bill_pending')">🧾 Send to Counter</button>`;
-  return `<div class="ocard ${o.status}"><div class="ocard-top"><div class="otable">Table ${o.table_no}</div><div class="ometa"><div class="otime">${time}</div>${o.order_num>0?`<div class="onum">#${o.order_num}</div>`:''}</div></div><div class="oitems">${(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>${o.note?`<div class="onote">📝 "${o.note}"</div>`:''}<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div></div>`;
+  return `<div class="ocard ${o.status}"><div class="ocard-top"><div class="otable">Table ${o.table_no} ${itemCount>5?`<span class="oitem-count-badge" style="display:inline-block">${itemCount} items</span>`:''}</div><div class="ometa"><div class="otime">${time}</div>${o.order_num>0?`<div class="onum">#${o.order_num}</div>`:''}</div></div><div class="oitems">${(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>${o.note?`<div class="onote">📝 "${o.note}"</div>`:''}<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div></div>`;
 }
 async function doStatus(id,status){
   const {error}=await sb.from('orders').update({status}).eq('id',id);
