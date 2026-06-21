@@ -219,6 +219,24 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 </div>
 
 <!-- Print Area (hidden, shown only when printing) -->
+<!-- WhatsApp Phone Entry Modal -->
+<div class="no-modal-bg" id="waModalBg">
+  <div class="no-modal" style="max-width:340px">
+    <div class="no-modal-hdr" style="background:#25D366">
+      <h3>📱 Send WhatsApp Bill</h3>
+      <button class="no-close" onclick="closeWaModal()">&times;</button>
+    </div>
+    <div class="no-modal-body">
+      <div class="no-label">Customer's WhatsApp Number</div>
+      <input type="tel" class="no-input" id="waPhoneInput" placeholder="10-digit number" maxlength="10"/>
+      <div id="waErrMsg" style="color:#C0392B;font-size:12px;margin-top:6px;min-height:16px"></div>
+    </div>
+    <div class="no-cart-summary">
+      <button class="no-submit-btn" style="background:#25D366" onclick="confirmSendWhatsApp()">Open WhatsApp →</button>
+    </div>
+  </div>
+</div>
+
 <div id="printArea">
   <div style="text-align:center;margin-bottom:10px;">
     <div style="font-weight:700;font-size:16px" id="printRestName">Satvik Restaurant</div>
@@ -467,8 +485,25 @@ function updateStats(){
 }
 
 /* ===== NEW ORDER (Counter Entry for Walk-ins) ===== */
-function openNewOrderModal(){
-  if(!MENU_DATA){toast('Menu still loading, try again in a moment.',true);return;}
+async function openNewOrderModal(){
+  if(!MENU_DATA){
+    toast('Loading menu...');
+    try{
+      const {data:rdata,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+      if(error)throw error;
+      if(rdata?.data?.menu?.length){
+        MENU_DATA=rdata.data.menu;
+        RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
+      }else{
+        toast('No menu found. Please add menu items in Admin panel first.',true);
+        return;
+      }
+    }catch(e){
+      console.error('Menu fetch error:',e);
+      toast('Could not load menu: '+e.message,true);
+      return;
+    }
+  }
   noCart={};
   document.getElementById('noTableNum').value='';
   renderNoCatTabs();
@@ -568,19 +603,39 @@ function printTableBill(tableNo,allItems,grandTotal){
 }
 
 /* ===== WHATSAPP BILL (from counter) ===== */
+let waPendingData=null;
 function sendWhatsAppBill(tableNo,allItems,grandTotal){
-  const phone=prompt('Enter customer WhatsApp number (10 digits):');
-  if(!phone||!/^[6-9]\d{9}$/.test(phone.trim())){
-    if(phone!==null) toast('Invalid number — must be 10 digits.',true);
+  waPendingData={tableNo,allItems,grandTotal};
+  document.getElementById('waPhoneInput').value='';
+  document.getElementById('waErrMsg').textContent='';
+  document.getElementById('waModalBg').classList.add('show');
+  setTimeout(()=>document.getElementById('waPhoneInput').focus(),100);
+}
+function closeWaModal(){
+  document.getElementById('waModalBg').classList.remove('show');
+  waPendingData=null;
+}
+function confirmSendWhatsApp(){
+  const phone=document.getElementById('waPhoneInput').value.trim();
+  if(!/^[6-9]\d{9}$/.test(phone)){
+    document.getElementById('waErrMsg').textContent='Enter a valid 10-digit number.';
     return;
   }
+  if(!waPendingData)return;
+  const {tableNo,allItems,grandTotal}=waPendingData;
   let msg=`🙏 *${RESTAURANT_INFO.name}*\n${RESTAURANT_INFO.sub}\n\n*Your Bill — Table ${tableNo}*\n`;
   Object.values(allItems).forEach(i=>{msg+=`${i.name} ×${i.qty} — ₹${i.total}\n`;});
   msg+=`\n*Total: ₹${grandTotal}*\n\nThank you for dining with us! 🙏`;
   if(RESTAURANT_INFO.review) msg+=`\n\n⭐ Loved the food? Rate us: ${RESTAURANT_INFO.review}`;
   msg+=`\n\n🎉 See you again soon!`;
-  window.open(`https://wa.me/91${phone.trim()}?text=${encodeURIComponent(msg)}`,'_blank');
+  const waLink=`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
+  const a=document.createElement('a');
+  a.href=waLink;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  closeWaModal();
+  toast('✅ Opening WhatsApp...');
 }
+document.getElementById('waPhoneInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')confirmSendWhatsApp();});
 
 const toastEl=document.getElementById('toast');
 function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),4000);}
