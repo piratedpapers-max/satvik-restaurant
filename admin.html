@@ -65,6 +65,25 @@ textarea{resize:vertical;min-height:55px;}
 .a-sub{font-size:11px;color:var(--green);font-weight:600;margin-top:3px;}
 .top-dishes{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;}
 .td-title{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:15px;margin-bottom:10px;}
+/* Report tabs and download */
+.report-tab{background:#F5F0E8;border:1.5px solid #E5DCC8;color:#7A6E5F;padding:8px 18px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .2s;}
+.report-tab.active{background:var(--green);color:#fff;border-color:var(--green);}
+.download-btn{background:#34495E;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif;margin-left:auto;}
+/* Report summary cards */
+.report-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+.r-card{background:#F5F0E8;border:1px solid #E5DCC8;border-radius:10px;padding:14px 12px;text-align:center;}
+.r-card-green{background:#EAF6EE;border-color:#27AE60;}
+.r-card-orange{background:#FFF3E0;border-color:#E67E22;}
+.r-card-blue{background:#EAF2F8;border-color:#2980B9;}
+.r-card-purple{background:#F5EEF8;border-color:#8E44AD;}
+.r-val{font-family:'Yatra One',sans-serif;font-size:20px;color:var(--brown);margin-bottom:4px;}
+.r-lbl{font-size:10px;color:#7A6E5F;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
+/* Report table */
+.report-table{width:100%;border-collapse:collapse;font-size:12px;}
+.report-table th{background:#F5F0E8;padding:8px 10px;text-align:left;font-weight:700;color:#7A6E5F;border-bottom:2px solid #E5DCC8;white-space:nowrap;}
+.report-table td{padding:8px 10px;border-bottom:1px solid #F0E8D0;color:#3A2E1E;}
+.report-table tr:last-child td{border-bottom:none;}
+.report-table tr:hover td{background:#FDFAF3;}
 .td-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
 .td-row:last-child{border:none;}
 .td-rank{font-weight:700;font-size:12px;color:var(--gold);width:20px;}
@@ -139,6 +158,41 @@ textarea{resize:vertical;min-height:55px;}
         <div id="topDishes"><div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Loading...</div></div>
       </div>
     </div>
+
+    <!-- WEEKLY & MONTHLY ANALYTICS -->
+    <div class="panel">
+      <h2>📅 Weekly & Monthly Reports</h2>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="report-tab active" id="tabWeek" onclick="switchReportTab('week')">📅 This Week</button>
+        <button class="report-tab" id="tabMonth" onclick="switchReportTab('month')">📆 This Month</button>
+        <button class="download-btn" onclick="downloadReport()">⬇️ Download CSV</button>
+      </div>
+      <div id="reportDateRange" style="font-size:11px;color:var(--muted);margin-bottom:14px;font-style:italic"></div>
+
+      <!-- Summary cards -->
+      <div class="report-cards" id="reportCards">
+        <div class="r-card"><div class="r-val" id="rTotalRev">—</div><div class="r-lbl">Total Revenue</div></div>
+        <div class="r-card"><div class="r-val" id="rTotalOrders">—</div><div class="r-lbl">Total Orders</div></div>
+        <div class="r-card r-card-green"><div class="r-val" id="rDineRev">—</div><div class="r-lbl">Dine-in Revenue</div></div>
+        <div class="r-card r-card-orange"><div class="r-val" id="rParcelRev">—</div><div class="r-lbl">Parcel Revenue</div></div>
+        <div class="r-card"><div class="r-val" id="rAvgOrder">—</div><div class="r-lbl">Avg Order Value</div></div>
+        <div class="r-card r-card-blue"><div class="r-val" id="rQROrders">—</div><div class="r-lbl">QR Self-Orders</div></div>
+        <div class="r-card r-card-purple"><div class="r-val" id="rCounterOrders">—</div><div class="r-lbl">Counter/Staff Orders</div></div>
+        <div class="r-card r-card-orange"><div class="r-val" id="rParcelOrders">—</div><div class="r-lbl">Parcel Orders</div></div>
+      </div>
+
+      <!-- Daily breakdown table -->
+      <div style="margin-top:16px">
+        <div class="td-title" style="margin-bottom:8px">📊 Day-by-Day Breakdown</div>
+        <div style="overflow-x:auto">
+          <table class="report-table" id="reportTable">
+            <thead><tr><th>Date</th><th>Orders</th><th>Revenue</th><th>Dine-in</th><th>Parcel</th><th>QR Orders</th><th>Counter Orders</th></tr></thead>
+            <tbody id="reportTableBody"><tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted)">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div class="panel">
       <h2>🔐 Secure QR Codes</h2>
       <p class="hint">Each table gets a unique secure link. Customers cannot change their table number. Generating new tokens replaces old ones — reprint QR codes after regenerating.</p>
@@ -190,7 +244,12 @@ function tryLogin(){
     document.getElementById('loginBox').classList.add('hidden');document.getElementById('adminPanel').classList.remove('hidden');document.getElementById('loading').classList.remove('hidden');loadAll();
   }else{document.getElementById('loginErr').style.display='block';}
 }
-async function loadAll(){await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders()]);document.getElementById('loading').classList.add('hidden');setInterval(loadTodayOrders,30000);}
+async function loadAll(){
+  await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders()]);
+  document.getElementById('loading').classList.add('hidden');
+  setInterval(loadTodayOrders,30000);
+  loadReport('week'); // Load weekly report by default
+}
 async function loadMenuData(){
   try{const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();if(error)throw error;DATA=(data?.data?.menu?.length)?data.data:getDefault();}catch(e){DATA=getDefault();}
   renderForm();
@@ -203,7 +262,11 @@ async function loadAnalytics(){
     const {data:md}=await sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('payment_status','paid').gte('placed_at',monthStart.toISOString());
     const tr=(td||[]).reduce((s,o)=>s+(o.total||0),0);const mr=(md||[]).reduce((s,o)=>s+(o.total||0),0);
     const tc=(td||[]).length;const mc=(md||[]).length;const av=tc>0?Math.round(tr/tc):0;
-    const tblCounts={};(td||[]).forEach(o=>{if(o.table_no)tblCounts[o.table_no]=(tblCounts[o.table_no]||0)+1;});
+    const tblCounts={};(td||[]).forEach(o=>{
+      // Exclude parcel orders from busiest table - they're not real tables
+      if(o.table_no && !String(o.table_no).startsWith('Parcel'))
+        tblCounts[o.table_no]=(tblCounts[o.table_no]||0)+1;
+    });
     const topTbl=Object.entries(tblCounts).sort((a,b)=>b[1]-a[1])[0];
     document.getElementById('aTR').textContent='₹'+tr;document.getElementById('aTO').textContent=tc+' orders';
     document.getElementById('aMR').textContent='₹'+mr;document.getElementById('aMO').textContent=mc+' orders';
@@ -314,6 +377,179 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
 document.getElementById('previewBtn').addEventListener('click',()=>window.open('index.html?t=preview','_blank'));
 const toastEl=document.getElementById('toast');
 function showToast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
+
+/* ===== WEEKLY & MONTHLY REPORTS ===== */
+let currentReportTab='week';
+let currentReportData=[];
+
+function switchReportTab(tab){
+  currentReportTab=tab;
+  document.getElementById('tabWeek').classList.toggle('active',tab==='week');
+  document.getElementById('tabMonth').classList.toggle('active',tab==='month');
+  loadReport(tab);
+}
+
+function getReportRange(tab){
+  const now=new Date();
+  let start,end;
+  if(tab==='week'){
+    // Monday to Sunday of current week (IST local)
+    const day=now.getDay(); // 0=Sun,1=Mon...6=Sat
+    const diffToMon=day===0?-6:1-day; // days back to Monday
+    start=new Date(now);
+    start.setDate(now.getDate()+diffToMon);
+    start.setHours(0,0,0,0);
+    end=new Date(start);
+    end.setDate(start.getDate()+6);
+    end.setHours(23,59,59,999);
+  } else {
+    // 1st to last day of current month
+    start=new Date(now.getFullYear(),now.getMonth(),1,0,0,0,0);
+    end=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999);
+  }
+  return {start,end};
+}
+
+function formatDateLabel(d){
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
+function formatDayKey(d){
+  return d.toISOString().slice(0,10);
+}
+
+async function loadReport(tab){
+  document.getElementById('reportTableBody').innerHTML=
+    '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted)">Loading...</td></tr>';
+
+  const {start,end}=getReportRange(tab);
+  document.getElementById('reportDateRange').textContent=
+    `${formatDateLabel(start)} — ${formatDateLabel(end)}`;
+
+  try{
+    const {data,error}=await sb.from('orders')
+      .select('id,table_no,total,note,placed_at,payment_status,items')
+      .eq('restaurant_id',RESTAURANT_ID)
+      .eq('payment_status','paid')
+      .gte('placed_at',start.toISOString())
+      .lte('placed_at',end.toISOString())
+      .order('placed_at',{ascending:true});
+
+    if(error)throw error;
+    currentReportData=data||[];
+    renderReport(currentReportData,start,end,tab);
+  }catch(e){
+    console.error('Report load error:',e);
+    document.getElementById('reportTableBody').innerHTML=
+      '<tr><td colspan="7" style="text-align:center;padding:16px;color:#c00">Error loading data</td></tr>';
+  }
+}
+
+function classifyOrder(o){
+  const isParcel=String(o.table_no||'').startsWith('Parcel');
+  const isCounter=(o.note||'').includes('Order taken at counter')||(o.note||'').includes('Parcel / Takeaway');
+  return {isParcel,isCounter,isQR:!isCounter&&!isParcel};
+}
+
+function renderReport(data,start,end,tab){
+  // Summary totals
+  let totalRev=0,totalOrders=0,dineRev=0,parcelRev=0,qrOrders=0,counterOrders=0,parcelOrders=0;
+  data.forEach(o=>{
+    const {isParcel,isCounter,isQR}=classifyOrder(o);
+    totalRev+=o.total||0;
+    totalOrders++;
+    if(isParcel){parcelRev+=o.total||0;parcelOrders++;}
+    else{dineRev+=o.total||0;}
+    if(isQR)qrOrders++;
+    else if(isParcel)parcelOrders; // already counted
+    else counterOrders++;
+  });
+  const avg=totalOrders>0?Math.round(totalRev/totalOrders):0;
+  document.getElementById('rTotalRev').textContent='₹'+totalRev;
+  document.getElementById('rTotalOrders').textContent=totalOrders+' orders';
+  document.getElementById('rDineRev').textContent='₹'+dineRev;
+  document.getElementById('rParcelRev').textContent='₹'+parcelRev;
+  document.getElementById('rAvgOrder').textContent='₹'+avg;
+  document.getElementById('rQROrders').textContent=qrOrders+' orders';
+  document.getElementById('rCounterOrders').textContent=counterOrders+' orders';
+  document.getElementById('rParcelOrders').textContent=parcelOrders+' orders';
+
+  // Build day-by-day buckets
+  const days={};
+  const cur=new Date(start);
+  while(cur<=end){
+    days[formatDayKey(cur)]={date:new Date(cur),orders:0,revenue:0,dineIn:0,parcel:0,qr:0,counter:0};
+    cur.setDate(cur.getDate()+1);
+  }
+  data.forEach(o=>{
+    const key=(o.placed_at||'').slice(0,10);
+    if(!days[key])return;
+    const {isParcel,isCounter,isQR}=classifyOrder(o);
+    days[key].orders++;
+    days[key].revenue+=o.total||0;
+    if(isParcel)days[key].parcel++;
+    else days[key].dineIn++;
+    if(isQR)days[key].qr++;
+    else if(!isParcel)days[key].counter++;
+  });
+
+  // Render table
+  const rows=Object.values(days);
+  if(rows.length===0){
+    document.getElementById('reportTableBody').innerHTML=
+      '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--muted)">No paid orders in this period</td></tr>';
+    return;
+  }
+  document.getElementById('reportTableBody').innerHTML=rows.map(d=>{
+    const dateLabel=d.date.toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short'});
+    const isEmpty=d.orders===0;
+    return `<tr style="${isEmpty?'opacity:0.4':''}">
+      <td><strong>${dateLabel}</strong></td>
+      <td>${d.orders||'—'}</td>
+      <td>${d.revenue>0?'₹'+d.revenue:'—'}</td>
+      <td>${d.dineIn>0?d.dineIn+' orders':'—'}</td>
+      <td>${d.parcel>0?'<span style="color:#E67E22;font-weight:700">📦 '+d.parcel+'</span>':'—'}</td>
+      <td>${d.qr>0?d.qr:'—'}</td>
+      <td>${d.counter>0?d.counter:'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function downloadReport(){
+  if(!currentReportData.length){
+    showToast('No data to download for this period.',true);
+    return;
+  }
+  const {start,end}=getReportRange(currentReportTab);
+  const header=['Date','Order #','Table/Parcel','Revenue','Type','Source','Note'];
+  const rows=currentReportData.map(o=>{
+    const {isParcel,isCounter,isQR}=classifyOrder(o);
+    const type=isParcel?'Parcel':'Dine-in';
+    const source=isQR?'QR Self-Order':isParcel?'Parcel (Counter)':'Counter/Staff';
+    const date=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    return [date,o.order_num||'',o.table_no||'',o.total||0,type,source,(o.note||'').replace(/,/g,' ')];
+  });
+
+  // Add summary rows at bottom
+  const blank=['','','','','','',''];
+  const summary=[
+    blank,
+    ['SUMMARY','','','','','',''],
+    ['Period',formatDateLabel(start)+' to '+formatDateLabel(end),'','','','',''],
+    ['Total Orders',currentReportData.length,'','','','',''],
+    ['Total Revenue','Rs '+currentReportData.reduce((s,o)=>s+(o.total||0),0),'','','','',''],
+  ];
+
+  const csv=[header,...rows,...summary].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const dateStr=new Date().toISOString().slice(0,10);
+  a.href=url;
+  a.download=`Satvik_${currentReportTab==='week'?'Weekly':'Monthly'}_Report_${dateStr}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ Report downloaded!');
+}
 </script>
 </body>
 </html>
