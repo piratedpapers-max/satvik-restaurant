@@ -269,19 +269,13 @@ function render(){
 function oCard(o){
   const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
   const isWaiter=o.status==='waiter';
-  const isParcel=String(o.table_no).startsWith('Parcel');
   const itemCount=(o.items||[]).length;
   let actions='';
   if(isWaiter) actions=`<button class="abtn abtn-dismiss" onclick="doStatus('${o.id}','dismissed')">✓ Done</button>`;
   else if(o.status==='new') actions=`<button class="abtn abtn-cook" onclick="doStatus('${o.id}','cooking')">🔥 Start Cooking</button>`;
   else if(o.status==='cooking') actions=`<button class="abtn abtn-ready" onclick="doStatus('${o.id}','ready')">✅ Mark Ready</button>`;
   else if(o.status==='ready') actions=`<button class="abtn abtn-dismiss" style="background:#27AE60;color:#fff" onclick="doStatus('${o.id}','bill_pending')">🧾 Send to Counter</button>`;
-  const tableLabel=isParcel
-    ? `<span style="color:#E67E22;font-family:'Yatra One',sans-serif;font-size:15px">📦 ${o.table_no}</span>`
-    : `Table ${o.table_no}`;
-  const parcelNote=isParcel?`<div style="background:#FFF3E0;border-left:3px solid #E67E22;padding:5px 10px;font-size:11px;font-weight:700;color:#E67E22">📦 PACK THIS ORDER — Parcel/Takeaway</div>`:'';
-  const waiterBadge=o.waiter_name?`<div style="background:#F5EEF8;border-left:3px solid #8E44AD;padding:4px 10px;font-size:11px;font-weight:700;color:#8E44AD">🧑 Waiter: ${o.waiter_name}</div>`:'';
-  return `<div class="ocard ${o.status}" ${isParcel?'style="border-left-color:#E67E22"':''}><div class="ocard-top"><div class="otable">${tableLabel} ${itemCount>5?`<span class="oitem-count-badge" style="display:inline-block">${itemCount} items</span>`:''}</div><div class="ometa"><div class="otime">${time}</div>${o.order_num>0?`<div class="onum">#${o.order_num}</div>`:''}</div></div>${parcelNote}${waiterBadge}<div class="oitems">${(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>${o.note&&!isParcel?`<div class="onote">📝 "${o.note}"</div>`:''}<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div></div>`;
+  return `<div class="ocard ${o.status}"><div class="ocard-top"><div class="otable">Table ${o.table_no} ${itemCount>5?`<span class="oitem-count-badge" style="display:inline-block">${itemCount} items</span>`:''}</div><div class="ometa"><div class="otime">${time}</div>${o.order_num>0?`<div class="onum">#${o.order_num}</div>`:''}</div></div><div class="oitems">${(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>${o.note?`<div class="onote">📝 "${o.note}"</div>`:''}<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div></div>`;
 }
 async function doStatus(id,status){
   const {error}=await sb.from('orders').update({status}).eq('id',id);

@@ -2,468 +2,576 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Waiter — Satvik Restaurant</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no"/>
+<title>Waiter App</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --green:#4A7C59;--gold:#D4A017;--brown:#6B3F1E;--paper:#FDFAF3;
-  --card:#F5F0E8;--line:#E5DCC8;--ink:#1A1208;--muted:#7A6E5F;
-  --red:#C0392B;--orange:#E67E22;
-}
-body{background:var(--paper);color:var(--ink);font-family:'Poppins',sans-serif;min-height:100vh;}
+:root{--green:#4A7C59;--gold:#D4A017;--brown:#6B3F1E;--cream:#FDFAF3;--paper:#FFFEF9;--steel:#1E1E1E;--line:#E5DCC8;--ink:#1A1208;--muted:#7A6E5F;--red:#C0392B;--orange:#E67E22;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--cream);color:var(--ink);font-family:'Poppins',sans-serif;min-height:100vh;}
+body{padding-bottom:80px;}
 
-/* ERROR SCREEN */
-#errorScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;}
-#errorScreen.show{display:flex;}
-.error-icon{font-size:48px;margin-bottom:16px;}
-.error-title{font-size:20px;font-weight:700;color:var(--red);margin-bottom:8px;}
-.error-msg{font-size:14px;color:var(--muted);}
-
-/* MAIN APP */
-#app{display:none;}
-#app.show{display:block;}
+/* INVALID */
+.invalid-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:30px;text-align:center;}
+.invalid-screen .icon{font-size:48px;margin-bottom:16px;}
+.invalid-screen h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:22px;margin-bottom:8px;}
+.invalid-screen p{font-size:13px;color:var(--muted);line-height:1.6;}
 
 /* HEADER */
-header{background:var(--green);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.hdr-left h1{font-family:'Yatra One',sans-serif;font-size:18px;}
-.hdr-left p{font-size:11px;opacity:.8;margin-top:1px;}
-.hdr-right{display:flex;align-items:center;gap:10px;}
-.waiter-name-badge{background:rgba(255,255,255,.2);padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;}
+header{background:var(--steel);padding:14px 16px;border-bottom:3px solid var(--green);position:sticky;top:0;z-index:100;}
+.h-top{display:flex;align-items:center;justify-content:space-between;}
+.h-name{font-family:'Yatra One',sans-serif;color:var(--gold);font-size:18px;}
+.h-role{font-size:9px;color:var(--green);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-top:1px;}
+.h-right{display:flex;align-items:center;gap:8px;}
+.ldot{width:8px;height:8px;background:#27AE60;border-radius:50%;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ltext{font-size:10px;color:#27AE60;font-weight:700;letter-spacing:1px;}
+.snd-btn{background:none;border:1px solid #333;color:var(--muted);padding:4px 8px;border-radius:6px;cursor:pointer;font-size:13px;}
+
+/* TABS */
+.tabs{display:flex;background:var(--paper);border-bottom:2px solid var(--line);position:sticky;top:57px;z-index:90;}
+.tab{flex:1;padding:11px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;letter-spacing:.5px;text-transform:uppercase;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-badge{display:inline-block;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:999px;margin-left:4px;vertical-align:middle;}
 
 /* STATS BAR */
-.stats-bar{background:#fff;border-bottom:1px solid var(--line);padding:12px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.stat-item{text-align:center;}
-.stat-val{font-family:'Yatra One',sans-serif;font-size:18px;color:var(--brown);}
-.stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 12px;background:var(--paper);border-bottom:1px solid var(--line);}
+.stat{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center;}
+.sv{font-family:'Yatra One',sans-serif;font-size:18px;color:var(--brown);}
+.sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:1px;}
 
-/* TABLE SELECT */
-.section{padding:16px;}
-.section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
-.table-input-row{display:flex;gap:10px;align-items:center;}
-.table-input{flex:1;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font-size:16px;font-family:'Poppins',sans-serif;background:#fff;}
-.table-input:focus{outline:none;border-color:var(--green);}
-.table-confirm-btn{background:var(--green);color:#fff;border:none;padding:12px 20px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;font-family:'Poppins',sans-serif;}
-.table-confirm-btn:disabled{background:#ccc;cursor:not-allowed;}
-.active-table-badge{background:#EAF6EE;border:1.5px solid var(--green);border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
-.active-table-badge.hide{display:none;}
-.atb-label{font-weight:700;color:var(--green);font-size:14px;}
-.atb-change{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;}
+/* CALL ALERT */
+.call-alert{background:var(--red);color:#fff;padding:12px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;cursor:pointer;animation:alertPulse 1s infinite;}
+@keyframes alertPulse{0%,100%{opacity:1}50%{opacity:.8}}
+.call-alert.hide{display:none;}
 
-/* MENU */
-.cat-tabs{display:flex;gap:6px;overflow-x:auto;padding:0 16px 12px;-webkit-overflow-scrolling:touch;}
+/* SECTIONS */
+.section{display:none;padding:12px;}
+.section.active{display:block;}
+
+/* ORDER CARDS */
+.ocard{background:var(--paper);border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;}
+.ocard.alert{border-color:var(--red);border-width:2px;}
+.ocard.ready-alert{border-color:#27AE60;border-width:2px;animation:greenPulse 2s infinite;}
+@keyframes greenPulse{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.3)}50%{box-shadow:0 0 0 6px rgba(39,174,96,0)}}
+.ocard-top{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);}
+.otable{font-family:'Yatra One',sans-serif;font-size:17px;color:var(--brown);}
+.onum{font-size:10px;color:var(--gold);font-weight:700;}
+.otime{font-size:10px;color:var(--muted);}
+.ostatus{display:inline-block;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;}
+.ostatus.new{background:#FEF3C7;color:#92400E;}
+.ostatus.cooking{background:#FED7AA;color:#C2410C;}
+.ostatus.ready{background:#D1FAE5;color:#065F46;}
+.ostatus.waiter{background:#FEE2E2;color:#991B1B;}
+.oitems{padding:8px 12px;}
+.oitem{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--line);font-size:12px;}
+.oitem:last-child{border:none;}
+.oqty{background:var(--gold);color:#111;font-weight:700;font-size:10px;width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.oname{flex:1;font-weight:500;}
+.onote{padding:0 12px 8px;font-size:11px;color:var(--muted);font-style:italic;}
+.ofoot{padding:8px 12px;border-top:1px solid var(--line);display:flex;gap:6px;align-items:center;}
+.ototal{font-weight:700;font-size:13px;color:var(--brown);flex:1;}
+.abtn{border:none;border-radius:7px;padding:8px 14px;font-weight:700;font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;}
+.abtn-served{background:var(--green);color:#fff;}
+.abtn-dismiss{background:#e8e8e8;color:#555;}
+.abtn-call{background:var(--red);color:#fff;}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-state .ei{font-size:36px;margin-bottom:10px;}
+.empty-state p{font-size:13px;line-height:1.6;}
+
+/* ORDER ENTRY SECTION */
+.oe-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:14px;}
+.oe-label:first-child{margin-top:0;}
+.oe-select{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'Poppins',sans-serif;background:#fff;margin-bottom:2px;}
+.cat-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:10px;}
 .cat-tabs::-webkit-scrollbar{display:none;}
-.cat-tab{flex:0 0 auto;background:var(--card);border:1.5px solid var(--line);color:var(--muted);font-size:11px;font-weight:700;padding:7px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;font-family:'Poppins',sans-serif;}
+.cat-tab{flex:0 0 auto;padding:6px 13px;border:1.5px solid var(--line);border-radius:999px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;background:#fff;}
 .cat-tab.active{background:var(--green);border-color:var(--green);color:#fff;}
-.menu-list{padding:0 16px;}
-.menu-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);}
-.menu-item:last-child{border:none;}
-.mi-dot{width:14px;height:14px;border-radius:2px;border:1.5px solid;flex:0 0 auto;margin-right:10px;}
-.mi-dot.veg{border-color:#27AE60;background:#EAF6EE;}
-.mi-dot.nonveg{border-color:#C0392B;background:#FDEDEC;}
+.menu-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px;}
 .mi-info{flex:1;}
-.mi-name{font-size:13px;font-weight:600;}
-.mi-desc{font-size:11px;color:var(--muted);margin-top:2px;}
-.mi-price{font-size:12px;color:var(--muted);font-weight:700;margin-right:12px;white-space:nowrap;}
-.mi-qty{display:flex;align-items:center;gap:8px;}
-.qty-btn{width:28px;height:28px;border-radius:7px;border:1.5px solid var(--green);background:#fff;color:var(--green);font-weight:700;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
-.qty-btn:active{background:#EAF6EE;}
-.qty-val{min-width:20px;text-align:center;font-weight:700;font-size:14px;}
+.mi-name{font-weight:600;font-size:13px;}
+.mi-price{font-size:12px;color:var(--muted);margin-top:1px;}
+.stepper{display:flex;align-items:center;background:var(--green);border-radius:7px;overflow:hidden;}
+.stepper button{background:none;border:none;color:#fff;font-size:16px;font-weight:700;width:28px;height:28px;cursor:pointer;}
+.stepper .qv{color:#fff;font-weight:700;font-size:12px;min-width:20px;text-align:center;}
+.add-btn{background:#fff;border:1.5px solid var(--green);color:var(--green);font-weight:700;font-size:11px;padding:6px 12px;border-radius:7px;cursor:pointer;}
+.note-f{width:100%;padding:10px 11px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:12px;resize:none;background:#fff;margin-top:8px;}
 
-/* ORDER BAR */
-.order-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid var(--line);padding:12px 16px;display:none;}
-.order-bar.show{display:block;}
-.order-bar-summary{display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;font-weight:700;}
-.note-input{width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;margin-bottom:10px;}
-.send-btn{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Yatra One',sans-serif;letter-spacing:.5px;}
-.send-btn:disabled{background:#ccc;cursor:not-allowed;}
+/* CART BAR */
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:var(--steel);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:200;transform:translateY(120%);transition:transform .25s;box-shadow:0 -4px 20px rgba(0,0,0,.3);}
+.cart-bar.show{transform:translateY(0);}
+.cb-info{display:flex;flex-direction:column;}
+.cb-count{font-size:11px;color:var(--gold);font-weight:600;}
+.cb-total{font-family:'Yatra One',sans-serif;font-size:18px;}
+.send-btn{background:var(--green);color:#fff;font-weight:700;font-size:13px;border:none;padding:11px 20px;border-radius:9px;cursor:pointer;font-family:'Poppins',sans-serif;}
 
-/* TOAST */
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1A1208;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap;}
-.toast.show{opacity:1;}
+/* PERFORMANCE */
+.perf-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;}
+.perf-name{font-family:'Yatra One',sans-serif;font-size:16px;color:var(--brown);margin-bottom:10px;}
+.perf-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.perf-stat{background:var(--cream);border-radius:8px;padding:10px;text-align:center;}
+.perf-val{font-family:'Yatra One',sans-serif;font-size:20px;color:var(--brown);}
+.perf-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+
+.toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:12px;font-weight:600;z-index:500;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
-
-/* SUCCESS SCREEN */
-#successScreen{display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;min-height:60vh;}
-#successScreen.show{display:flex;}
-.success-icon{font-size:56px;margin-bottom:16px;}
-.success-title{font-size:22px;font-weight:700;color:var(--green);font-family:'Yatra One',sans-serif;margin-bottom:8px;}
-.success-sub{font-size:14px;color:var(--muted);margin-bottom:24px;}
-.new-order-btn{background:var(--green);color:#fff;border:none;padding:14px 28px;border-radius:11px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Poppins',sans-serif;}
-
-/* SPACER FOR FIXED ORDER BAR */
-.bar-spacer{height:160px;}
-@keyframes readyPulse{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.4)}50%{box-shadow:0 0 0 8px rgba(39,174,96,0)}}
-
-/* LOADING */
-#loading{display:flex;align-items:center;justify-content:center;min-height:100vh;font-size:18px;color:var(--muted);font-family:'Yatra One',sans-serif;}
+.loading{position:fixed;inset:0;background:var(--cream);display:flex;align-items:center;justify-content:center;z-index:600;}
+.spin{width:32px;height:32px;border:3px solid var(--line);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.watermark{text-align:center;padding:14px;font-size:10px;color:var(--muted);}
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet"/>
 </head>
 <body>
 
-<div id="loading">Loading...</div>
-
-<div id="errorScreen">
-  <div class="error-icon">🔒</div>
-  <div class="error-title" id="errorTitle">Invalid Waiter Link</div>
-  <div class="error-msg" id="errorMsg">This link is not valid or has been deactivated. Please ask the admin for a new link.</div>
+<div class="loading" id="loading"><div class="spin"></div></div>
+<div class="invalid-screen hidden" id="invalidScreen">
+  <div class="icon">⛔</div>
+  <h2>Invalid Waiter Link</h2>
+  <p>This link is not valid or has been deactivated.<br/>Please contact your manager for a new link.</p>
 </div>
 
-<div id="app">
+<div id="appWrap" class="hidden">
+  <!-- CALL ALERT -->
+  <div class="call-alert hide" id="callAlert">🔔 TABLE <span id="callTable"></span> — Customer needs you! Tap to dismiss</div>
+
   <header>
-    <div class="hdr-left">
-      <h1>Satvik Restaurant</h1>
-      <p>Pure Veg · Varanasi</p>
-    </div>
-    <div class="hdr-right">
-      <div class="waiter-name-badge" id="waiterNameBadge">🧑 —</div>
+    <div class="h-top">
+      <div>
+        <div class="h-name" id="waiterName">Waiter</div>
+        <div class="h-role" id="waiterRoleLine">Satvik Restaurant</div>
+      </div>
+      <div class="h-right">
+        <div class="ldot" id="ldot"></div>
+        <span class="ltext">LIVE</span>
+        <button class="snd-btn" id="sndBtn" onclick="toggleSound()">🔔</button>
+      </div>
     </div>
   </header>
 
-  <!-- Stats bar -->
   <div class="stats-bar">
-    <div class="stat-item"><div class="stat-val" id="statOrdersToday">0</div><div class="stat-lbl">Orders Today</div></div>
-    <div class="stat-item"><div class="stat-val" id="statRevToday">₹0</div><div class="stat-lbl">Revenue Today</div></div>
-    <div class="stat-item"><div class="stat-val" id="statOrdersMonth">0</div><div class="stat-lbl">This Month</div></div>
+    <div class="stat"><div class="sv" id="sNew">0</div><div class="sl">New</div></div>
+    <div class="stat"><div class="sv" id="sReady">0</div><div class="sl">Ready</div></div>
+    <div class="stat"><div class="sv" id="sToday">0</div><div class="sl">Today</div></div>
+    <div class="stat"><div class="sv" id="sRevenue">₹0</div><div class="sl">Revenue</div></div>
   </div>
 
-  <!-- Table selection -->
-  <div class="section">
-    <div class="section-title">Select Table</div>
-    <div class="table-input-row">
-      <input type="text" inputmode="numeric" class="table-input" id="tableInput" placeholder="Table number (e.g. 5)" maxlength="3"/>
-      <button class="table-confirm-btn" id="tableConfirmBtn" onclick="confirmTable()">Confirm</button>
-    </div>
-    <div class="active-table-badge hide" id="activeTableBadge">
-      <span class="atb-label" id="atbLabel">Table —</span>
-      <span class="atb-change" onclick="changeTable()">Change table</span>
-    </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('orders')" id="tab-orders">Orders <span class="tab-badge" id="badge-orders" style="display:none">0</span></div>
+    <div class="tab" onclick="switchTab('new-order')" id="tab-new-order">New Order</div>
+    <div class="tab" onclick="switchTab('performance')" id="tab-performance">My Stats</div>
   </div>
 
-  <!-- Menu -->
-  <div id="menuSection" style="display:none">
-    <div class="section-title" style="padding:0 16px 8px">Menu</div>
-    <div class="cat-tabs" id="catTabs"></div>
-    <div class="menu-list" id="menuList"></div>
-    <div class="bar-spacer"></div>
+  <!-- ORDERS TAB -->
+  <div class="section active" id="sec-orders">
+    <div id="ordersWrap"></div>
   </div>
 
-  <!-- Success screen -->
-  <div id="successScreen">
-    <div class="success-icon" id="successIcon">✅</div>
-    <div class="success-title" id="successTitle">Order Sent!</div>
-    <div class="success-sub" id="successMsg">Order sent to kitchen successfully.</div>
+  <!-- NEW ORDER TAB -->
+  <div class="section" id="sec-new-order">
+    <div class="oe-label">Table Number</div>
+    <select class="oe-select" id="oeTable">
+      <option value="">Select table...</option>
+    </select>
+    <div class="oe-label">Menu</div>
+    <div class="cat-tabs" id="oeCatTabs"></div>
+    <div id="oeItems"></div>
+    <textarea class="note-f" id="oeNote" rows="2" placeholder="Special instructions (optional)..."></textarea>
+  </div>
 
-    <!-- Live status tracker - shows after order is placed -->
-    <div id="orderStatusTracker" style="display:none;margin:16px 0;width:100%;max-width:320px">
-      <div style="background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;text-align:center">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Kitchen Status</div>
-        <div id="kitchenStatusBadge" style="font-size:15px;font-weight:700;color:var(--brown)">⏳ Waiting for kitchen...</div>
+  <!-- PERFORMANCE TAB -->
+  <div class="section" id="sec-performance">
+    <div class="perf-card">
+      <div class="perf-name" id="perfName">My Performance</div>
+      <div class="perf-grid">
+        <div class="perf-stat"><div class="perf-val" id="pToday">0</div><div class="perf-lbl">Orders Today</div></div>
+        <div class="perf-stat"><div class="perf-val" id="pRevToday">₹0</div><div class="perf-lbl">Revenue Today</div></div>
+        <div class="perf-stat"><div class="perf-val" id="pMonth">0</div><div class="perf-lbl">Orders This Month</div></div>
+        <div class="perf-stat"><div class="perf-val" id="pRevMonth">₹0</div><div class="perf-lbl">Revenue This Month</div></div>
       </div>
     </div>
+  </div>
 
-    <!-- Ready alert - flashes when food is ready -->
-    <div id="readyAlert" style="display:none;background:#EAF6EE;border:2px solid #27AE60;border-radius:14px;padding:20px 24px;text-align:center;margin:16px 0;width:100%;max-width:320px;animation:readyPulse 1s infinite">
-      <div style="font-size:40px;margin-bottom:8px">🍽️</div>
-      <div style="font-size:18px;font-weight:700;color:#27AE60;font-family:'Yatra One',sans-serif">Food is Ready!</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:4px" id="readyMsg">Table — is ready to serve.</div>
+  <!-- CART BAR -->
+  <div class="cart-bar" id="cartBar">
+    <div class="cb-info">
+      <div class="cb-count" id="cbCount">0 ITEMS</div>
+      <div class="cb-total" id="cbTotal">₹0</div>
     </div>
-
-    <button class="new-order-btn" onclick="resetForNewOrder()">➕ New Order</button>
+    <button class="send-btn" onclick="sendOrder()">🍽️ Send to Kitchen</button>
   </div>
-</div>
-
-<!-- Order bar (fixed bottom) -->
-<div class="order-bar" id="orderBar">
-  <div class="order-bar-summary">
-    <span id="cartSummary">0 items</span>
-    <span id="cartTotal" style="color:var(--green)">₹0</span>
-  </div>
-  <input class="note-input" id="noteInput" placeholder="Special instructions? (e.g. less spicy, no onion)"/>
-  <button class="send-btn" id="sendBtn" onclick="placeOrder()">🍽️ Send to Kitchen</button>
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="watermark">Powered by HK Digital Solutions</div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 
-let WAITER=null; // {id, name, token}
-let MENU=[];
-let RDATA={};
-let cart={}; // {itemKey: {item, qty}}
-let selectedTable=null;
-let currentCatIdx=0;
-let isOrdering=false;
-let activeOrderChannel=null; // realtime channel for tracking placed order
+let WAITER=null;
+let RDATA=null;
+let liveOrders={};
+let soundOn=true;
+let cart={};
+let waiterChannel=null;
 
-/* ===== INIT ===== */
+// ── INIT ──
 async function init(){
   const params=new URLSearchParams(window.location.search);
   const token=params.get('w');
-  if(!token){showError('No Waiter Token','Open this page using the link provided by your admin.');return;}
+  if(!token){showInvalid();return;}
   try{
     const {data,error}=await sb.from('waiters').select('*').eq('token',token).eq('restaurant_id',RESTAURANT_ID).single();
-    if(error||!data){showError('Invalid Link','This waiter link is not recognised. Ask admin for your correct link.');return;}
-    if(!data.active){showError('Link Deactivated','Your waiter link has been deactivated. Contact the restaurant admin.');return;}
+    if(error||!data||data.active===false){showInvalid();return;}
     WAITER=data;
-    document.getElementById('waiterNameBadge').textContent='🧑 '+WAITER.name;
-    document.title='Waiter: '+WAITER.name+' — Satvik';
-    await Promise.all([loadMenu(),loadStats()]);
-    document.getElementById('loading').style.display='none';
-    document.getElementById('app').classList.add('show');
-    document.getElementById('successScreen').style.display='none';
-  }catch(e){showError('Error Loading','Could not load waiter data. Please try again.');console.error(e);}
+    document.getElementById('waiterName').textContent=WAITER.name;
+    document.getElementById('waiterRoleLine').textContent='Satvik Restaurant · Waiter';
+    document.title=WAITER.name+' — Waiter App';
+    // Load restaurant data
+    const {data:rd}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    RDATA=rd?.data||{menu:[]};
+    // Populate table selector
+    populateTableSelect();
+    // Load menu for order entry
+    renderOeMenu();
+    // Load live orders
+    await loadOrders();
+    // Load performance
+    await loadPerformance();
+    // Subscribe realtime
+    subscribe();
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('appWrap').classList.remove('hidden');
+  }catch(e){console.error(e);showInvalid();}
 }
 
-function showError(title,msg){
-  document.getElementById('loading').style.display='none';
-  document.getElementById('errorTitle').textContent=title;
-  document.getElementById('errorMsg').textContent=msg;
-  document.getElementById('errorScreen').classList.add('show');
+function showInvalid(){
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('invalidScreen').classList.remove('hidden');
 }
 
-/* ===== MENU LOAD ===== */
-async function loadMenu(){
-  const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-  if(data?.data?.menu?.length){
-    MENU=data.data.menu;
-    RDATA=data.data;
-  }
-  renderCatTabs();
-}
-
-function renderCatTabs(){
-  document.getElementById('catTabs').innerHTML=MENU.map((cat,i)=>
-    `<button class="cat-tab ${i===0?'active':''}" onclick="selectCat(${i})">${cat.category}</button>`
-  ).join('');
-  if(MENU.length)renderMenuItems(0);
-}
-
-function selectCat(idx){
-  currentCatIdx=idx;
-  document.querySelectorAll('.cat-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
-  renderMenuItems(idx);
-}
-
-function renderMenuItems(idx){
-  const cat=MENU[idx];
-  document.getElementById('menuList').innerHTML=(cat.items||[]).filter(it=>it.available!==false).map(item=>{
-    const key=idx+'::'+item.name;
-    const qty=cart[key]?.qty||0;
-    const isVeg=item.veg!==false;
-    return `<div class="menu-item">
-      <div class="mi-dot ${isVeg?'veg':'nonveg'}"></div>
-      <div class="mi-info">
-        <div class="mi-name">${item.name}</div>
-        ${item.desc?`<div class="mi-desc">${item.desc}</div>`:''}
-      </div>
-      <div class="mi-price">₹${item.price}</div>
-      <div class="mi-qty">
-        <button class="qty-btn" onclick="changeQty('${key.replace(/'/g,"\\'")}',${idx},-1)">−</button>
-        <span class="qty-val" id="qv-${btoa(encodeURIComponent(key))}">${qty}</span>
-        <button class="qty-btn" onclick="changeQty('${key.replace(/'/g,"\\'")}',${idx},1)">+</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function changeQty(key,catIdx,delta){
-  const parts=key.split('::');const catI=parseInt(parts[0]);const itemName=parts.slice(1).join('::');
-  const cat=MENU[catI];if(!cat)return;
-  const item=cat.items.find(i=>i.name===itemName);if(!item)return;
-  const cur=cart[key]?.qty||0;
-  const next=Math.max(0,cur+delta);
-  if(next===0)delete cart[key];
-  else cart[key]={item,qty:next};
-  const el=document.getElementById('qv-'+btoa(encodeURIComponent(key)));
-  if(el)el.textContent=next;
-  updateOrderBar();
-}
-
-function updateOrderBar(){
-  const items=Object.values(cart);
-  const count=items.reduce((s,c)=>s+c.qty,0);
-  const total=items.reduce((s,c)=>s+c.item.price*c.qty,0);
-  document.getElementById('cartSummary').textContent=count+' item'+(count!==1?'s':'');
-  document.getElementById('cartTotal').textContent='₹'+total;
-  const bar=document.getElementById('orderBar');
-  if(count>0&&selectedTable) bar.classList.add('show');
-  else bar.classList.remove('show');
-}
-
-/* ===== TABLE SELECT ===== */
-document.getElementById('tableInput').addEventListener('input',e=>{
-  e.target.value=e.target.value.replace(/[^0-9]/g,'');
-});
-function confirmTable(){
-  const val=document.getElementById('tableInput').value.trim();
-  if(!/^[0-9]{1,3}$/.test(val)){toast('Enter a valid table number',true);return;}
-  selectedTable=val;
-  document.getElementById('tableInput').style.display='none';
-  document.getElementById('tableConfirmBtn').style.display='none';
-  document.getElementById('activeTableBadge').classList.remove('hide');
-  document.getElementById('atbLabel').textContent='Table '+selectedTable;
-  document.getElementById('menuSection').style.display='block';
-  updateOrderBar();
-}
-function changeTable(){
-  selectedTable=null;
-  document.getElementById('tableInput').style.display='';
-  document.getElementById('tableInput').value='';
-  document.getElementById('tableConfirmBtn').style.display='';
-  document.getElementById('activeTableBadge').classList.add('hide');
-  document.getElementById('menuSection').style.display='none';
-  updateOrderBar();
-}
-
-/* ===== PLACE ORDER ===== */
-async function placeOrder(){
-  if(isOrdering)return;
-  const items=Object.values(cart);
-  if(!items.length||!selectedTable)return;
-  isOrdering=true;
-  const btn=document.getElementById('sendBtn');
-  btn.disabled=true;btn.textContent='Sending...';
-  try{
-    // Get order number
-    const {data:orderNum}=await sb.rpc('get_next_order_num',{p_restaurant_id:RESTAURANT_ID});
-    const total=items.reduce((s,c)=>s+c.item.price*c.qty,0);
-    const note=document.getElementById('noteInput').value.trim();
-    const order={
-      restaurant_id:RESTAURANT_ID,
-      table_no:selectedTable,
-      items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),
-      total,
-      note:note||null,
-      status:'new',
-      order_num:orderNum,
-      payment_status:'pending',
-      placed_at:new Date().toISOString(),
-      waiter_id:WAITER.id,
-      waiter_name:WAITER.name
-    };
-    const {data:insertedData,error}=await sb.from('orders').insert([order]).select('id').single();
-    if(error)throw error;
-    // Show success screen
-    document.getElementById('successMsg').textContent=`Order #${orderNum} sent to kitchen for Table ${selectedTable}.`;
-    document.getElementById('orderStatusTracker').style.display='block';
-    document.getElementById('readyAlert').style.display='none';
-    document.getElementById('kitchenStatusBadge').textContent='⏳ Waiting for kitchen...';
-    document.getElementById('menuSection').style.display='none';
-    document.getElementById('successScreen').style.display='flex';
-    document.getElementById('orderBar').classList.remove('show');
-    // Subscribe to this specific order so waiter is notified when it's Ready
-    subscribeToOrder(insertedData.id, selectedTable, orderNum);
-    // Update stats
-    await loadStats();
-  }catch(e){
-    console.error(e);
-    toast('Could not place order: '+e.message,true);
-  }finally{
-    isOrdering=false;
-    btn.disabled=false;btn.textContent='🍽️ Send to Kitchen';
+// ── TABLE SELECT ──
+function populateTableSelect(){
+  const sel=document.getElementById('oeTable');
+  sel.innerHTML='<option value="">Select table...</option>';
+  if(WAITER.tables){
+    // Parse assigned tables
+    const tables=parseTables(WAITER.tables);
+    tables.forEach(t=>sel.innerHTML+=`<option value="${t}">Table ${t}</option>`);
+  } else {
+    // All tables 1-20
+    for(let i=1;i<=20;i++) sel.innerHTML+=`<option value="${i}">Table ${i}</option>`;
   }
 }
 
-function subscribeToOrder(orderId, tableNo, orderNum){
-  // Remove any previous channel
-  if(activeOrderChannel){ sb.removeChannel(activeOrderChannel); activeOrderChannel=null; }
+function parseTables(str){
+  const tables=[];
+  str.split(',').forEach(part=>{
+    part=part.trim();
+    if(part.includes('-')){
+      const [a,b]=part.split('-').map(Number);
+      for(let i=a;i<=b;i++) tables.push(String(i));
+    } else if(part){
+      tables.push(part);
+    }
+  });
+  return tables;
+}
 
-  activeOrderChannel=sb.channel('waiter-order-'+orderId)
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`id=eq.${orderId}`},p=>{
-      const status=p.new.status;
-      const badge=document.getElementById('kitchenStatusBadge');
-      const readyAlert=document.getElementById('readyAlert');
+// ── TABS ──
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('sec-'+tab).classList.add('active');
+  if(tab==='new-order') updateCartBar();
+  else document.getElementById('cartBar').classList.remove('show');
+  if(tab==='performance') loadPerformance();
+}
 
-      if(status==='cooking'){
-        badge.textContent='🔥 Kitchen is cooking your order...';
-        badge.style.color='#E67E22';
-      } else if(status==='ready'||status==='bill_pending'){
-        // Food is ready — show big alert, vibrate if device supports it
-        badge.textContent='✅ Ready!';
-        badge.style.color='#27AE60';
-        document.getElementById('orderStatusTracker').style.display='none';
-        readyAlert.style.display='block';
-        document.getElementById('readyMsg').textContent=`Table ${tableNo} — Order #${orderNum} is ready to serve.`;
-        // Vibrate phone if supported (works on Android, most kitchen/waiter devices)
-        if(navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
-        // Play a sound
-        playReadySound();
-      } else if(status==='served'){
-        readyAlert.style.display='none';
-        badge.textContent='✅ Order completed.';
-        badge.style.color='#27AE60';
+// ── LIVE ORDERS ──
+async function loadOrders(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const {data}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID)
+    .in('status',['new','cooking','ready','waiter','bill_pending'])
+    .gte('placed_at',today.toISOString())
+    .order('placed_at',{ascending:true});
+  liveOrders={};
+  (data||[]).forEach(o=>{
+    // Filter to waiter's assigned tables
+    if(!WAITER.tables||isMyTable(o.table_no)) liveOrders[o.id]=o;
+  });
+  renderOrders();
+  updateStats();
+}
+
+function isMyTable(tableNo){
+  if(!WAITER.tables)return true;
+  const tables=parseTables(WAITER.tables);
+  return tables.includes(String(tableNo));
+}
+
+function subscribe(){
+  if(waiterChannel){sb.removeChannel(waiterChannel);waiterChannel=null;}
+  waiterChannel=sb.channel('waiter-'+WAITER.id+'-'+Date.now())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
+      if(!WAITER.tables||isMyTable(p.new.table_no)){
+        liveOrders[p.new.id]=p.new;
+        if(p.new.status==='waiter'){beep(440);showCallAlert(p.new.table_no);}
+        else if(p.new.status==='new'){beep(660);toast(`🆕 New order — Table ${p.new.table_no}`);}
+        renderOrders();updateStats();
       }
     })
-    .subscribe();
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
+      if(!WAITER.tables||isMyTable(p.new.table_no)){
+        if(['dismissed','served'].includes(p.new.status)) delete liveOrders[p.new.id];
+        else liveOrders[p.new.id]=p.new;
+        if(p.new.status==='ready'&&(!WAITER.tables||isMyTable(p.new.table_no))){
+          beep(880);toast(`✅ Food ready — Table ${p.new.table_no} — Serve now!`);
+        }
+        renderOrders();updateStats();
+      }
+    })
+    .subscribe(s=>{
+      const dot=document.getElementById('ldot');
+      dot.style.background=s==='SUBSCRIBED'?'#27AE60':'#E74C3C';
+      if(s!=='SUBSCRIBED') setTimeout(()=>loadOrders(),3000);
+    });
 }
 
-function playReadySound(){
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&WAITER)loadOrders();});
+
+function renderOrders(){
+  const wrap=document.getElementById('ordersWrap');
+  const all=Object.values(liveOrders).sort((a,b)=>new Date(a.placed_at)-new Date(b.placed_at));
+  // Show ready first (highest priority), then new, then others
+  const ready=all.filter(o=>o.status==='ready');
+  const waiterCall=all.filter(o=>o.status==='waiter');
+  const newOrders=all.filter(o=>o.status==='new');
+  const others=all.filter(o=>!['ready','waiter','new'].includes(o.status));
+  const sorted=[...waiterCall,...ready,...newOrders,...others];
+  if(!sorted.length){wrap.innerHTML=`<div class="empty-state"><div class="ei">🍽️</div><p>No active orders at your tables.<br/>All clear!</p></div>`;return;}
+  wrap.innerHTML=sorted.map(o=>orderCard(o)).join('');
+  // Update badge
+  const badge=document.getElementById('badge-orders');
+  const urgent=ready.length+waiterCall.length;
+  if(urgent>0){badge.textContent=urgent;badge.style.display='inline-block';}
+  else badge.style.display='none';
+}
+
+function orderCard(o){
+  const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const isWaiter=o.status==='waiter';
+  const isReady=o.status==='ready';
+  const items=(o.items||[]).filter(i=>!i.name.includes('WAITER'));
+  const statusMap={new:'New',cooking:'Cooking',ready:'Ready — Serve Now!',waiter:'Needs Waiter',bill_pending:'Bill Pending'};
+  let actions='';
+  if(isWaiter) actions=`<button class="abtn abtn-dismiss" onclick="dismissOrder('${o.id}')">✓ Attended</button>`;
+  else if(isReady) actions=`<button class="abtn abtn-served" onclick="markServed('${o.id}')">✅ Marked Served</button>`;
+  const isParcel=String(o.table_no).startsWith('P');
+  const tableLabel=isParcel?o.table_no:`Table ${o.table_no}`;
+  return `<div class="ocard ${isReady?'ready-alert':''} ${isWaiter?'alert':''}">
+    <div class="ocard-top">
+      <div>
+        <div class="otable">${tableLabel}</div>
+        <div class="onum">${o.order_num?'#'+o.order_num:''}</div>
+      </div>
+      <div style="text-align:right">
+        <span class="ostatus ${o.status}">${statusMap[o.status]||o.status}</span>
+        <div class="otime">${time}</div>
+      </div>
+    </div>
+    ${items.length?`<div class="oitems">${items.map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>`:''}
+    ${o.note?`<div class="onote">📝 "${o.note}"</div>`:''}
+    ${actions?`<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div>`:''}
+  </div>`;
+}
+
+async function markServed(id){
+  const {error}=await sb.from('orders').update({status:'bill_pending',waiter_id:WAITER.id}).eq('id',id);
+  if(error){toast('Error: '+error.message,true);return;}
+  if(liveOrders[id]) liveOrders[id].status='bill_pending';
+  renderOrders();updateStats();toast('✅ Marked as served!');
+}
+
+async function dismissOrder(id){
+  const {error}=await sb.from('orders').update({status:'dismissed'}).eq('id',id);
+  if(error){toast('Error',true);return;}
+  delete liveOrders[id];renderOrders();updateStats();
+}
+
+function showCallAlert(tableNo){
+  const alert=document.getElementById('callAlert');
+  document.getElementById('callTable').textContent=tableNo;
+  alert.classList.remove('hide');
+  alert.onclick=()=>alert.classList.add('hide');
+  setTimeout(()=>alert.classList.add('hide'),15000);
+}
+
+function updateStats(){
+  const all=Object.values(liveOrders);
+  document.getElementById('sNew').textContent=all.filter(o=>o.status==='new').length;
+  document.getElementById('sReady').textContent=all.filter(o=>o.status==='ready').length;
+}
+
+// ── ORDER ENTRY ──
+function renderOeMenu(){
+  const catTabs=document.getElementById('oeCatTabs');
+  catTabs.innerHTML='';
+  (RDATA.menu||[]).forEach((cat,i)=>{
+    const btn=document.createElement('div');
+    btn.className='cat-tab'+(i===0?' active':'');
+    btn.textContent=cat.category;
+    btn.onclick=()=>{
+      document.querySelectorAll('.cat-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderOeItems(cat);
+    };
+    catTabs.appendChild(btn);
+  });
+  if(RDATA.menu?.length) renderOeItems(RDATA.menu[0]);
+}
+
+function renderOeItems(cat){
+  const wrap=document.getElementById('oeItems');
+  wrap.innerHTML=(cat.items||[]).filter(i=>i.available!==false).map(item=>{
+    const key=cat.category+'::'+item.name;
+    return `<div class="menu-item" id="mi-${CSS.escape(key)}">
+      <div class="mi-info"><div class="mi-name">${item.name}</div><div class="mi-price">₹${item.price}</div></div>
+      <div id="qz-${CSS.escape(key)}"></div>
+    </div>`;
+  }).join('');
+  (cat.items||[]).filter(i=>i.available!==false).forEach(item=>{
+    const key=cat.category+'::'+item.name;
+    renderQty(key,item);
+  });
+}
+
+function renderQty(key,item){
+  const zone=document.getElementById('qz-'+CSS.escape(key));
+  if(!zone)return;
+  const qty=cart[key]?.qty||0;
+  if(qty===0){
+    zone.innerHTML=`<button class="add-btn" onclick="addItem('${key.replace(/'/g,"\\'")}')">Add</button>`;
+  } else {
+    zone.innerHTML=`<div class="stepper">
+      <button onclick="changeQty('${key.replace(/'/g,"\\'")}','${item.name.replace(/'/g,"\\'")}',${item.price},-1)">−</button>
+      <span class="qv">${qty}</span>
+      <button onclick="changeQty('${key.replace(/'/g,"\\'")}','${item.name.replace(/'/g,"\\'")}',${item.price},1)">+</button>
+    </div>`;
+  }
+}
+
+function addItem(key){
+  const parts=key.split('::');
+  const cat=RDATA.menu.find(c=>c.category===parts[0]);
+  const item=cat?.items.find(i=>i.name===parts[1]);
+  if(!item)return;
+  cart[key]={item,qty:1};
+  renderQty(key,item);
+  updateCartBar();
+}
+
+function changeQty(key,name,price,delta){
+  if(!cart[key])cart[key]={item:{name,price},qty:0};
+  cart[key].qty+=delta;
+  if(cart[key].qty<=0)delete cart[key];
+  const parts=key.split('::');
+  const cat=RDATA.menu.find(c=>c.category===parts[0]);
+  const item=cat?.items.find(i=>i.name===parts[1]);
+  if(item)renderQty(key,item);
+  updateCartBar();
+}
+
+function updateCartBar(){
+  const items=Object.values(cart).filter(c=>c.qty>0);
+  const count=items.reduce((s,c)=>s+c.qty,0);
+  const total=items.reduce((s,c)=>s+c.item.price*c.qty,0);
+  document.getElementById('cbCount').textContent=`${count} ITEM${count!==1?'S':''}`;
+  document.getElementById('cbTotal').textContent='₹'+total;
+  const bar=document.getElementById('cartBar');
+  const isNewOrderTab=document.getElementById('sec-new-order').classList.contains('active');
+  bar.classList.toggle('show',count>0&&isNewOrderTab);
+}
+
+async function sendOrder(){
+  const tableNo=document.getElementById('oeTable').value;
+  if(!tableNo){toast('Please select a table first',true);return;}
+  const items=Object.values(cart).filter(c=>c.qty>0);
+  if(!items.length){toast('Add items first',true);return;}
+  const btn=document.querySelector('.send-btn');btn.disabled=true;btn.textContent='Sending...';
+  try{
+    // Get next order number
+    const today=new Date();today.setHours(0,0,0,0);
+    const {data:existing}=await sb.from('orders').select('order_num').eq('restaurant_id',RESTAURANT_ID).gte('placed_at',today.toISOString()).order('order_num',{ascending:false}).limit(1);
+    const orderNum=(existing?.[0]?.order_num||0)+1;
+    const total=items.reduce((s,c)=>s+c.item.price*c.qty,0);
+    const order={
+      restaurant_id:RESTAURANT_ID,table_no:tableNo,
+      items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),
+      total,note:document.getElementById('oeNote').value.trim(),
+      status:'new',order_num:orderNum,payment_status:'pending',
+      waiter_id:WAITER.id,placed_at:new Date().toISOString()
+    };
+    const {error}=await sb.from('orders').insert([order]);
+    if(error)throw error;
+    // Clear cart
+    Object.keys(cart).forEach(k=>delete cart[k]);
+    document.getElementById('oeNote').value='';
+    document.getElementById('oeTable').value='';
+    renderOeMenu();
+    updateCartBar();
+    toast(`✅ Order #${orderNum} sent to kitchen — Table ${tableNo}`);
+    switchTab('orders');
+  }catch(e){console.error(e);toast('Error: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='🍽️ Send to Kitchen';}
+}
+
+// ── PERFORMANCE ──
+async function loadPerformance(){
+  try{
+    const today=new Date();const dayStart=new Date(today);dayStart.setHours(0,0,0,0);
+    const monthStart=new Date(today.getFullYear(),today.getMonth(),1);
+    const {data:td}=await sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).eq('payment_status','paid').gte('placed_at',dayStart.toISOString());
+    const {data:tm}=await sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).eq('payment_status','paid').gte('placed_at',monthStart.toISOString());
+    const {data:allToday}=await sb.from('orders').select('total,order_num').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).gte('placed_at',dayStart.toISOString());
+    const todayRev=(td||[]).reduce((s,o)=>s+(o.total||0),0);
+    const monthRev=(tm||[]).reduce((s,o)=>s+(o.total||0),0);
+    document.getElementById('perfName').textContent=WAITER.name+"'s Performance";
+    document.getElementById('pToday').textContent=(allToday||[]).length;
+    document.getElementById('pRevToday').textContent='₹'+todayRev;
+    document.getElementById('pMonth').textContent=(tm||[]).length;
+    document.getElementById('pRevMonth').textContent='₹'+monthRev;
+    document.getElementById('sToday').textContent=(allToday||[]).length;
+    document.getElementById('sRevenue').textContent='₹'+todayRev;
+  }catch(e){console.error(e);}
+}
+
+// ── SOUND ──
+function beep(freq=660){
+  if(!soundOn)return;
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    // Play a pleasant ascending 3-tone chime
-    [[523,0],[659,0.3],[784,0.6]].forEach(([freq,delay])=>{
-      const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type='sine';o.frequency.value=freq;
-      o.connect(g);g.connect(ctx.destination);
-      g.gain.setValueAtTime(0,ctx.currentTime+delay);
-      g.gain.linearRampToValueAtTime(0.4,ctx.currentTime+delay+0.05);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.5);
-      o.start(ctx.currentTime+delay);
-      o.stop(ctx.currentTime+delay+0.6);
-    });
+    const o=ctx.createOscillator();const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=freq;o.type='sine';
+    g.gain.setValueAtTime(0.3,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    o.start();o.stop(ctx.currentTime+0.4);
   }catch(e){}
 }
+function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';}
 
-function resetForNewOrder(){
-  // Clean up order subscription
-  if(activeOrderChannel){ sb.removeChannel(activeOrderChannel); activeOrderChannel=null; }
-  cart={};
-  selectedTable=null;
-  document.getElementById('noteInput').value='';
-  document.getElementById('tableInput').value='';
-  document.getElementById('tableInput').style.display='';
-  document.getElementById('tableConfirmBtn').style.display='';
-  document.getElementById('activeTableBadge').classList.add('hide');
-  document.getElementById('menuSection').style.display='none';
-  document.getElementById('successScreen').style.display='none';
-  document.getElementById('orderStatusTracker').style.display='none';
-  document.getElementById('readyAlert').style.display='none';
-  document.getElementById('kitchenStatusBadge').textContent='⏳ Waiting for kitchen...';
-  document.getElementById('kitchenStatusBadge').style.color='';
-  // Re-render menu to reset qty displays
-  if(MENU.length)renderMenuItems(currentCatIdx);
-}
-
-/* ===== WAITER STATS ===== */
-async function loadStats(){
-  try{
-    const now=new Date();
-    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
-    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
-    const [{data:td},{data:md}]=await Promise.all([
-      sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).eq('payment_status','paid').gte('placed_at',todayStart.toISOString()),
-      sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).eq('payment_status','paid').gte('placed_at',monthStart.toISOString())
-    ]);
-    const todayOrders=(td||[]).length;
-    const todayRev=(td||[]).reduce((s,o)=>s+(o.total||0),0);
-    const monthOrders=(md||[]).length;
-    document.getElementById('statOrdersToday').textContent=todayOrders;
-    document.getElementById('statRevToday').textContent='₹'+todayRev;
-    document.getElementById('statOrdersMonth').textContent=monthOrders;
-  }catch(e){console.error('Stats error:',e);}
-}
-
-/* ===== TOAST ===== */
+// ── TOAST ──
 const toastEl=document.getElementById('toast');
-function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3500);}
+function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
+
+// ── hidden helper ──
+HTMLElement.prototype.addClass=function(c){this.classList.add(c);return this;};
 
 init();
 </script>
