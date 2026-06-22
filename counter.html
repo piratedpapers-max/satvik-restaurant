@@ -627,9 +627,9 @@ async function onParcelToggle(){
   document.getElementById('tableNumSection').style.display=isParcel?'none':'block';
   document.getElementById('parcelLabelSection').style.display=isParcel?'block':'none';
   if(isParcel){
-    // Compute next parcel number for today
-    const nextNum=await getNextParcelNum();
-    document.getElementById('parcelRefBox').textContent=`📦 Parcel #${nextNum}`;
+    // Just show a preview label — do NOT write to DB yet
+    // Actual number is generated only when order is placed (avoids wasting numbers on toggle)
+    document.getElementById('parcelRefBox').textContent='📦 Parcel #— (assigned on submit)';
   }
   updateNoCartTotal();
 }
@@ -723,11 +723,20 @@ async function getNextParcelNum(){
 
 async function submitNewOrder(){
   const isParcel=document.getElementById('parcelToggle').checked;
-  const tableNo=isParcel
-    ? document.getElementById('parcelRefBox').textContent.replace('📦 ','').trim() // e.g. "Parcel #3"
-    : document.getElementById('noTableNum').value.trim();
   const items=Object.values(noCart);
-  if(!tableNo||!items.length)return;
+  if(!items.length)return;
+
+  // Generate parcel number NOW at submit time (not on toggle — avoids wasting numbers)
+  let tableNo;
+  if(isParcel){
+    const parcelNum=await getNextParcelNum();
+    tableNo=`Parcel #${parcelNum}`;
+    document.getElementById('parcelRefBox').textContent='📦 '+tableNo;
+  } else {
+    tableNo=document.getElementById('noTableNum').value.trim();
+    if(!tableNo){toast('Enter a table number.',true);return;}
+  }
+
   const btn=document.getElementById('noSubmitBtn');
   btn.disabled=true;btn.textContent='Sending...';
   try{

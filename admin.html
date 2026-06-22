@@ -84,6 +84,20 @@ textarea{resize:vertical;min-height:55px;}
 .report-table td{padding:8px 10px;border-bottom:1px solid #F0E8D0;color:#3A2E1E;}
 .report-table tr:last-child td{border-bottom:none;}
 .report-table tr:hover td{background:#FDFAF3;}
+/* Waiter management */
+.w-input{flex:1;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;min-width:180px;}
+.waiter-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.waiter-card.inactive{opacity:.5;}
+.wc-name{font-weight:700;font-size:14px;flex:1;}
+.wc-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;}
+.wc-status.active{background:#EAF6EE;color:#27AE60;}
+.wc-status.inactive{background:#F5EEF8;color:#8E44AD;}
+.wc-btn{border:none;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;}
+.wc-link-btn{background:#EAF2F8;color:#2980B9;}
+.wc-stats-btn{background:#EAF6EE;color:#27AE60;}
+.wc-toggle-btn{background:#F5EEF8;color:#8E44AD;}
+.wc-copy-toast{font-size:10px;color:var(--green);font-weight:700;display:none;}
+.wc-copy-toast.show{display:inline;}
 .td-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);}
 .td-row:last-child{border:none;}
 .td-rank{font-weight:700;font-size:12px;color:var(--gold);width:20px;}
@@ -177,7 +191,8 @@ textarea{resize:vertical;min-height:55px;}
         <div class="r-card r-card-orange"><div class="r-val" id="rParcelRev">—</div><div class="r-lbl">Parcel Revenue</div></div>
         <div class="r-card"><div class="r-val" id="rAvgOrder">—</div><div class="r-lbl">Avg Order Value</div></div>
         <div class="r-card r-card-blue"><div class="r-val" id="rQROrders">—</div><div class="r-lbl">QR Self-Orders</div></div>
-        <div class="r-card r-card-purple"><div class="r-val" id="rCounterOrders">—</div><div class="r-lbl">Counter/Staff Orders</div></div>
+        <div class="r-card r-card-purple"><div class="r-val" id="rWaiterOrders">—</div><div class="r-lbl">Waiter Orders</div></div>
+        <div class="r-card"><div class="r-val" id="rCounterOrders">—</div><div class="r-lbl">Counter Orders</div></div>
         <div class="r-card r-card-orange"><div class="r-val" id="rParcelOrders">—</div><div class="r-lbl">Parcel Orders</div></div>
       </div>
 
@@ -202,6 +217,35 @@ textarea{resize:vertical;min-height:55px;}
       <button class="gen-btn" id="genBtn" onclick="generateTokens()">🔑 Generate Secure QR Links</button>
       <div class="token-grid" id="tokenGrid"></div>
     </div>
+
+    <!-- WAITER MANAGEMENT -->
+    <div class="panel">
+      <h2>🧑 Waiter Management</h2>
+      <p class="hint">Create waiter profiles and share their unique link. Each waiter uses their own link to take orders from their phone — no login needed.</p>
+
+      <!-- Create new waiter -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" id="newWaiterName" class="w-input" placeholder="Waiter name (e.g. Ravi)"/>
+        <button class="gen-btn" style="white-space:nowrap" onclick="createWaiter()">➕ Create Waiter</button>
+      </div>
+
+      <!-- Waiter list -->
+      <div id="waiterList"><div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Loading...</div></div>
+
+      <!-- Per-waiter analytics -->
+      <div id="waiterAnalytics" style="display:none;margin-top:20px">
+        <div class="td-title" style="margin-bottom:10px">📊 Waiter Performance — <span id="waiterAnalyticsName"></span></div>
+        <div class="report-cards" style="margin-bottom:14px">
+          <div class="r-card r-card-green"><div class="r-val" id="waToday">—</div><div class="r-lbl">Orders Today</div></div>
+          <div class="r-card r-card-blue"><div class="r-val" id="waRevToday">—</div><div class="r-lbl">Revenue Today</div></div>
+          <div class="r-card"><div class="r-val" id="waMonth">—</div><div class="r-lbl">Orders This Month</div></div>
+          <div class="r-card"><div class="r-val" id="waRevMonth">—</div><div class="r-lbl">Revenue This Month</div></div>
+          <div class="r-card r-card-purple"><div class="r-val" id="waAvg">—</div><div class="r-lbl">Avg Order Value</div></div>
+          <div class="r-card"><div class="r-val" id="waTables">—</div><div class="r-lbl">Tables Served Today</div></div>
+        </div>
+      </div>
+    </div>
+
     <div class="panel">
       <h2>Restaurant Settings</h2>
       <label>Restaurant Name</label><input type="text" id="rName"/>
@@ -245,10 +289,10 @@ function tryLogin(){
   }else{document.getElementById('loginErr').style.display='block';}
 }
 async function loadAll(){
-  await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders()]);
+  await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders(),loadWaiters()]);
   document.getElementById('loading').classList.add('hidden');
   setInterval(loadTodayOrders,30000);
-  loadReport('week'); // Load weekly report by default
+  loadReport('week');
 }
 async function loadMenuData(){
   try{const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();if(error)throw error;DATA=(data?.data?.menu?.length)?data.data:getDefault();}catch(e){DATA=getDefault();}
@@ -376,6 +420,104 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
 });
 document.getElementById('previewBtn').addEventListener('click',()=>window.open('index.html?t=preview','_blank'));
 const toastEl=document.getElementById('toast');
+/* ===== WAITER MANAGEMENT ===== */
+const SITE_URL='https://satvik-restaurant-gamma.vercel.app';
+
+function generateWaiterToken(){
+  const arr=new Uint8Array(18);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b=>b.toString(36)).join('').slice(0,24);
+}
+
+async function loadWaiters(){
+  const {data,error}=await sb.from('waiters').select('*').eq('restaurant_id',RESTAURANT_ID).order('created_at',{ascending:true});
+  if(error){document.getElementById('waiterList').innerHTML='<div style="color:red;font-size:12px">Error loading waiters</div>';return;}
+  if(!data||!data.length){
+    document.getElementById('waiterList').innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">No waiters created yet. Add your first waiter above.</div>';
+    return;
+  }
+  document.getElementById('waiterList').innerHTML=data.map(w=>`
+    <div class="waiter-card ${w.active?'':'inactive'}" id="wcard-${w.id}">
+      <div>
+        <div class="wc-name">🧑 ${w.name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">Created ${new Date(w.created_at).toLocaleDateString('en-IN')}</div>
+      </div>
+      <span class="wc-status ${w.active?'active':'inactive'}">${w.active?'Active':'Inactive'}</span>
+      <button class="wc-btn wc-stats-btn" onclick="loadWaiterAnalytics('${w.id}','${w.name}')">📊 Stats</button>
+      <button class="wc-btn wc-link-btn" onclick="copyWaiterLink('${w.token}','${w.id}')">🔗 Copy Link</button>
+      <button class="wc-btn wc-toggle-btn" onclick="toggleWaiter('${w.id}',${w.active})">${w.active?'Deactivate':'Activate'}</button>
+      <span class="wc-copy-toast" id="copied-${w.id}">✅ Copied!</span>
+    </div>
+  `).join('');
+}
+
+async function createWaiter(){
+  const name=document.getElementById('newWaiterName').value.trim();
+  if(!name){showToast('Enter a waiter name first.',true);return;}
+  const token=generateWaiterToken();
+  const {error}=await sb.from('waiters').insert([{
+    restaurant_id:RESTAURANT_ID,name,token,active:true
+  }]);
+  if(error){showToast('Error creating waiter: '+error.message,true);return;}
+  document.getElementById('newWaiterName').value='';
+  showToast('✅ Waiter "'+name+'" created!');
+  await loadWaiters();
+}
+
+function copyWaiterLink(token,id){
+  const link=`${SITE_URL}/waiter.html?w=${token}`;
+  navigator.clipboard.writeText(link).then(()=>{
+    const el=document.getElementById('copied-'+id);
+    if(el){el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}
+  }).catch(()=>{
+    // Fallback for devices where clipboard API needs user gesture
+    prompt('Copy this waiter link:',link);
+  });
+}
+
+async function toggleWaiter(id,currentlyActive){
+  const {error}=await sb.from('waiters').update({active:!currentlyActive}).eq('id',id);
+  if(error){showToast('Error updating waiter.',true);return;}
+  showToast(currentlyActive?'Waiter deactivated.':'Waiter activated.');
+  await loadWaiters();
+}
+
+async function loadWaiterAnalytics(waiterId,waiterName){
+  document.getElementById('waiterAnalytics').style.display='block';
+  document.getElementById('waiterAnalyticsName').textContent=waiterName;
+  // Set all to loading state
+  ['waToday','waRevToday','waMonth','waRevMonth','waAvg','waTables'].forEach(id=>{
+    document.getElementById(id).textContent='...';
+  });
+  try{
+    const now=new Date();
+    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const [{data:td},{data:md}]=await Promise.all([
+      sb.from('orders').select('total,table_no').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',waiterId).eq('payment_status','paid').gte('placed_at',todayStart.toISOString()),
+      sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',waiterId).eq('payment_status','paid').gte('placed_at',monthStart.toISOString())
+    ]);
+    const todayOrders=(td||[]).length;
+    const todayRev=(td||[]).reduce((s,o)=>s+(o.total||0),0);
+    const monthOrders=(md||[]).length;
+    const monthRev=(md||[]).reduce((s,o)=>s+(o.total||0),0);
+    const avg=monthOrders>0?Math.round(monthRev/monthOrders):0;
+    // Count unique tables served today (excluding parcels)
+    const uniqueTables=new Set((td||[]).map(o=>o.table_no).filter(t=>!String(t).startsWith('Parcel')));
+    document.getElementById('waToday').textContent=todayOrders;
+    document.getElementById('waRevToday').textContent='₹'+todayRev;
+    document.getElementById('waMonth').textContent=monthOrders;
+    document.getElementById('waRevMonth').textContent='₹'+monthRev;
+    document.getElementById('waAvg').textContent='₹'+avg;
+    document.getElementById('waTables').textContent=uniqueTables.size;
+    // Scroll to analytics
+    document.getElementById('waiterAnalytics').scrollIntoView({behavior:'smooth'});
+  }catch(e){
+    console.error('Waiter analytics error:',e);
+    showToast('Error loading waiter stats.',true);
+  }
+}
+
 function showToast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
 
 /* ===== WEEKLY & MONTHLY REPORTS ===== */
@@ -427,7 +569,7 @@ async function loadReport(tab){
 
   try{
     const {data,error}=await sb.from('orders')
-      .select('id,table_no,total,note,placed_at,payment_status,items')
+      .select('id,table_no,total,note,placed_at,payment_status,items,waiter_id,waiter_name')
       .eq('restaurant_id',RESTAURANT_ID)
       .eq('payment_status','paid')
       .gte('placed_at',start.toISOString())
@@ -446,22 +588,24 @@ async function loadReport(tab){
 
 function classifyOrder(o){
   const isParcel=String(o.table_no||'').startsWith('Parcel');
+  const isWaiterOrder=!!(o.waiter_id||o.waiter_name); // placed via waiter.html
   const isCounter=(o.note||'').includes('Order taken at counter')||(o.note||'').includes('Parcel / Takeaway');
-  return {isParcel,isCounter,isQR:!isCounter&&!isParcel};
+  const isQR=!isWaiterOrder&&!isCounter&&!isParcel;
+  return {isParcel,isWaiterOrder,isCounter,isQR};
 }
 
 function renderReport(data,start,end,tab){
   // Summary totals
-  let totalRev=0,totalOrders=0,dineRev=0,parcelRev=0,qrOrders=0,counterOrders=0,parcelOrders=0;
+  let totalRev=0,totalOrders=0,dineRev=0,parcelRev=0,qrOrders=0,counterOrders=0,parcelOrders=0,waiterOrders=0;
   data.forEach(o=>{
-    const {isParcel,isCounter,isQR}=classifyOrder(o);
+    const {isParcel,isWaiterOrder,isCounter,isQR}=classifyOrder(o);
     totalRev+=o.total||0;
     totalOrders++;
     if(isParcel){parcelRev+=o.total||0;parcelOrders++;}
     else{dineRev+=o.total||0;}
     if(isQR)qrOrders++;
-    else if(isParcel)parcelOrders; // already counted
-    else counterOrders++;
+    else if(isWaiterOrder)waiterOrders++;
+    else if(isCounter)counterOrders++;
   });
   const avg=totalOrders>0?Math.round(totalRev/totalOrders):0;
   document.getElementById('rTotalRev').textContent='₹'+totalRev;
@@ -470,6 +614,7 @@ function renderReport(data,start,end,tab){
   document.getElementById('rParcelRev').textContent='₹'+parcelRev;
   document.getElementById('rAvgOrder').textContent='₹'+avg;
   document.getElementById('rQROrders').textContent=qrOrders+' orders';
+  document.getElementById('rWaiterOrders').textContent=waiterOrders+' orders';
   document.getElementById('rCounterOrders').textContent=counterOrders+' orders';
   document.getElementById('rParcelOrders').textContent=parcelOrders+' orders';
 
