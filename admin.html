@@ -559,9 +559,8 @@ function getReportRange(tab){
   const now=new Date();
   let start,end;
   if(tab==='week'){
-    // Monday to Sunday of current week (IST local)
     const day=now.getDay(); // 0=Sun,1=Mon...6=Sat
-    const diffToMon=day===0?-6:1-day; // days back to Monday
+    const diffToMon=day===0?-6:1-day;
     start=new Date(now);
     start.setDate(now.getDate()+diffToMon);
     start.setHours(0,0,0,0);
@@ -569,7 +568,6 @@ function getReportRange(tab){
     end.setDate(start.getDate()+6);
     end.setHours(23,59,59,999);
   } else {
-    // 1st to last day of current month
     start=new Date(now.getFullYear(),now.getMonth(),1,0,0,0,0);
     end=new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59,999);
   }
@@ -579,8 +577,18 @@ function getReportRange(tab){
 function formatDateLabel(d){
   return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 }
+
+// Use IST local date as the day key (not UTC) to avoid date shifting for Indian users
 function formatDayKey(d){
-  return d.toISOString().slice(0,10);
+  const ist=new Date(d.getTime()+5.5*60*60*1000);
+  return ist.toISOString().slice(0,10);
+}
+
+// Convert a placed_at timestamp string to IST date string for bucketing
+function placedAtToISTKey(placedAt){
+  const d=new Date(placedAt);
+  const ist=new Date(d.getTime()+5.5*60*60*1000);
+  return ist.toISOString().slice(0,10);
 }
 
 async function loadReport(tab){
@@ -650,7 +658,7 @@ function renderReport(data,start,end,tab){
     cur.setDate(cur.getDate()+1);
   }
   data.forEach(o=>{
-    const key=(o.placed_at||'').slice(0,10);
+    const key=placedAtToISTKey(o.placed_at||new Date().toISOString());
     if(!days[key])return;
     const {isParcel,isCounter,isQR}=classifyOrder(o);
     days[key].orders++;
