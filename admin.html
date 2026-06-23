@@ -86,7 +86,7 @@ textarea{resize:vertical;min-height:55px;}
 .report-table tr:hover td{background:#FDFAF3;}
 /* Waiter management */
 .w-input{flex:1;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:13px;font-family:'Poppins',sans-serif;min-width:180px;}
-.waiter-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.waiter-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;}
 .waiter-card.inactive{opacity:.5;}
 .wc-name{font-weight:700;font-size:14px;flex:1;}
 .wc-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;}
@@ -436,19 +436,43 @@ async function loadWaiters(){
     document.getElementById('waiterList').innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">No waiters created yet. Add your first waiter above.</div>';
     return;
   }
-  document.getElementById('waiterList').innerHTML=data.map(w=>`
+  document.getElementById('waiterList').innerHTML=data.map(w=>{
+    const tables=(w.assigned_tables||[]).join(', ');
+    return `
     <div class="waiter-card ${w.active?'':'inactive'}" id="wcard-${w.id}">
-      <div>
+      <div style="flex:1;min-width:0">
         <div class="wc-name">🧑 ${w.name}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:2px">Created ${new Date(w.created_at).toLocaleDateString('en-IN')}</div>
+        <!-- Table assignment row -->
+        <div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="tbl-${w.id}"
+            value="${tables}"
+            placeholder="Tables: 1, 2, 3, 4, 5"
+            style="flex:1;min-width:140px;padding:5px 8px;border:1.5px solid var(--line);border-radius:6px;font-size:11px;font-family:'Poppins',sans-serif;"
+          />
+          <button class="wc-btn" style="background:#EAF6EE;color:#27AE60;white-space:nowrap" onclick="saveTables('${w.id}')">💾 Save Tables</button>
+        </div>
+        ${tables?`<div style="font-size:10px;color:var(--green);font-weight:700;margin-top:4px">📋 Assigned: Tables ${tables}</div>`:'<div style="font-size:10px;color:var(--muted);margin-top:4px">No tables assigned yet</div>'}
       </div>
-      <span class="wc-status ${w.active?'active':'inactive'}">${w.active?'Active':'Inactive'}</span>
-      <button class="wc-btn wc-stats-btn" onclick="loadWaiterAnalytics('${w.id}','${w.name}')">📊 Stats</button>
-      <button class="wc-btn wc-link-btn" onclick="copyWaiterLink('${w.token}','${w.id}')">🔗 Copy Link</button>
-      <button class="wc-btn wc-toggle-btn" onclick="toggleWaiter('${w.id}',${w.active})">${w.active?'Deactivate':'Activate'}</button>
-      <span class="wc-copy-toast" id="copied-${w.id}">✅ Copied!</span>
-    </div>
-  `).join('');
+      <div style="display:flex;flex-direction:column;gap:5px;flex:0 0 auto;align-items:flex-end">
+        <span class="wc-status ${w.active?'active':'inactive'}">${w.active?'Active':'Inactive'}</span>
+        <button class="wc-btn wc-stats-btn" onclick="loadWaiterAnalytics('${w.id}','${w.name}')">📊 Stats</button>
+        <button class="wc-btn wc-link-btn" onclick="copyWaiterLink('${w.token}','${w.id}')">🔗 Copy Link</button>
+        <button class="wc-btn wc-toggle-btn" onclick="toggleWaiter('${w.id}',${w.active})">${w.active?'Deactivate':'Activate'}</button>
+        <span class="wc-copy-toast" id="copied-${w.id}">✅ Copied!</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function saveTables(waiterId){
+  const raw=document.getElementById('tbl-'+waiterId).value;
+  // Parse comma-separated table numbers, strip whitespace, remove non-numeric
+  const tables=raw.split(',').map(t=>t.trim()).filter(t=>/^[0-9]+$/.test(t));
+  const {error}=await sb.from('waiters').update({assigned_tables:tables}).eq('id',waiterId);
+  if(error){showToast('Error saving tables: '+error.message,true);return;}
+  showToast('✅ Tables saved — waiter will see them on next refresh');
+  await loadWaiters();
 }
 
 async function createWaiter(){
@@ -456,7 +480,7 @@ async function createWaiter(){
   if(!name){showToast('Enter a waiter name first.',true);return;}
   const token=generateWaiterToken();
   const {error}=await sb.from('waiters').insert([{
-    restaurant_id:RESTAURANT_ID,name,token,active:true
+    restaurant_id:RESTAURANT_ID,name,token,active:true,assigned_tables:[]
   }]);
   if(error){showToast('Error creating waiter: '+error.message,true);return;}
   document.getElementById('newWaiterName').value='';

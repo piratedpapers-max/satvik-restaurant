@@ -15,10 +15,9 @@
 }
 body{background:var(--paper);color:var(--ink);font-family:'Poppins',sans-serif;min-height:100vh;}
 
-/* ── SCREENS ── */
-.screen{display:none;min-height:100vh;}
-.screen.show{display:block;}
-#loadingScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;font-size:18px;color:var(--muted);font-family:'Yatra One',sans-serif;}
+/* ── FULL-PAGE OVERLAYS ── */
+#loadingOverlay{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:9999;font-size:18px;color:var(--muted);font-family:'Yatra One',sans-serif;}
+#loadingOverlay.hide{display:none;}
 #errorScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;}
 #errorScreen.show{display:flex;}
 .err-icon{font-size:48px;margin-bottom:16px;}
@@ -26,34 +25,40 @@ body{background:var(--paper);color:var(--ink);font-family:'Poppins',sans-serif;m
 .err-msg{font-size:14px;color:var(--muted);}
 
 /* ── PIN SCREEN ── */
-#pinScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;background:var(--paper);}
+#pinScreen{position:fixed;inset:0;background:var(--paper);display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px;z-index:1000;}
 #pinScreen.show{display:flex;}
 .pin-header{text-align:center;margin-bottom:32px;}
-.pin-header h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:22px;margin-bottom:6px;}
-.pin-header p{font-size:13px;color:var(--muted);}
+.pin-waiter-name{font-family:'Yatra One',sans-serif;color:var(--green);font-size:20px;margin-bottom:6px;}
+.pin-title{font-size:16px;font-weight:700;color:var(--brown);margin-bottom:4px;}
+.pin-sub{font-size:12px;color:var(--muted);}
 .pin-dots{display:flex;gap:14px;margin-bottom:28px;}
-.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);background:transparent;transition:.2s;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);transition:.2s;}
 .pin-dot.filled{background:var(--green);border-color:var(--green);}
 .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;width:100%;}
-.pin-btn{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:18px;font-size:20px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;color:var(--ink);transition:.1s;}
+.pin-btn{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:18px;font-size:20px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;color:var(--ink);}
 .pin-btn:active{background:var(--card);}
-.pin-btn.del{background:#F5EEF8;border-color:#D7BDE2;color:var(--purple);}
+.pin-btn.del{background:#FEF9E7;border-color:#F9E79F;color:var(--brown);}
 .pin-btn.enter{background:var(--green);color:#fff;border-color:var(--green);}
-.pin-btn.enter:active{background:#3a6347;}
 .pin-err{color:var(--red);font-size:12px;font-weight:600;min-height:18px;margin-top:10px;text-align:center;}
-.pin-waiter-name{font-family:'Yatra One',sans-serif;color:var(--green);font-size:18px;margin-bottom:6px;}
+
+/* ── NO TABLES SCREEN ── */
+#noTablesScreen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;}
+#noTablesScreen.show{display:flex;}
+.nt-icon{font-size:48px;margin-bottom:16px;}
+.nt-title{font-size:18px;font-weight:700;color:var(--brown);margin-bottom:8px;}
+.nt-msg{font-size:13px;color:var(--muted);line-height:1.6;}
 
 /* ── MAIN APP ── */
+#mainApp{display:none;}
+#mainApp.show{display:block;}
 header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
 .hdr-name{font-family:'Yatra One',sans-serif;font-size:17px;}
-.hdr-sub{font-size:10px;opacity:.8;}
-.lock-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;}
+.hdr-sub{font-size:10px;opacity:.8;margin-top:1px;}
+.lock-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;}
 
-/* ── TABS ── */
-.tab-bar{display:flex;background:#fff;border-bottom:2px solid var(--line);position:sticky;top:52px;z-index:99;}
-.tab{flex:1;padding:12px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:.2s;}
-.tab.active{color:var(--green);border-bottom-color:var(--green);}
-.tab-badge{display:inline-block;background:var(--red);color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;margin-left:3px;vertical-align:middle;}
+/* ── ASSIGNED TABLES BANNER ── */
+.tables-banner{background:#1A2E22;color:#A8D5B5;padding:8px 16px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.tables-list{color:#fff;}
 
 /* ── STATS BAR ── */
 .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);background:var(--card);border-bottom:1px solid var(--line);}
@@ -62,53 +67,71 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 .stat-val{font-family:'Yatra One',sans-serif;font-size:18px;color:var(--brown);}
 .stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
 
-/* ── CALL WAITER ALERTS ── */
+/* ── CALL ALERTS ── */
+#callAlertContainer{position:sticky;top:52px;z-index:98;}
 .call-alert{background:var(--red);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;animation:callPulse .8s infinite;}
 @keyframes callPulse{0%,100%{opacity:1}50%{opacity:.7}}
-.call-alert-text{font-weight:700;font-size:13px;}
-.call-dismiss-btn{background:rgba(255,255,255,.25);border:none;color:#fff;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
-#callAlertContainer{position:sticky;top:90px;z-index:98;}
+.call-text{font-weight:700;font-size:13px;}
+.call-dismiss{background:rgba(255,255,255,.25);border:none;color:#fff;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
 
-/* ── ORDER KANBAN ── */
-.kanban{padding:12px;}
-.k-col{background:var(--card);border-radius:10px;margin-bottom:12px;overflow:hidden;}
-.k-hdr{padding:10px 12px;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
-.k-hdr.new{background:#1A1200;color:var(--gold);border-bottom:2px solid var(--gold);}
-.k-hdr.cooking{background:#1A0C00;color:var(--orange);border-bottom:2px solid var(--orange);}
-.k-hdr.ready{background:#0A1A0C;color:#27AE60;border-bottom:2px solid #27AE60;}
-.k-cnt{background:rgba(255,255,255,.1);padding:1px 7px;border-radius:999px;font-size:11px;}
+/* ── TAB BAR ── */
+.tab-bar{display:flex;background:#fff;border-bottom:2px solid var(--line);position:sticky;top:52px;z-index:99;}
+.tab{flex:1;padding:12px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:.2s;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-badge{display:inline-block;background:var(--red);color:#fff;border-radius:999px;font-size:9px;padding:1px 5px;margin-left:3px;vertical-align:middle;}
+
+/* ── KANBAN ── */
+.kanban{padding:12px;display:flex;flex-direction:column;gap:12px;}
+.k-col{background:var(--card);border-radius:10px;overflow:hidden;}
+.k-hdr{padding:10px 14px;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.k-hdr.new-hdr{background:#1A1200;color:var(--gold);border-bottom:2px solid var(--gold);}
+.k-hdr.cooking-hdr{background:#1A0C00;color:var(--orange);border-bottom:2px solid var(--orange);}
+.k-hdr.ready-hdr{background:#0A1A0C;color:#27AE60;border-bottom:2px solid #27AE60;}
+.k-cnt{background:rgba(255,255,255,.15);padding:1px 8px;border-radius:999px;font-size:11px;}
 .k-body{padding:8px;display:flex;flex-direction:column;gap:6px;}
-.k-empty{text-align:center;padding:20px;color:var(--muted);font-size:12px;}
+.k-empty{text-align:center;padding:18px;color:var(--muted);font-size:12px;font-style:italic;}
+
+/* ── ORDER CARDS ── */
 .ocard{background:#fff;border-radius:8px;border-left:3px solid var(--gold);overflow:hidden;}
 .ocard.cooking{border-left-color:var(--orange);}
-.ocard.ready{border-left-color:#27AE60;animation:readyGlow 1.5s infinite;}
-@keyframes readyGlow{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.3)}50%{box-shadow:0 0 0 6px rgba(39,174,96,0)}}
-.ocard-top{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);}
+.ocard.ready{border-left-color:#27AE60;}
+.ocard.ready .ocard-top{background:#EAF6EE;}
+.ocard-top{padding:8px 10px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--line);}
 .otable{font-family:'Yatra One',sans-serif;font-size:14px;color:var(--brown);}
-.ometa{font-size:10px;color:var(--muted);text-align:right;}
-.onum{color:var(--gold);font-weight:700;}
+.osource{font-size:9px;font-weight:700;padding:2px 6px;border-radius:999px;margin-top:2px;display:inline-block;}
+.osource.qr{background:#EAF2F8;color:var(--blue);}
+.osource.waiter-src{background:#F5EEF8;color:var(--purple);}
+.osource.counter-src{background:#FEF9E7;color:var(--brown);}
+.ometa{text-align:right;font-size:10px;color:var(--muted);}
+.onum{color:var(--gold);font-weight:700;font-size:11px;}
 .oitems{padding:6px 10px;}
 .oitem{display:flex;gap:6px;padding:2px 0;font-size:12px;border-bottom:1px solid var(--line);}
 .oitem:last-child{border:none;}
 .oqty{background:var(--gold);color:#111;font-weight:700;font-size:10px;width:18px;height:18px;border-radius:3px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
-.ototal{padding:6px 10px;font-size:12px;font-weight:700;color:var(--green);border-top:1px solid var(--line);}
+.ocard-foot{padding:6px 10px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.ototal{font-size:12px;font-weight:700;color:var(--green);}
+.serve-btn{background:#27AE60;color:#fff;border:none;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;}
+.serve-btn:active{background:#1e8449;}
 
 /* ── ORDER TAB ── */
-.order-section{padding:12px;}
-.section-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
-.table-row{display:flex;gap:8px;margin-bottom:12px;}
-.table-inp{flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-size:16px;font-family:'Poppins',sans-serif;background:#fff;}
-.table-inp:focus{outline:none;border-color:var(--green);}
-.table-ok-btn{background:var(--green);color:#fff;border:none;padding:11px 16px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;}
-.active-tbl{background:#EAF6EE;border:1.5px solid var(--green);border-radius:9px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.order-section{padding:12px 16px;}
+.sec-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.table-row{display:flex;gap:8px;margin-bottom:10px;}
+.tbl-inp{flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-size:16px;font-family:'Poppins',sans-serif;background:#fff;}
+.tbl-inp:focus{outline:none;border-color:var(--green);}
+.tbl-inp.warn{border-color:var(--orange);}
+.tbl-ok{background:var(--green);color:#fff;border:none;padding:11px 16px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;}
+.active-tbl{background:#EAF6EE;border:1.5px solid var(--green);border-radius:9px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .active-tbl.hide{display:none;}
-.atbl-name{font-weight:700;color:var(--green);font-size:14px;}
+.atbl-name{font-weight:700;color:var(--green);}
 .atbl-change{font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;}
-.cat-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px;}
+.warn-banner{background:#FEF3CD;border:1.5px solid #F0C040;border-radius:8px;padding:8px 12px;font-size:11px;color:#856404;margin-bottom:10px;display:none;}
+.warn-banner.show{display:block;}
+.cat-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px;}
 .cat-tabs::-webkit-scrollbar{display:none;}
 .cat-tab{flex:0 0 auto;background:var(--card);border:1.5px solid var(--line);color:var(--muted);font-size:11px;font-weight:700;padding:6px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;}
 .cat-tab.active{background:var(--green);border-color:var(--green);color:#fff;}
-.menu-items{display:flex;flex-direction:column;gap:0;}
+.menu-list{display:flex;flex-direction:column;}
 .mi{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
 .mi:last-child{border:none;}
 .mi-dot{width:12px;height:12px;border-radius:2px;border:1.5px solid;flex:0 0 auto;margin-right:10px;}
@@ -118,7 +141,7 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 .mi-name{font-size:13px;font-weight:600;}
 .mi-desc{font-size:11px;color:var(--muted);}
 .mi-price{font-size:12px;color:var(--muted);font-weight:700;margin-right:10px;white-space:nowrap;}
-.mi-qty-ctrl{display:flex;align-items:center;gap:6px;}
+.mi-qty{display:flex;align-items:center;gap:6px;}
 .q-btn{width:26px;height:26px;border-radius:6px;border:1.5px solid var(--green);background:#fff;color:var(--green);font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .q-val{min-width:18px;text-align:center;font-weight:700;font-size:13px;}
 
@@ -131,16 +154,20 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 .send-btn:disabled{background:#ccc;}
 .bar-spacer{height:150px;}
 
+/* ── READY GLOW ── */
+@keyframes readyGlow{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.4)}50%{box-shadow:0 0 0 8px rgba(39,174,96,0)}}
+.ocard.ready{animation:readyGlow 1.5s infinite;}
+
 /* ── TOAST ── */
-.toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:#1A1208;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:#1A1208;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9998;white-space:nowrap;}
 .toast.show{opacity:1;}
 .toast.err{background:var(--red);}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
-<div id="loadingScreen">Loading...</div>
+<!-- LOADING OVERLAY (full screen, on top of everything) -->
+<div id="loadingOverlay">⏳ Loading...</div>
 
 <!-- ERROR -->
 <div id="errorScreen">
@@ -152,9 +179,9 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 <!-- PIN SCREEN -->
 <div id="pinScreen">
   <div class="pin-header">
-    <div class="pin-waiter-name" id="pinWaiterName"></div>
-    <h2 id="pinTitle">Set Your PIN</h2>
-    <p id="pinSubtitle">Choose a 4-digit PIN to secure your account</p>
+    <div class="pin-waiter-name" id="pinWaiterName">👋</div>
+    <div class="pin-title" id="pinTitle">Enter Your PIN</div>
+    <div class="pin-sub" id="pinSub">Enter your 4-digit PIN to continue</div>
   </div>
   <div class="pin-dots">
     <div class="pin-dot" id="pd0"></div>
@@ -172,15 +199,23 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
     <button class="pin-btn" onclick="pk('7')">7</button>
     <button class="pin-btn" onclick="pk('8')">8</button>
     <button class="pin-btn" onclick="pk('9')">9</button>
-    <button class="pin-btn del" onclick="pd()">⌫</button>
+    <button class="pin-btn del" onclick="ppd()">⌫</button>
     <button class="pin-btn" onclick="pk('0')">0</button>
-    <button class="pin-btn enter" onclick="pe()">✓</button>
+    <button class="pin-btn enter" onclick="ppe()">✓</button>
   </div>
   <div class="pin-err" id="pinErr"></div>
 </div>
 
+<!-- NO TABLES ASSIGNED -->
+<div id="noTablesScreen">
+  <div class="nt-icon">📋</div>
+  <div class="nt-title">No Tables Assigned Yet</div>
+  <div class="nt-msg">Your admin hasn't assigned any tables to you yet.<br/>Ask them to assign your tables in the Admin panel.<br/><br/>You can still take orders using the New Order tab.</div>
+  <div id="mainApp" style="display:none"></div>
+</div>
+
 <!-- MAIN APP -->
-<div id="mainApp" class="screen">
+<div id="mainApp">
   <header>
     <div>
       <div class="hdr-name" id="hdrName">Waiter</div>
@@ -189,45 +224,53 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
     <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
   </header>
 
-  <!-- Stats bar -->
-  <div class="stats-bar">
-    <div class="stat"><div class="stat-val" id="sOrdersToday">0</div><div class="stat-lbl">Today Orders</div></div>
-    <div class="stat"><div class="stat-val" id="sRevToday">₹0</div><div class="stat-lbl">Today Revenue</div></div>
-    <div class="stat"><div class="stat-val" id="sOrdersMonth">0</div><div class="stat-lbl">This Month</div></div>
+  <!-- Assigned tables banner -->
+  <div class="tables-banner">
+    📋 Your Tables: <span class="tables-list" id="tablesBanner">None assigned</span>
   </div>
 
-  <!-- Call waiter alerts container -->
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-val" id="sToday">0</div><div class="stat-lbl">Today Orders</div></div>
+    <div class="stat"><div class="stat-val" id="sRev">₹0</div><div class="stat-lbl">Today Revenue</div></div>
+    <div class="stat"><div class="stat-val" id="sMonth">0</div><div class="stat-lbl">This Month</div></div>
+  </div>
+
+  <!-- Call alerts -->
   <div id="callAlertContainer"></div>
 
-  <!-- Tab bar -->
+  <!-- Tabs -->
   <div class="tab-bar">
-    <div class="tab active" id="tabDash" onclick="switchTab('dashboard')">📋 My Orders<span class="tab-badge" id="activeCount" style="display:none">0</span></div>
+    <div class="tab active" id="tabDash" onclick="switchTab('dash')">
+      📋 My Tables<span class="tab-badge" id="activeBadge" style="display:none">0</span>
+    </div>
     <div class="tab" id="tabOrder" onclick="switchTab('order')">➕ New Order</div>
   </div>
 
   <!-- DASHBOARD TAB -->
   <div id="dashTab">
     <div class="kanban" id="kanban">
-      <div class="k-empty" style="padding:40px">Loading your orders...</div>
+      <div class="k-empty" style="padding:40px;text-align:center;color:var(--muted)">Loading orders...</div>
     </div>
   </div>
 
   <!-- ORDER TAB -->
   <div id="orderTab" style="display:none">
     <div class="order-section">
-      <div class="section-label">Table Number</div>
+      <div class="sec-label">Table Number</div>
       <div class="table-row">
-        <input type="text" inputmode="numeric" class="table-inp" id="tblInput" placeholder="e.g. 5" maxlength="3"/>
-        <button class="table-ok-btn" onclick="confirmTable()">Confirm</button>
+        <input type="text" inputmode="numeric" class="tbl-inp" id="tblInp" placeholder="e.g. 5" maxlength="3"/>
+        <button class="tbl-ok" onclick="confirmTable()">Confirm</button>
       </div>
+      <div class="warn-banner" id="warnBanner">⚠️ This table is not in your assigned list. You can still take the order.</div>
       <div class="active-tbl hide" id="activeTbl">
         <span class="atbl-name" id="atblName">Table —</span>
         <span class="atbl-change" onclick="changeTable()">Change</span>
       </div>
       <div id="menuWrap" style="display:none">
-        <div class="section-label">Menu</div>
+        <div class="sec-label">Menu</div>
         <div class="cat-tabs" id="catTabs"></div>
-        <div class="menu-items" id="menuItems"></div>
+        <div class="menu-list" id="menuList"></div>
         <div class="bar-spacer"></div>
       </div>
     </div>
@@ -244,7 +287,7 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
   <button class="send-btn" id="sendBtn" onclick="placeOrder()">🍽️ Send to Kitchen</button>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toastEl"></div>
 
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
@@ -254,16 +297,16 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ── STATE ── */
 let WAITER=null;
+let ASSIGNED_TABLES=[]; // e.g. ['1','2','3','4','5']
 let MENU=[];
-let myOrders={}; // {orderId: orderObj} — only this waiter's active orders
+let tableOrders={}; // all active orders from assigned tables
 let cart={};
 let selectedTable=null;
 let currentCatIdx=0;
 let isOrdering=false;
 let ordersChannel=null;
-let pendingCalls=[]; // waiter call alerts
 const TOKEN=new URLSearchParams(window.location.search).get('w');
-const LS_KEY=TOKEN?'waiter_pin_'+TOKEN.slice(0,8):null;
+const LS_AUTH_KEY=TOKEN?'w_auth_'+TOKEN.slice(0,8):null;
 
 /* ── AUDIO ── */
 let audioCtx=null;
@@ -271,21 +314,24 @@ function primeAudio(){
   if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
   if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
 }
-function playChime(){
+function playChime(type='ready'){
+  primeAudio();
+  const patterns={
+    ready:[[523,0],[659,.2],[784,.4],[1047,.65]],
+    call:[[880,0],[880,.15],[880,.3]]
+  };
   try{
     if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(audioCtx.state==='suspended'){audioCtx.resume().then(()=>_chime());}else{_chime();}
+    const play=()=>(patterns[type]||patterns.ready).forEach(([f,d])=>{
+      const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='sine';o.frequency.value=f;o.connect(g);g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0,audioCtx.currentTime+d);
+      g.gain.linearRampToValueAtTime(.35,audioCtx.currentTime+d+.04);
+      g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d+.45);
+      o.start(audioCtx.currentTime+d);o.stop(audioCtx.currentTime+d+.5);
+    });
+    audioCtx.state==='suspended'?audioCtx.resume().then(play):play();
   }catch(e){}
-}
-function _chime(){
-  [[523,0],[659,.25],[784,.5],[1047,.8]].forEach(([f,d])=>{
-    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type='sine';o.frequency.value=f;o.connect(g);g.connect(audioCtx.destination);
-    g.gain.setValueAtTime(0,audioCtx.currentTime+d);
-    g.gain.linearRampToValueAtTime(.35,audioCtx.currentTime+d+.04);
-    g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+d+.45);
-    o.start(audioCtx.currentTime+d);o.stop(audioCtx.currentTime+d+.5);
-  });
 }
 document.addEventListener('click',primeAudio);
 document.addEventListener('touchstart',primeAudio);
@@ -298,125 +344,107 @@ async function init(){
     if(error||!data){showError('Invalid Link','This waiter link is not recognised. Ask admin for your correct link.');return;}
     if(!data.active){showError('Link Deactivated','Your waiter link has been deactivated. Contact the restaurant admin.');return;}
     WAITER=data;
+    ASSIGNED_TABLES=(data.assigned_tables||[]).map(t=>String(t).trim()).filter(Boolean);
     document.getElementById('pinWaiterName').textContent='👋 '+WAITER.name;
-    // Check if PIN already set for this device via localStorage
-    const savedPin=localStorage.getItem(LS_KEY);
-    if(savedPin){
-      // Already authenticated on this device — go straight to app
-      if(WAITER.pin&&savedPin===WAITER.pin){
-        showApp();
-      } else if(!WAITER.pin){
-        // PIN not set in DB yet — show set PIN screen
-        showPinScreen('set');
-      } else {
-        // PIN mismatch (changed by admin?) — show verify screen
-        localStorage.removeItem(LS_KEY);
-        showPinScreen('verify');
-      }
+    // Check localStorage for saved PIN auth
+    const savedPin=localStorage.getItem(LS_AUTH_KEY);
+    if(savedPin&&WAITER.pin&&savedPin===WAITER.pin){
+      // Already authenticated
+      hideLoading();
+      showApp();
     } else {
+      hideLoading();
       showPinScreen(WAITER.pin?'verify':'set');
     }
   }catch(e){showError('Error','Could not load waiter data. Please try again.');console.error(e);}
 }
 
+function hideLoading(){document.getElementById('loadingOverlay').classList.add('hide');}
 function showError(title,msg){
-  document.getElementById('loadingScreen').style.display='none';
+  hideLoading();
   document.getElementById('errTitle').textContent=title;
   document.getElementById('errMsg').textContent=msg;
   document.getElementById('errorScreen').classList.add('show');
 }
 
-/* ── PIN LOGIC ── */
-let pinInput='';
+/* ── PIN ── */
+let pinBuffer='';
 let pinMode='verify'; // 'set' or 'verify'
-let firstPin=''; // for confirm step when setting
+let pinFirst='';
 
 function showPinScreen(mode){
-  pinMode=mode;pinInput='';firstPin='';
-  document.getElementById('loadingScreen').style.display='none';
-  if(mode==='set'){
-    document.getElementById('pinTitle').textContent='Set Your PIN';
-    document.getElementById('pinSubtitle').textContent='Choose a 4-digit PIN. You\'ll use this to log in.';
-  } else {
-    document.getElementById('pinTitle').textContent='Enter Your PIN';
-    document.getElementById('pinSubtitle').textContent='Enter your 4-digit PIN to continue.';
-  }
+  pinMode=mode;pinBuffer='';pinFirst='';
+  const titles={set:'Set Your PIN',verify:'Enter Your PIN'};
+  const subs={set:'Choose a 4-digit PIN — you\'ll use this every time you log in.',verify:'Enter your 4-digit PIN to continue.'};
+  document.getElementById('pinTitle').textContent=titles[mode];
+  document.getElementById('pinSub').textContent=subs[mode];
   document.getElementById('pinErr').textContent='';
-  updateDots();
+  updatePinDots();
   document.getElementById('pinScreen').classList.add('show');
 }
+function pk(k){primeAudio();if(pinBuffer.length>=4)return;pinBuffer+=k;updatePinDots();}
+function ppd(){pinBuffer=pinBuffer.slice(0,-1);document.getElementById('pinErr').textContent='';updatePinDots();}
+function updatePinDots(){for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length);}
 
-function pk(k){primeAudio();if(pinInput.length>=4)return;pinInput+=k;updateDots();}
-function pd(){pinInput=pinInput.slice(0,-1);document.getElementById('pinErr').textContent='';updateDots();}
-function updateDots(){for(let i=0;i<4;i++)document.getElementById('pd'+i).classList.toggle('filled',i<pinInput.length);}
-
-async function pe(){
-  if(pinInput.length<4){document.getElementById('pinErr').textContent='Enter all 4 digits.';return;}
+async function ppe(){
+  if(pinBuffer.length<4){document.getElementById('pinErr').textContent='Enter all 4 digits.';return;}
   if(pinMode==='set'){
-    if(!firstPin){
-      // First entry — store and ask to confirm
-      firstPin=pinInput;pinInput='';
+    if(!pinFirst){
+      pinFirst=pinBuffer;pinBuffer='';
       document.getElementById('pinTitle').textContent='Confirm Your PIN';
-      document.getElementById('pinSubtitle').textContent='Enter the same PIN again to confirm.';
-      updateDots();return;
-    } else {
-      // Confirm step
-      if(pinInput!==firstPin){
-        document.getElementById('pinErr').textContent='PINs do not match. Try again.';
-        pinInput='';firstPin='';
-        document.getElementById('pinTitle').textContent='Set Your PIN';
-        document.getElementById('pinSubtitle').textContent='Choose a 4-digit PIN.';
-        updateDots();return;
-      }
-      // Save PIN to Supabase
-      const {error}=await sb.from('waiters').update({pin:pinInput}).eq('id',WAITER.id);
-      if(error){document.getElementById('pinErr').textContent='Could not save PIN. Try again.';pinInput='';updateDots();return;}
-      WAITER.pin=pinInput;
-      localStorage.setItem(LS_KEY,pinInput);
-      document.getElementById('pinScreen').classList.remove('show');
-      showApp();
+      document.getElementById('pinSub').textContent='Enter the same PIN again to confirm.';
+      updatePinDots();return;
     }
+    if(pinBuffer!==pinFirst){
+      document.getElementById('pinErr').textContent='PINs do not match. Try again.';
+      pinBuffer='';pinFirst='';
+      document.getElementById('pinTitle').textContent='Set Your PIN';
+      document.getElementById('pinSub').textContent='Choose a 4-digit PIN.';
+      updatePinDots();return;
+    }
+    const {error}=await sb.from('waiters').update({pin:pinBuffer}).eq('id',WAITER.id);
+    if(error){document.getElementById('pinErr').textContent='Could not save PIN. Try again.';pinBuffer='';updatePinDots();return;}
+    WAITER.pin=pinBuffer;
+    localStorage.setItem(LS_AUTH_KEY,pinBuffer);
+    document.getElementById('pinScreen').classList.remove('show');
+    showApp();
   } else {
-    // Verify mode
-    if(pinInput===WAITER.pin){
-      localStorage.setItem(LS_KEY,pinInput);
+    if(pinBuffer===WAITER.pin){
+      localStorage.setItem(LS_AUTH_KEY,pinBuffer);
       document.getElementById('pinScreen').classList.remove('show');
       showApp();
     } else {
-      document.getElementById('pinErr').textContent='Incorrect PIN.';
-      pinInput='';updateDots();
+      document.getElementById('pinErr').textContent='Incorrect PIN. Try again.';
+      pinBuffer='';updatePinDots();
     }
   }
 }
 
 function lockApp(){
-  localStorage.removeItem(LS_KEY);
+  localStorage.removeItem(LS_AUTH_KEY);
+  if(ordersChannel){sb.removeChannel(ordersChannel);ordersChannel=null;}
   document.getElementById('mainApp').classList.remove('show');
-  pinInput='';pinMode=WAITER.pin?'verify':'set';firstPin='';
-  updateDots();
+  pinBuffer='';pinFirst='';
+  updatePinDots();
   document.getElementById('pinErr').textContent='';
-  document.getElementById('pinTitle').textContent=WAITER.pin?'Enter Your PIN':'Set Your PIN';
-  document.getElementById('pinSubtitle').textContent=WAITER.pin?'Enter your 4-digit PIN to continue.':'Choose a 4-digit PIN.';
-  document.getElementById('pinScreen').classList.add('show');
+  showPinScreen(WAITER.pin?'verify':'set');
 }
 
-/* ── MAIN APP ── */
+/* ── SHOW APP ── */
 async function showApp(){
+  // Update tables banner
+  if(ASSIGNED_TABLES.length){
+    document.getElementById('tablesBanner').textContent=ASSIGNED_TABLES.map(t=>'T'+t).join(', ');
+  } else {
+    document.getElementById('tablesBanner').textContent='None assigned — ask admin';
+  }
   document.getElementById('hdrName').textContent='🧑 '+WAITER.name;
   document.getElementById('mainApp').classList.add('show');
-  await Promise.all([loadMenu(),loadMyOrders(),loadStats()]);
+  await Promise.all([loadMenu(),loadTableOrders(),loadStats()]);
   subscribeToOrders();
 }
 
-/* ── TABS ── */
-function switchTab(tab){
-  document.getElementById('tabDash').classList.toggle('active',tab==='dashboard');
-  document.getElementById('tabOrder').classList.toggle('active',tab==='order');
-  document.getElementById('dashTab').style.display=tab==='dashboard'?'block':'none';
-  document.getElementById('orderTab').style.display=tab==='order'?'block':'none';
-}
-
-/* ── STATS ── */
+/* ── STATS (only count paid orders placed by this waiter) ── */
 async function loadStats(){
   try{
     const now=new Date();
@@ -426,146 +454,194 @@ async function loadStats(){
       sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).eq('payment_status','paid').gte('placed_at',todayStart.toISOString()),
       sb.from('orders').select('id').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).gte('placed_at',monthStart.toISOString())
     ]);
-    document.getElementById('sOrdersToday').textContent=(td||[]).length;
-    document.getElementById('sRevToday').textContent='₹'+(td||[]).reduce((s,o)=>s+(o.total||0),0);
-    document.getElementById('sOrdersMonth').textContent=(md||[]).length;
+    document.getElementById('sToday').textContent=(td||[]).length;
+    document.getElementById('sRev').textContent='₹'+(td||[]).reduce((s,o)=>s+(o.total||0),0);
+    document.getElementById('sMonth').textContent=(md||[]).length;
   }catch(e){console.error('Stats error:',e);}
 }
 
-/* ── MY ORDERS (dashboard) ── */
-async function loadMyOrders(){
+/* ── LOAD ALL ACTIVE ORDERS FROM ASSIGNED TABLES ── */
+async function loadTableOrders(){
+  if(!ASSIGNED_TABLES.length){
+    renderDashboard();return;
+  }
   const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
-  const {data}=await sb.from('orders').select('*')
-    .eq('restaurant_id',RESTAURANT_ID)
-    .eq('waiter_id',WAITER.id)
-    .in('status',['new','cooking','ready','bill_pending'])
-    .gte('placed_at',todayStart.toISOString())
-    .order('placed_at',{ascending:true});
-  myOrders={};
-  (data||[]).forEach(o=>{myOrders[o.id]=o;});
-  renderDashboard();
+  try{
+    const {data}=await sb.from('orders').select('*')
+      .eq('restaurant_id',RESTAURANT_ID)
+      .in('table_no',ASSIGNED_TABLES)
+      .in('status',['new','cooking','ready','bill_pending'])
+      .gte('placed_at',todayStart.toISOString())
+      .order('placed_at',{ascending:true});
+    tableOrders={};
+    (data||[]).forEach(o=>{tableOrders[o.id]=o;});
+    renderDashboard();
+  }catch(e){console.error('Load orders error:',e);}
 }
 
+/* ── CLASSIFY ORDER SOURCE ── */
+function getSource(o){
+  if(o.waiter_id)return 'waiter';
+  if((o.note||'').includes('Order taken at counter'))return 'counter';
+  return 'qr';
+}
+const sourceLabels={qr:'📱 QR Order',waiter:'🧑 Waiter Order',counter:'🖥️ Counter Order'};
+const sourceCls={qr:'qr',waiter:'waiter-src',counter:'counter-src'};
+
+/* ── RENDER DASHBOARD ── */
 function renderDashboard(){
-  const all=Object.values(myOrders);
+  const all=Object.values(tableOrders);
   const newOrds=all.filter(o=>o.status==='new');
   const cooking=all.filter(o=>o.status==='cooking');
   const ready=all.filter(o=>['ready','bill_pending'].includes(o.status));
-  const activeCount=all.length;
-  const badge=document.getElementById('activeCount');
-  badge.style.display=activeCount>0?'inline':'none';
-  badge.textContent=activeCount;
+  const total=all.length;
 
-  const readyIds=ready.map(o=>o.id);
-  document.getElementById('kanban').innerHTML=`
-    ${kCol('🆕 New',newOrds,'new')}
-    ${kCol('🔥 Cooking',cooking,'cooking')}
-    ${kCol('✅ Ready to Serve',ready,'ready')}
-  `;
+  const badge=document.getElementById('activeBadge');
+  badge.style.display=total>0?'inline':'none';
+  badge.textContent=total;
 
-  // Notify for ready orders
-  if(ready.length>0){
-    playChime();
-    if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
+  if(!ASSIGNED_TABLES.length){
+    document.getElementById('kanban').innerHTML=`
+      <div style="text-align:center;padding:40px;color:var(--muted)">
+        <div style="font-size:32px;margin-bottom:12px">📋</div>
+        <div style="font-weight:700;margin-bottom:6px">No tables assigned</div>
+        <div style="font-size:12px">Ask your admin to assign tables to you in the Admin panel.</div>
+      </div>`;
+    return;
   }
+
+  document.getElementById('kanban').innerHTML=`
+    ${kCol('🆕 New Orders',newOrds,'new-hdr',false)}
+    ${kCol('🔥 Cooking',cooking,'cooking-hdr',false)}
+    ${kCol('✅ Ready to Serve',ready,'ready-hdr',true)}
+  `;
 }
 
-function kCol(title,orders,cls){
-  const cards=orders.length?orders.map(oCard).join(''):`<div class="k-empty">Nothing here</div>`;
+function kCol(title,orders,hdrCls,showServeBtn){
+  const cards=orders.length
+    ? orders.map(o=>oCard(o,showServeBtn)).join('')
+    : `<div class="k-empty">Nothing here</div>`;
   return `<div class="k-col">
-    <div class="k-hdr ${cls}">${title}<span class="k-cnt">${orders.length}</span></div>
+    <div class="k-hdr ${hdrCls}">${title}<span class="k-cnt">${orders.length}</span></div>
     <div class="k-body">${cards}</div>
   </div>`;
 }
 
-function oCard(o){
+function oCard(o,showServeBtn){
   const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
   const isReady=['ready','bill_pending'].includes(o.status);
+  const src=getSource(o);
   const items=(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div>${i.name}</div></div>`).join('');
+  const serveBtn=showServeBtn?`<button class="serve-btn" onclick="markServed('${o.id}')">✅ Served</button>`:'';
   return `<div class="ocard ${isReady?'ready':o.status}">
     <div class="ocard-top">
-      <div class="otable">Table ${o.table_no}</div>
-      <div class="ometa"><div class="onum">#${o.order_num||'?'}</div><div>${time}</div></div>
+      <div>
+        <div class="otable">Table ${o.table_no}</div>
+        <span class="osource ${sourceCls[src]}">${sourceLabels[src]}</span>
+      </div>
+      <div class="ometa">
+        <div class="onum">#${o.order_num||'?'}</div>
+        <div>${time}</div>
+      </div>
     </div>
     <div class="oitems">${items}</div>
-    ${o.total?`<div class="ototal">₹${o.total}</div>`:''}
+    ${o.note?`<div style="padding:4px 10px 6px;font-size:11px;color:var(--muted);font-style:italic">📝 ${o.note}</div>`:''}
+    <div class="ocard-foot">
+      <div class="ototal">${o.total>0?'₹'+o.total:''}</div>
+      ${serveBtn}
+    </div>
   </div>`;
+}
+
+/* ── MARK SERVED ── */
+async function markServed(orderId){
+  try{
+    const {error}=await sb.from('orders').update({
+      status:'served',
+      payment_status:'paid',
+      served_at:new Date().toISOString()
+    }).eq('id',orderId);
+    if(error)throw error;
+    delete tableOrders[orderId];
+    renderDashboard();
+    toast('✅ Order marked as served!');
+    loadStats();
+  }catch(e){console.error(e);toast('Error marking served: '+e.message,true);}
 }
 
 /* ── REALTIME ── */
 function subscribeToOrders(){
   if(ordersChannel){sb.removeChannel(ordersChannel);ordersChannel=null;}
-  ordersChannel=sb.channel('waiter-'+WAITER.id+'-'+Date.now())
+  ordersChannel=sb.channel('waiter-tables-'+WAITER.id+'-'+Date.now())
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
-      // Listen for waiter-call orders on tables this waiter is serving
-      if(p.new.status==='waiter'){
-        const myTableNos=new Set(Object.values(myOrders).map(o=>o.table_no));
-        if(myTableNos.has(p.new.table_no)){
-          showCallAlert(p.new.table_no);
-        }
-        return;
+      const tbl=String(p.new.table_no);
+      // Call waiter alert — customer called from one of our tables
+      if(p.new.status==='waiter'&&ASSIGNED_TABLES.includes(tbl)){
+        showCallAlert(tbl);return;
       }
-      // Track own orders placed via this waiter's account
-      if(p.new.waiter_id===WAITER.id){
-        myOrders[p.new.id]=p.new;
+      // New order on one of our assigned tables
+      if(ASSIGNED_TABLES.includes(tbl)&&!['served','dismissed','waiter'].includes(p.new.status)){
+        tableOrders[p.new.id]=p.new;
         renderDashboard();
+        toast(`🆕 New order — Table ${tbl}`);
       }
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
-      if(myOrders[p.new.id]){
-        if(['served','dismissed'].includes(p.new.status)){
-          delete myOrders[p.new.id];
-        } else {
-          const wasReady=['ready','bill_pending'].includes(p.new.status);
-          const wasNotReady=!['ready','bill_pending'].includes(myOrders[p.new.id]?.status);
-          myOrders[p.new.id]=p.new;
-          // Only chime if this specific order just became ready (not if already ready)
-          if(wasReady&&wasNotReady){
-            toast(`🍽️ Table ${p.new.table_no} — Order #${p.new.order_num} is READY!`);
-            playChime();
-            if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
-          }
+      if(!tableOrders[p.new.id])return;
+      const wasReady=!['ready','bill_pending'].includes(tableOrders[p.new.id]?.status);
+      const isNowReady=['ready','bill_pending'].includes(p.new.status);
+      if(['served','dismissed'].includes(p.new.status)){
+        delete tableOrders[p.new.id];
+      } else {
+        tableOrders[p.new.id]=p.new;
+        // Only alert when status BECOMES ready (not if already was ready)
+        if(isNowReady&&wasReady){
+          toast(`🍽️ Table ${p.new.table_no} — Order #${p.new.order_num} is READY!`);
+          playChime('ready');
+          if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
         }
-        renderDashboard();
-        loadStats();
       }
+      renderDashboard();
+      loadStats();
     })
     .subscribe(s=>{
-      if(s==='SUBSCRIBED'&&Object.keys(myOrders).length===0){
-        loadMyOrders();
-      }
+      if(s==='SUBSCRIBED'){loadTableOrders();}
     });
 }
 
-// Re-fetch on tab focus (covers refresh/wake)
+// Re-sync on tab focus
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden&&WAITER){loadMyOrders();loadStats();}
+  if(!document.hidden&&WAITER){loadTableOrders();loadStats();}
 });
 
-/* ── WAITER CALL ALERTS ── */
+/* ── CALL WAITER ALERTS ── */
 function showCallAlert(tableNo){
-  playChime();
-  if(navigator.vibrate)navigator.vibrate([500,200,500]);
-  const id='call-'+Date.now();
-  const container=document.getElementById('callAlertContainer');
+  playChime('call');
+  if(navigator.vibrate)navigator.vibrate([500,200,500,200,500]);
+  const id='ca-'+Date.now();
   const el=document.createElement('div');
-  el.className='call-alert';
-  el.id=id;
-  el.innerHTML=`<span class="call-alert-text">🙋 Call from Table ${tableNo}!</span>
-    <button class="call-dismiss-btn" onclick="dismissCall('${id}')">✓ Got it</button>`;
-  container.appendChild(el);
-  // Auto-dismiss after 30 seconds
-  setTimeout(()=>dismissCall(id),30000);
+  el.className='call-alert';el.id=id;
+  el.innerHTML=`<span class="call-text">🙋 Customer calling — Table ${tableNo}!</span>
+    <button class="call-dismiss" onclick="document.getElementById('${id}').remove()">✓ Got it</button>`;
+  document.getElementById('callAlertContainer').appendChild(el);
+  setTimeout(()=>{const e=document.getElementById(id);if(e)e.remove();},30000);
 }
-function dismissCall(id){
-  const el=document.getElementById(id);
-  if(el)el.remove();
+
+/* ── TABS ── */
+function switchTab(tab){
+  document.getElementById('tabDash').classList.toggle('active',tab==='dash');
+  document.getElementById('tabOrder').classList.toggle('active',tab==='order');
+  document.getElementById('dashTab').style.display=tab==='dash'?'block':'none';
+  document.getElementById('orderTab').style.display=tab==='order'?'block':'none';
 }
 
 /* ── MENU ── */
 async function loadMenu(){
   const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-  if(data?.data?.menu?.length){MENU=data.data.menu;buildCatTabs();}
+  if(data?.data?.menu?.length){
+    MENU=data.data.menu;
+    buildCatTabs();
+  }
 }
 function buildCatTabs(){
   document.getElementById('catTabs').innerHTML=MENU.map((c,i)=>
@@ -580,11 +656,10 @@ function selectCat(idx){
 }
 function renderMenu(idx){
   const cat=MENU[idx];
-  document.getElementById('menuItems').innerHTML=(cat.items||[]).filter(it=>it.available!==false).map(item=>{
+  document.getElementById('menuList').innerHTML=(cat.items||[]).filter(it=>it.available!==false).map(item=>{
     const key=idx+'::'+item.name;
     const qty=cart[key]?.qty||0;
     const isVeg=item.veg!==false;
-    const encodedKey=btoa(encodeURIComponent(key));
     return `<div class="mi">
       <div class="mi-dot ${isVeg?'veg':'nonveg'}"></div>
       <div class="mi-info">
@@ -592,55 +667,64 @@ function renderMenu(idx){
         ${item.desc?`<div class="mi-desc">${item.desc}</div>`:''}
       </div>
       <div class="mi-price">₹${item.price}</div>
-      <div class="mi-qty-ctrl">
-        <button class="q-btn" onclick="changeQty('${key.replace(/'/g,"\\'")}',${idx},-1)">−</button>
-        <span class="q-val" id="qv-${encodedKey}">${qty}</span>
-        <button class="q-btn" onclick="changeQty('${key.replace(/'/g,"\\'")}',${idx},1)">+</button>
+      <div class="mi-qty">
+        <button class="q-btn" onclick="chgQty('${key.replace(/'/g,"\\'")}',${idx},-1)">−</button>
+        <span class="q-val" id="qv-${btoa(encodeURIComponent(key))}">${qty}</span>
+        <button class="q-btn" onclick="chgQty('${key.replace(/'/g,"\\'")}',${idx},1)">+</button>
       </div>
     </div>`;
   }).join('');
 }
-function changeQty(key,catIdx,delta){
+function chgQty(key,catIdx,delta){
   const itemName=key.split('::').slice(1).join('::');
   const item=MENU[catIdx]?.items?.find(i=>i.name===itemName);
   if(!item)return;
-  const cur=cart[key]?.qty||0;
-  const next=Math.max(0,cur+delta);
+  const cur=cart[key]?.qty||0;const next=Math.max(0,cur+delta);
   if(next===0)delete cart[key];else cart[key]={item,qty:next};
   const el=document.getElementById('qv-'+btoa(encodeURIComponent(key)));
   if(el)el.textContent=next;
-  updateOrderBar();
+  updateBar();
 }
-function updateOrderBar(){
+function updateBar(){
   const items=Object.values(cart);
   const count=items.reduce((s,c)=>s+c.qty,0);
   const total=items.reduce((s,c)=>s+c.item.price*c.qty,0);
   document.getElementById('cartSummary').textContent=count+' item'+(count!==1?'s':'');
   document.getElementById('cartTotal').textContent='₹'+total;
-  const bar=document.getElementById('orderBar');
-  if(count>0&&selectedTable)bar.classList.add('show');else bar.classList.remove('show');
+  document.getElementById('orderBar').classList.toggle('show',count>0&&!!selectedTable);
 }
 
 /* ── TABLE SELECT ── */
-document.getElementById('tblInput').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[^0-9]/g,'');});
+document.getElementById('tblInp').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[^0-9]/g,'');});
 function confirmTable(){
-  const val=document.getElementById('tblInput').value.trim();
+  const val=document.getElementById('tblInp').value.trim();
   if(!/^[0-9]{1,3}$/.test(val)){toast('Enter a valid table number.',true);return;}
   selectedTable=val;
-  document.getElementById('tblInput').style.display='none';
-  document.querySelector('.table-ok-btn').style.display='none';
+  // Warn if not in assigned tables
+  const warn=document.getElementById('warnBanner');
+  if(ASSIGNED_TABLES.length&&!ASSIGNED_TABLES.includes(val)){
+    warn.classList.add('show');
+    document.getElementById('tblInp').classList.add('warn');
+  } else {
+    warn.classList.remove('show');
+    document.getElementById('tblInp').classList.remove('warn');
+  }
+  document.getElementById('tblInp').style.display='none';
+  document.querySelector('.tbl-ok').style.display='none';
   document.getElementById('activeTbl').classList.remove('hide');
   document.getElementById('atblName').textContent='Table '+selectedTable;
   document.getElementById('menuWrap').style.display='block';
-  updateOrderBar();
+  updateBar();
 }
 function changeTable(){
   selectedTable=null;
-  document.getElementById('tblInput').style.display='';document.getElementById('tblInput').value='';
-  document.querySelector('.table-ok-btn').style.display='';
+  document.getElementById('tblInp').style.display='';document.getElementById('tblInp').value='';
+  document.getElementById('tblInp').classList.remove('warn');
+  document.querySelector('.tbl-ok').style.display='';
   document.getElementById('activeTbl').classList.add('hide');
   document.getElementById('menuWrap').style.display='none';
-  updateOrderBar();
+  document.getElementById('warnBanner').classList.remove('show');
+  updateBar();
 }
 
 /* ── PLACE ORDER ── */
@@ -649,8 +733,7 @@ async function placeOrder(){
   const items=Object.values(cart);
   if(!items.length||!selectedTable)return;
   isOrdering=true;
-  const btn=document.getElementById('sendBtn');
-  btn.disabled=true;btn.textContent='Sending...';
+  const btn=document.getElementById('sendBtn');btn.disabled=true;btn.textContent='Sending...';
   try{
     const {data:orderNum,error:rpcErr}=await sb.rpc('get_next_order_num',{p_restaurant_id:RESTAURANT_ID});
     if(rpcErr)throw rpcErr;
@@ -664,23 +747,15 @@ async function placeOrder(){
     }]);
     if(error)throw error;
     toast(`✅ Order #${orderNum} sent — Table ${selectedTable}`);
-    // Reset cart but keep table selected for quick re-ordering
-    cart={};
-    document.getElementById('noteInp').value='';
-    renderMenu(currentCatIdx);
-    updateOrderBar();
-    // Switch to dashboard to watch order progress
-    switchTab('dashboard');
-    await loadStats();
-  }catch(e){
-    console.error(e);toast('Could not place order: '+e.message,true);
-  }finally{
-    isOrdering=false;btn.disabled=false;btn.textContent='🍽️ Send to Kitchen';
-  }
+    cart={};document.getElementById('noteInp').value='';
+    renderMenu(currentCatIdx);updateBar();
+    switchTab('dash');
+  }catch(e){console.error(e);toast('Error: '+e.message,true);}
+  finally{isOrdering=false;btn.disabled=false;btn.textContent='🍽️ Send to Kitchen';}
 }
 
 /* ── TOAST ── */
-const toastEl=document.getElementById('toast');
+const toastEl=document.getElementById('toastEl');
 let toastTimer=null;
 function toast(text,isErr){
   toastEl.textContent=text;
