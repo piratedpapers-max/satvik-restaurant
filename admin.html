@@ -120,6 +120,14 @@ textarea{resize:vertical;min-height:55px;}
 .item-bot input[type="checkbox"]{width:14px;height:14px;cursor:pointer;}
 .item-row textarea{font-size:12px;min-height:36px;}
 .add-item-btn{width:100%;padding:8px;border:1.5px dashed var(--green);background:none;color:var(--green);border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;margin-top:4px;}
+.img-row{display:flex;gap:6px;align-items:center;margin-top:6px;}
+.img-preview{width:48px;height:48px;border-radius:7px;object-fit:cover;border:1.5px solid var(--line);display:none;flex:0 0 auto;}
+.img-preview.show{display:block;}
+.img-url-inp{flex:1;padding:7px 10px;border:1.5px solid var(--line);border-radius:7px;font-size:11px;font-family:'Poppins',sans-serif;color:var(--ink);}
+.img-upload-btn{background:#EAF2F8;color:#2980B9;border:1.5px solid #AED6F1;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Poppins',sans-serif;}
+.img-upload-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+.img-remove-btn{background:#FDEDEC;color:var(--red);border:1.5px solid #F5B7B1;border-radius:7px;padding:7px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Poppins',sans-serif;display:none;}
+.img-remove-btn.show{display:block;}
 .add-cat-btn{width:100%;padding:9px;border:1.5px dashed var(--brown);background:none;color:var(--brown);border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;}
 .save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--steel);padding:12px 14px;display:flex;gap:8px;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,.25);}
 .save-bar button{flex:1;padding:13px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;}
@@ -279,6 +287,9 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
 const ADMIN_PASSWORD="satvik2026";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+// ── CLOUDINARY CONFIG (fill in after creating free account at cloudinary.com) ──
+const CLOUDINARY_CLOUD_NAME="dmzk3gkty";
+const CLOUDINARY_UPLOAD_PRESET="satvik_menu";
 let DATA=null;
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 document.getElementById('loginBtn').addEventListener('click',tryLogin);
@@ -397,8 +408,67 @@ function renderCat(cat){
 }
 function renderItem(item){
   const r=document.createElement('div');r.className='item-row';
-  r.innerHTML=`<div class="item-top"><input type="text" class="iname" value="${esc(item.name)}" placeholder="Dish name"/><input type="number" class="iprice" value="${item.price||0}" placeholder="₹"/><button class="ibtn d">✕</button></div><textarea class="idesc" placeholder="Description">${item.desc||''}</textarea><div class="item-bot"><label><input type="checkbox" class="iveg" ${item.veg?'checked':''}/> Veg</label><label><input type="checkbox" class="iavail" ${item.available!==false?'checked':''}/> Available</label></div>`;
-  r.querySelector('.ibtn.d').addEventListener('click',()=>r.remove());return r;
+  const imgUrl=item.image||'';
+  r.innerHTML=`
+    <div class="item-top">
+      <input type="text" class="iname" value="${esc(item.name)}" placeholder="Dish name"/>
+      <input type="number" class="iprice" value="${item.price||0}" placeholder="₹"/>
+      <button class="ibtn d">✕</button>
+    </div>
+    <textarea class="idesc" placeholder="Description">${item.desc||''}</textarea>
+    <div class="item-bot">
+      <label><input type="checkbox" class="iveg" ${item.veg?'checked':''}/> Veg</label>
+      <label><input type="checkbox" class="iavail" ${item.available!==false?'checked':''}/> Available</label>
+    </div>
+    <div class="img-row">
+      <img class="img-preview ${imgUrl?'show':''}" src="${imgUrl||''}" alt="dish"/>
+      <input type="text" class="iimg" placeholder="Image URL (auto-filled after upload)" value="${esc(imgUrl)}"/>
+      <button class="img-upload-btn">📷 Upload</button>
+      <button class="img-remove-btn ${imgUrl?'show':''}">✕</button>
+    </div>`;
+  r.querySelector('.ibtn.d').addEventListener('click',()=>r.remove());
+
+  // Image URL input — manual paste
+  const imgInp=r.querySelector('.iimg');
+  const imgPrev=r.querySelector('.img-preview');
+  const removeBtn=r.querySelector('.img-remove-btn');
+  imgInp.addEventListener('input',()=>{
+    const url=imgInp.value.trim();
+    if(url){imgPrev.src=url;imgPrev.classList.add('show');removeBtn.classList.add('show');}
+    else{imgPrev.src='';imgPrev.classList.remove('show');removeBtn.classList.remove('show');}
+  });
+
+  // Remove image
+  removeBtn.addEventListener('click',()=>{
+    imgInp.value='';imgPrev.src='';imgPrev.classList.remove('show');removeBtn.classList.remove('show');
+  });
+
+  // Cloudinary upload
+  const uploadBtn=r.querySelector('.img-upload-btn');
+  uploadBtn.addEventListener('click',()=>{
+    if(CLOUDINARY_CLOUD_NAME==='YOUR_CLOUD_NAME'){
+      showToast('⚠️ Set up Cloudinary first — see comments in code.',true);return;
+    }
+    const fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='image/*';
+    fileInput.addEventListener('change',async()=>{
+      const file=fileInput.files[0];if(!file)return;
+      uploadBtn.disabled=true;uploadBtn.textContent='Uploading...';
+      try{
+        const fd=new FormData();fd.append('file',file);fd.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);
+        const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,{method:'POST',body:fd});
+        const json=await res.json();
+        if(json.secure_url){
+          imgInp.value=json.secure_url;imgPrev.src=json.secure_url;
+          imgPrev.classList.add('show');removeBtn.classList.add('show');
+          showToast('✅ Image uploaded!');
+        } else {showToast('Upload failed: '+(json.error?.message||'Unknown error'),true);}
+      }catch(e){showToast('Upload error: '+e.message,true);}
+      finally{uploadBtn.disabled=false;uploadBtn.textContent='📷 Upload';}
+    });
+    fileInput.click();
+  });
+
+  return r;
 }
 document.getElementById('addCat').addEventListener('click',()=>renderCat({category:'',items:[]}));
 function esc(s){return s?String(s).replace(/"/g,'&quot;'):'';}
@@ -406,7 +476,7 @@ function collectData(){
   const menu=[];
   document.querySelectorAll('.cat-block').forEach(b=>{
     const category=b.querySelector('.cname').value.trim();if(!category)return;
-    const items=[];b.querySelectorAll('.item-row').forEach(r=>{const name=r.querySelector('.iname').value.trim();if(!name)return;items.push({name,desc:r.querySelector('.idesc').value.trim(),price:parseFloat(r.querySelector('.iprice').value)||0,veg:r.querySelector('.iveg').checked,available:r.querySelector('.iavail').checked});});
+    const items=[];b.querySelectorAll('.item-row').forEach(r=>{const name=r.querySelector('.iname').value.trim();if(!name)return;const img=r.querySelector('.iimg')?.value.trim()||'';items.push({name,desc:r.querySelector('.idesc').value.trim(),price:parseFloat(r.querySelector('.iprice').value)||0,veg:r.querySelector('.iveg').checked,available:r.querySelector('.iavail').checked,image:img||undefined});});
     menu.push({category,items});
   });
   return{restaurantName:document.getElementById('rName').value.trim(),restaurantSub:document.getElementById('rSub').value.trim(),whatsapp:document.getElementById('rWA').value.trim(),googleReview:document.getElementById('rGR').value.trim(),todaySpecial:document.getElementById('rSpecial').value.trim(),menu};
