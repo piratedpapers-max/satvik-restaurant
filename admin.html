@@ -152,6 +152,26 @@ textarea{resize:vertical;min-height:55px;}
   <input type="password" id="loginPass" placeholder="Enter admin password"/>
   <button id="loginBtn">Login</button>
   <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
+  <div style="margin-top:10px;text-align:center">
+    <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showForgotPassword()">Forgot password?</span>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD BOX -->
+<div class="login-box hidden" id="forgotBox" style="margin-top:12px">
+  <h2 style="font-size:16px">Reset Password</h2>
+  <p style="margin-bottom:10px">Enter your WhatsApp number to receive a reset code.</p>
+  <input type="tel" id="forgotPhone" placeholder="WhatsApp number (10 digits)" maxlength="10"/>
+  <button id="forgotSendBtn" onclick="sendResetCode()">Send Reset Code</button>
+  <div id="forgotStep2" style="display:none;margin-top:12px">
+    <input type="text" id="forgotCode" placeholder="Enter 6-digit code" maxlength="6" style="margin-bottom:8px"/>
+    <input type="password" id="forgotNewPass" placeholder="New password" style="margin-bottom:8px"/>
+    <button onclick="confirmReset()">Set New Password</button>
+  </div>
+  <div class="login-err" id="forgotErr"></div>
+  <div style="margin-top:10px;text-align:center">
+    <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showLogin()">← Back to Login</span>
+  </div>
 </div>
 <div id="adminPanel" class="hidden">
   <header><h1>Satvik Restaurant — Admin</h1><p>Menu Manager & Analytics</p></header>
@@ -255,6 +275,18 @@ textarea{resize:vertical;min-height:55px;}
     </div>
 
     <div class="panel">
+      <h2>🔑 Change Password</h2>
+      <p class="hint">Change your admin login password. Make sure to remember the new password.</p>
+      <label>Current Password</label>
+      <input type="password" id="cpCurrent" placeholder="Current password"/>
+      <label>New Password</label>
+      <input type="password" id="cpNew" placeholder="New password (min 4 characters)"/>
+      <label>Confirm New Password</label>
+      <input type="password" id="cpConfirm" placeholder="Confirm new password"/>
+      <button class="gen-btn" style="margin-top:12px" onclick="changePassword()">🔑 Update Password</button>
+    </div>
+
+    <div class="panel">
       <h2>Restaurant Settings</h2>
       <label>Restaurant Name</label><input type="text" id="rName"/>
       <label>Subtitle</label><input type="text" id="rSub"/>
@@ -285,7 +317,6 @@ textarea{resize:vertical;min-height:55px;}
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
-const ADMIN_PASSWORD="satvik2026";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 // ── CLOUDINARY CONFIG (fill in after creating free account at cloudinary.com) ──
 const CLOUDINARY_CLOUD_NAME="dmzk3gkty";
@@ -294,10 +325,76 @@ let DATA=null;
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 document.getElementById('loginBtn').addEventListener('click',tryLogin);
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
-function tryLogin(){
-  if(document.getElementById('loginPass').value===ADMIN_PASSWORD){
-    document.getElementById('loginBox').classList.add('hidden');document.getElementById('adminPanel').classList.remove('hidden');document.getElementById('loading').classList.remove('hidden');loadAll();
-  }else{document.getElementById('loginErr').style.display='block';}
+async function tryLogin(){
+  const pass=document.getElementById('loginPass').value;
+  if(!pass){document.getElementById('loginErr').style.display='block';return;}
+  document.getElementById('loginBtn').textContent='Checking...';document.getElementById('loginBtn').disabled=true;
+  try{
+    const {data,error}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
+    if(error||!data){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
+    if(pass===data.password){
+      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('adminPanel').classList.remove('hidden');
+      document.getElementById('loading').classList.remove('hidden');
+      loadAll();
+    }else{
+      document.getElementById('loginErr').textContent='Incorrect password. Try again.';
+      document.getElementById('loginErr').style.display='block';
+    }
+  }catch(e){document.getElementById('loginErr').textContent='Error: '+e.message;document.getElementById('loginErr').style.display='block';}
+  finally{document.getElementById('loginBtn').textContent='Login';document.getElementById('loginBtn').disabled=false;}
+}
+
+function showForgotPassword(){
+  document.getElementById('loginBox').classList.add('hidden');
+  document.getElementById('forgotBox').classList.remove('hidden');
+  document.getElementById('forgotErr').style.display='none';
+  document.getElementById('forgotErr').textContent='';
+}
+function showLogin(){
+  document.getElementById('forgotBox').classList.add('hidden');
+  document.getElementById('loginBox').classList.remove('hidden');
+}
+
+let resetCode='';
+async function sendResetCode(){
+  const phone=document.getElementById('forgotPhone').value.trim();
+  if(!/^[6-9]\d{9}$/.test(phone)){
+    document.getElementById('forgotErr').textContent='Enter a valid 10-digit WhatsApp number.';
+    document.getElementById('forgotErr').style.display='block';return;
+  }
+  // Check whatsapp number matches restaurant data
+  const {data}=await sb.from('restaurant_data').select('whatsapp,data').eq('id',RESTAURANT_ID).single();
+  const storedPhone=(data?.data?.whatsapp||'').replace(/^91/,'').slice(-10);
+  if(storedPhone!==phone){
+    document.getElementById('forgotErr').textContent='This number is not registered with this restaurant.';
+    document.getElementById('forgotErr').style.display='block';return;
+  }
+  resetCode=Math.floor(100000+Math.random()*900000).toString();
+  const msg=`Your Satvik Admin password reset code is: *${resetCode}*%0AThis code expires in 10 minutes.`;
+  window.open(`https://wa.me/91${phone}?text=${msg}`,'_blank');
+  document.getElementById('forgotStep2').style.display='block';
+  document.getElementById('forgotErr').textContent='';
+  document.getElementById('forgotErr').style.display='none';
+  showToast('Code sent on WhatsApp!');
+  setTimeout(()=>{resetCode='';},600000); // expire in 10 min
+}
+async function confirmReset(){
+  const code=document.getElementById('forgotCode').value.trim();
+  const newPass=document.getElementById('forgotNewPass').value.trim();
+  if(code!==resetCode){
+    document.getElementById('forgotErr').textContent='Incorrect code. Try again.';
+    document.getElementById('forgotErr').style.display='block';return;
+  }
+  if(newPass.length<4){
+    document.getElementById('forgotErr').textContent='Password must be at least 4 characters.';
+    document.getElementById('forgotErr').style.display='block';return;
+  }
+  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
+  if(error){document.getElementById('forgotErr').textContent='Could not update password. Try again.';document.getElementById('forgotErr').style.display='block';return;}
+  showToast('✅ Password updated! Please login with your new password.');
+  resetCode='';
+  showLogin();
 }
 async function loadAll(){
   await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders(),loadWaiters()]);
@@ -529,6 +626,7 @@ async function loadWaiters(){
         <button class="wc-btn wc-stats-btn" onclick="loadWaiterAnalytics('${w.id}','${w.name}')">📊 Stats</button>
         <button class="wc-btn wc-link-btn" onclick="copyWaiterLink('${w.token}','${w.id}')">🔗 Copy Link</button>
         <button class="wc-btn wc-toggle-btn" onclick="toggleWaiter('${w.id}',${w.active})">${w.active?'Deactivate':'Activate'}</button>
+        <button class="wc-btn" style="background:#FDEDEC;color:var(--red);border:1px solid #F5B7B1" onclick="deleteWaiter('${w.id}','${w.name}')">🗑️ Delete</button>
         <span class="wc-copy-toast" id="copied-${w.id}">✅ Copied!</span>
       </div>
     </div>`;
@@ -576,6 +674,14 @@ async function toggleWaiter(id,currentlyActive){
   await loadWaiters();
 }
 
+async function deleteWaiter(id,name){
+  if(!confirm(`Delete waiter "${name}"? This cannot be undone.`))return;
+  const {error}=await sb.from('waiters').delete().eq('id',id);
+  if(error){showToast('Error deleting waiter: '+error.message,true);return;}
+  showToast('✅ Waiter "'+name+'" deleted.');
+  await loadWaiters();
+}
+
 async function loadWaiterAnalytics(waiterId,waiterName){
   document.getElementById('waiterAnalytics').style.display='block';
   document.getElementById('waiterAnalyticsName').textContent=waiterName;
@@ -613,6 +719,24 @@ async function loadWaiterAnalytics(waiterId,waiterName){
 }
 
 function showToast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
+
+async function changePassword(){
+  const current=document.getElementById('cpCurrent').value.trim();
+  const newPass=document.getElementById('cpNew').value.trim();
+  const confirm=document.getElementById('cpConfirm').value.trim();
+  if(!current||!newPass||!confirm){showToast('Fill in all fields.',true);return;}
+  if(newPass.length<4){showToast('New password must be at least 4 characters.',true);return;}
+  if(newPass!==confirm){showToast('New passwords do not match.',true);return;}
+  // Verify current password
+  const {data}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
+  if(current!==data?.password){showToast('Current password is incorrect.',true);return;}
+  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
+  if(error){showToast('Error updating password: '+error.message,true);return;}
+  document.getElementById('cpCurrent').value='';
+  document.getElementById('cpNew').value='';
+  document.getElementById('cpConfirm').value='';
+  showToast('✅ Password updated successfully!');
+}
 
 /* ===== WEEKLY & MONTHLY REPORTS ===== */
 let currentReportTab='week';
