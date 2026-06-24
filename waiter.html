@@ -261,6 +261,9 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
     <div class="tab active" id="tabDash" onclick="switchTab('dash')">
       📋 My Tables<span class="tab-badge" id="activeBadge" style="display:none">0</span>
     </div>
+    <div class="tab" id="tabServed" onclick="switchTab('served')">
+      ✅ Served Today<span class="tab-badge" id="servedBadge" style="display:none;background:#27AE60">0</span>
+    </div>
     <div class="tab" id="tabOrder" onclick="switchTab('order')">➕ New Order</div>
   </div>
 
@@ -269,6 +272,11 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
     <div class="kanban" id="kanban">
       <div class="k-empty" style="padding:40px;text-align:center;color:var(--muted)">Loading orders...</div>
     </div>
+  </div>
+
+  <!-- SERVED TODAY TAB -->
+  <div id="servedTab" style="display:none">
+    <div id="servedList" style="padding:12px"></div>
   </div>
 
   <!-- ORDER TAB -->
@@ -316,7 +324,8 @@ const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let WAITER=null;
 let ASSIGNED_TABLES=[]; // e.g. ['1','2','3','4','5']
 let MENU=[];
-let tableOrders={}; // all active orders from assigned tables
+let tableOrders={}; // active orders
+let servedOrders={}; // served today (bill_pending, served by this waiter today)
 let cart={};
 let selectedTable=null;
 let currentCatIdx=0;
@@ -484,15 +493,29 @@ async function loadTableOrders(){
   }
   const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
   try{
-    const {data}=await sb.from('orders').select('*')
+    // Active orders
+    const {data:active}=await sb.from('orders').select('*')
       .eq('restaurant_id',RESTAURANT_ID)
       .in('table_no',ASSIGNED_TABLES)
-      .in('status',['new','cooking','ready','bill_pending'])
+      .in('status',['new','cooking','ready'])
       .gte('placed_at',todayStart.toISOString())
       .order('placed_at',{ascending:true});
     tableOrders={};
-    (data||[]).forEach(o=>{tableOrders[o.id]=o;});
+    (active||[]).forEach(o=>{tableOrders[o.id]=o;});
+
+    // Served today (bill_pending with served_at set today, by this waiter)
+    const {data:served}=await sb.from('orders').select('*')
+      .eq('restaurant_id',RESTAURANT_ID)
+      .eq('waiter_id',WAITER.id)
+      .eq('status','bill_pending')
+      .not('served_at','is',null)
+      .gte('served_at',todayStart.toISOString())
+      .order('served_at',{ascending:false});
+    servedOrders={};
+    (served||[]).forEach(o=>{servedOrders[o.id]=o;});
+
     renderDashboard();
+    updateServedBadge();
   }catch(e){console.error('Load orders error:',e);}
 }
 
@@ -510,7 +533,7 @@ function renderDashboard(){
   const all=Object.values(tableOrders);
   const newOrds=all.filter(o=>o.status==='new');
   const cooking=all.filter(o=>o.status==='cooking');
-  const ready=all.filter(o=>['ready','bill_pending'].includes(o.status));
+  const ready=all.filter(o=>o.status==='ready');
   const total=all.length;
 
   const badge=document.getElementById('activeBadge');
@@ -546,7 +569,7 @@ function kCol(title,orders,hdrCls,showServeBtn){
 
 function oCard(o,showServeBtn){
   const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  const isReady=['ready','bill_pending'].includes(o.status);
+  const isReady=o.status==='ready';
   const src=getSource(o);
   const items=(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div>${i.name}</div></div>`).join('');
   const serveBtn=showServeBtn?`<button class="serve-btn" onclick="markServed('${o.id}')">✅ Served</button>`:'';
@@ -573,19 +596,65 @@ function oCard(o,showServeBtn){
 /* ── MARK SERVED ── */
 async function markServed(orderId){
   try{
-    // Only mark as served — do NOT set payment_status:'paid' here.
-    // Payment is handled by the counter. Setting paid here would remove
-    // the order from the counter's bill pending panel before payment is collected.
     const {error}=await sb.from('orders').update({
-      status:'bill_pending',
+      status:'bill_pending',        // stays visible on counter for billing
+      payment_status:'pending',     // payment NOT done — counter handles this
       served_at:new Date().toISOString()
     }).eq('id',orderId);
     if(error)throw error;
-    delete tableOrders[orderId];
+    // Move from active to served map
+    if(tableOrders[orderId]){
+      servedOrders[orderId]={...tableOrders[orderId],status:'bill_pending',served_at:new Date().toISOString()};
+      delete tableOrders[orderId];
+    }
     renderDashboard();
-    toast('✅ Order marked as served!');
+    updateServedBadge();
+    toast('✅ Marked served — awaiting payment at counter');
     loadStats();
-  }catch(e){console.error(e);toast('Error marking served: '+e.message,true);}
+  }catch(e){console.error(e);toast('Error: '+e.message,true);}
+}
+
+function updateServedBadge(){
+  const count=Object.keys(servedOrders).length;
+  const badge=document.getElementById('servedBadge');
+  badge.style.display=count>0?'inline':'none';
+  badge.textContent=count;
+}
+
+function renderServedToday(){
+  const list=Object.values(servedOrders).sort((a,b)=>new Date(b.served_at)-new Date(a.served_at));
+  const el=document.getElementById('servedList');
+  if(!list.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:8px">✅</div>
+      <div style="font-weight:700">No orders served yet today</div>
+      <div style="font-size:12px;margin-top:4px">Orders you mark as served will appear here</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML=list.map(o=>{
+    const servedTime=new Date(o.served_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const isPaid=o.payment_status==='paid';
+    const items=(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div>${i.name}</div></div>`).join('');
+    return `<div class="ocard" style="border-left:3px solid ${isPaid?'#27AE60':'#E67E22'};margin-bottom:10px;opacity:${isPaid?'.75':'1'}">
+      <div class="ocard-top">
+        <div>
+          <div class="otable">Table ${o.table_no}</div>
+          <span style="font-size:10px;font-weight:700;color:${isPaid?'#27AE60':'#E67E22'};background:${isPaid?'#EAF6EE':'#FFF3E0'};padding:2px 7px;border-radius:20px">
+            ${isPaid?'✅ Paid':'⏳ Bill Pending'}
+          </span>
+        </div>
+        <div class="ometa">
+          <div class="onum">#${o.order_num||'?'}</div>
+          <div>Served ${servedTime}</div>
+        </div>
+      </div>
+      <div class="oitems">${items}</div>
+      <div class="ocard-foot">
+        <div class="ototal">${o.total>0?'₹'+o.total:''}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ── REALTIME ── */
@@ -606,16 +675,33 @@ function subscribeToOrders(){
       }
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
-      if(!tableOrders[p.new.id])return;
-      const wasReady=!['ready','bill_pending'].includes(tableOrders[p.new.id]?.status);
-      const isNowReady=['ready','bill_pending'].includes(p.new.status);
-      if(['served','dismissed'].includes(p.new.status)){
-        delete tableOrders[p.new.id];
+      const order=p.new;
+      // If order becomes bill_pending (served by waiter) — move active → served
+      if(order.status==='bill_pending'&&tableOrders[order.id]){
+        servedOrders[order.id]=order;
+        delete tableOrders[order.id];
+        updateServedBadge();
+        renderDashboard();
+        return;
+      }
+      // If order gets paid — update servedOrders to reflect payment
+      if(order.payment_status==='paid'&&servedOrders[order.id]){
+        servedOrders[order.id]=order;
+        updateServedBadge();
+        // Refresh served tab if open
+        if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
+        return;
+      }
+      // Normal active order update
+      if(!tableOrders[order.id])return;
+      const wasReady=tableOrders[order.id]?.status==='ready';
+      const isNowReady=order.status==='ready';
+      if(['served','dismissed','paid'].includes(order.status)){
+        delete tableOrders[order.id];
       } else {
-        tableOrders[p.new.id]=p.new;
-        // Only alert when status BECOMES ready (not if already was ready)
-        if(isNowReady&&wasReady){
-          toast(`🍽️ Table ${p.new.table_no} — Order #${p.new.order_num} is READY!`);
+        tableOrders[order.id]=order;
+        if(isNowReady&&!wasReady){
+          toast(`🍽️ Table ${order.table_no} — Order #${order.order_num} is READY!`);
           playChime('ready');
           if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
         }
@@ -649,9 +735,12 @@ function showCallAlert(tableNo){
 /* ── TABS ── */
 function switchTab(tab){
   document.getElementById('tabDash').classList.toggle('active',tab==='dash');
+  document.getElementById('tabServed').classList.toggle('active',tab==='served');
   document.getElementById('tabOrder').classList.toggle('active',tab==='order');
   document.getElementById('dashTab').style.display=tab==='dash'?'block':'none';
+  document.getElementById('servedTab').style.display=tab==='served'?'block':'none';
   document.getElementById('orderTab').style.display=tab==='order'?'block':'none';
+  if(tab==='served') renderServedToday();
 }
 
 /* ── MENU ── */
