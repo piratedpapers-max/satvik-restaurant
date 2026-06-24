@@ -5,13 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Satvik — Admin</title>
 <style>
-:root{--green:#4A7C59;--gold:#D4A017;--brown:#6B3F1E;--cream:#FDFAF3;--steel:#1E1E1E;--paper:#FFFEF9;--line:#E5DCC8;--ink:#1A1208;--muted:#7A6E5F;--red:#C0392B;}
+:root{--green:#4A7C59;--gold:#D4A017;--brown:#6B3F1E;--cream:#F7F3EA;--steel:#1A1A1A;--paper:#FFFEF9;--line:#E5DCC8;--ink:#1A1208;--muted:#7A6E5F;--red:#C0392B;--surface:#FFFFFF;--shadow:0 2px 12px rgba(0,0,0,.07);}
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{background:var(--cream);color:var(--ink);font-family:'Poppins',sans-serif;}
 body{padding-bottom:100px;}
-header{background:var(--steel);color:#fff;padding:16px 18px;border-bottom:3px solid var(--green);}
-header h1{font-family:'Yatra One',sans-serif;color:var(--gold);font-size:20px;}
-header p{font-size:10px;color:var(--green);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-top:1px;}
+header{background:var(--steel);color:#fff;padding:14px 20px;border-bottom:3px solid var(--green);display:flex;align-items:center;justify-content:space-between;}
+header .h-left h1{font-family:'Yatra One',sans-serif;color:var(--gold);font-size:19px;}
+header .h-left p{font-size:10px;color:var(--green);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-top:1px;}
+header .h-right{display:flex;gap:8px;align-items:center;}
+.hdr-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;padding:7px 13px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;transition:background .2s;}
+.hdr-btn:hover{background:rgba(255,255,255,.2);}
+.hdr-btn.wa{background:#25D366;border-color:#25D366;}
+.hdr-btn.wa:hover{background:#1da851;}
 .login-box{max-width:340px;margin:60px auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:26px 22px;text-align:center;}
 .login-box h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:20px;margin-bottom:5px;}
 .login-box p{font-size:12px;color:var(--muted);margin-bottom:16px;}
@@ -19,10 +24,16 @@ header p{font-size:10px;color:var(--green);letter-spacing:2px;text-transform:upp
 .login-box button{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;}
 .login-err{color:var(--red);font-size:12px;margin-top:6px;display:none;}
 main{max-width:720px;margin:0 auto;padding:18px 14px;}
-.kitchen-link{display:block;background:var(--steel);color:var(--gold);text-decoration:none;padding:13px;border-radius:11px;text-align:center;font-weight:700;font-size:13px;margin-bottom:14px;}
-.panel{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;}
-.panel h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:17px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.quick-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.kitchen-link{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--steel);color:var(--gold);text-decoration:none;padding:13px;border-radius:11px;text-align:center;font-weight:700;font-size:13px;transition:opacity .2s;}
+.kitchen-link:hover{opacity:.85;}
+@media(max-width:480px){.quick-links{grid-template-columns:1fr;}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow);}
+.panel h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:17px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
 .panel h2::after{content:"";flex:1;height:1px;background:repeating-linear-gradient(to right,var(--line) 0 5px,transparent 5px 10px);}
+.panel-accent{border-left:3px solid var(--green);}
+.panel-accent-gold{border-left:3px solid var(--gold);}
+.panel-accent-blue{border-left:3px solid #2980B9;}
 label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;margin-top:12px;}
 label:first-of-type{margin-top:0;}
 input[type="text"],input[type="number"],textarea{width:100%;padding:10px 11px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'Poppins',sans-serif;background:#fff;}
@@ -129,11 +140,12 @@ textarea{resize:vertical;min-height:55px;}
 .img-remove-btn{background:#FDEDEC;color:var(--red);border:1.5px solid #F5B7B1;border-radius:7px;padding:7px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Poppins',sans-serif;display:none;}
 .img-remove-btn.show{display:block;}
 .add-cat-btn{width:100%;padding:9px;border:1.5px dashed var(--brown);background:none;color:var(--brown);border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;}
-.save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--steel);padding:12px 14px;display:flex;gap:8px;z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,.25);}
-.save-bar button{flex:1;padding:13px;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;}
+.save-bar{position:fixed;bottom:0;left:0;right:0;background:var(--steel);padding:12px 16px;display:flex;gap:8px;z-index:100;box-shadow:0 -6px 24px rgba(0,0,0,.3);}
+.save-bar button{flex:1;padding:13px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;transition:opacity .2s;}
+.save-bar button:hover{opacity:.9;}
 .save-btn{background:var(--gold);color:var(--steel);}
-.save-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
-.preview-btn{background:transparent;border:1.5px solid #fff;color:#fff;}
+.save-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;opacity:1;}
+.preview-btn{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.3);color:#fff;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:12px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
@@ -143,6 +155,23 @@ textarea{resize:vertical;min-height:55px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .watermark{text-align:center;padding:14px;font-size:10.5px;color:var(--muted);letter-spacing:.5px;}
 .watermark a{color:var(--muted);text-decoration:none;font-weight:600;}
+/* GST / BILL SETTINGS */
+.gst-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.gst-opt{flex:1;min-width:60px;}
+.gst-opt input[type="radio"]{display:none;}
+.gst-opt label{display:block;text-align:center;padding:9px 6px;border:1.5px solid var(--line);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--muted);}
+.gst-opt input:checked+label{background:var(--green);border-color:var(--green);color:#fff;}
+/* DAILY REPORT */
+.report-preview{background:#0D1F14;border-radius:10px;padding:14px;font-family:'Courier New',monospace;font-size:11px;line-height:1.7;color:#A8D5B5;margin-top:12px;white-space:pre-wrap;max-height:240px;overflow-y:auto;}
+.wa-report-btn{width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;transition:background .2s;}
+.wa-report-btn:hover{background:#1da851;}
+.wa-report-btn:disabled{background:#ccc;cursor:not-allowed;}
+/* IMPROVED ANALYTICS CARDS */
+.a-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;box-shadow:var(--shadow);}
+.a-card.highlight{border-color:var(--green);background:linear-gradient(135deg,#EAF6EE,#FFFEF9);}
+/* SECTION DIVIDER */
+.section-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;padding:8px 0 4px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+
 /* ── MOBILE RESPONSIVE ── */
 @media(max-width:600px){
   main{padding:12px 10px 0;}
@@ -196,23 +225,30 @@ textarea{resize:vertical;min-height:55px;}
 <!-- FORGOT PASSWORD BOX -->
 <div class="login-box hidden" id="forgotBox" style="margin-top:12px">
   <h2 style="font-size:16px">Reset Password</h2>
-  <p style="margin-bottom:10px">Enter your WhatsApp number to receive a reset code.</p>
-  <input type="tel" id="forgotPhone" placeholder="WhatsApp number (10 digits)" maxlength="10"/>
-  <button id="forgotSendBtn" onclick="sendResetCode()">Send Reset Code</button>
+  <p style="margin-bottom:14px">A reset code will be sent to your registered WhatsApp number.</p>
+  <button id="forgotSendBtn" onclick="sendResetCode()" style="width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;">Send Reset Code on WhatsApp</button>
   <div id="forgotStep2" style="display:none;margin-top:12px">
     <input type="text" id="forgotCode" placeholder="Enter 6-digit code" maxlength="6" style="margin-bottom:8px"/>
     <input type="password" id="forgotNewPass" placeholder="New password" style="margin-bottom:8px"/>
-    <button onclick="confirmReset()">Set New Password</button>
+    <button onclick="confirmReset()" style="width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;">Set New Password</button>
   </div>
-  <div class="login-err" id="forgotErr"></div>
+  <div class="login-err" id="forgotErr" style="display:none"></div>
   <div style="margin-top:10px;text-align:center">
     <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showLogin()">← Back to Login</span>
   </div>
 </div>
 <div id="adminPanel" class="hidden">
-  <header><h1>Satvik Restaurant — Admin</h1><p>Menu Manager & Analytics</p></header>
+  <header>
+    <div class="h-left"><h1>Satvik Restaurant — Admin</h1><p>Menu Manager & Analytics</p></div>
+    <div class="h-right">
+      <button class="hdr-btn wa" onclick="openDailyReport()">📊 Daily Report</button>
+    </div>
+  </header>
   <main>
-    <a class="kitchen-link" href="kitchen.html" target="_blank">🍳 Kitchen Screen →</a><a class="kitchen-link" style="background:#4A0E6B;margin-top:6px" href="counter.html" target="_blank">💰 Counter & Billing →</a>
+    <div class="quick-links">
+      <a class="kitchen-link" href="kitchen.html" target="_blank">🍳 Kitchen Screen →</a>
+      <a class="kitchen-link" style="background:#4A0E6B;" href="counter.html" target="_blank">💰 Counter & Billing →</a>
+    </div>
     <div class="panel">
       <h2>📋 Today's Orders</h2>
       <div class="orders-summary">
@@ -322,6 +358,37 @@ textarea{resize:vertical;min-height:55px;}
       <button class="gen-btn" style="margin-top:12px" onclick="changePassword()">🔑 Update Password</button>
     </div>
 
+    <!-- DAILY WHATSAPP REPORT PANEL -->
+    <div class="panel panel-accent" id="dailyReportPanel" style="display:none">
+      <h2>📊 Daily Sales Report</h2>
+      <div class="section-label">Preview</div>
+      <div class="report-preview" id="reportPreview">Generating report...</div>
+      <button class="wa-report-btn" id="waReportBtn" onclick="sendDailyReport()">
+        <span>📲</span> Send on WhatsApp
+      </button>
+      <p class="hint" style="margin-top:8px;text-align:center">Opens WhatsApp with today's summary pre-filled. Send it to yourself or your team.</p>
+    </div>
+
+    <!-- BILL SETTINGS -->
+    <div class="panel panel-accent-gold">
+      <h2>🧾 Bill Settings</h2>
+      <div class="section-label">GST Configuration</div>
+      <div class="gst-row">
+        <div class="gst-opt"><input type="radio" name="gst" id="gst0" value="0" checked/><label for="gst0">0%<br/><span style="font-size:9px;font-weight:400">No GST</span></label></div>
+        <div class="gst-opt"><input type="radio" name="gst" id="gst5" value="5"/><label for="gst5">5%<br/><span style="font-size:9px;font-weight:400">Restaurant</span></label></div>
+        <div class="gst-opt"><input type="radio" name="gst" id="gst12" value="12"/><label for="gst12">12%<br/><span style="font-size:9px;font-weight:400">AC + Liquor</span></label></div>
+        <div class="gst-opt"><input type="radio" name="gst" id="gst18" value="18"/><label for="gst18">18%<br/><span style="font-size:9px;font-weight:400">Hotel</span></label></div>
+      </div>
+      <p class="hint" style="margin-top:6px">Most standalone restaurants: 5%. No AC + turnover under ₹75L: 0%.</p>
+      <label style="margin-top:14px">GSTIN (GST Registration Number)</label>
+      <input type="text" id="billGSTIN" placeholder="e.g. 22AAAAA0000A1Z5 (leave empty if unregistered)" maxlength="15"/>
+      <label>Restaurant Address (for bill header)</label>
+      <textarea id="billAddress" placeholder="e.g. Near Kashi Vishwanath, Godowlia, Varanasi — 221001" style="min-height:50px"></textarea>
+      <label>Bill Footer Message</label>
+      <input type="text" id="billFooter" placeholder="e.g. Thank you for dining! Visit again 🙏"/>
+      <p class="hint">This appears at the bottom of every printed and WhatsApp bill.</p>
+    </div>
+
     <div class="panel">
       <h2>Restaurant Settings</h2>
       <label>Restaurant Name</label><input type="text" id="rName"/>
@@ -394,26 +461,35 @@ function showLogin(){
 
 let resetCode='';
 async function sendResetCode(){
-  const phone=document.getElementById('forgotPhone').value.trim();
-  if(!/^[6-9]\d{9}$/.test(phone)){
-    document.getElementById('forgotErr').textContent='Enter a valid 10-digit WhatsApp number.';
-    document.getElementById('forgotErr').style.display='block';return;
+  const btn=document.getElementById('forgotSendBtn');
+  btn.textContent='Sending...';btn.disabled=true;
+  try{
+    const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    if(error||!data){
+      showForgotErr('Could not connect to database. Try again.');return;
+    }
+    const rawPhone=(data?.data?.whatsapp||'').replace(/\D/g,'');
+    const phone10=rawPhone.replace(/^91/,'').slice(-10);
+    if(!phone10||phone10.length!==10){
+      showForgotErr('No WhatsApp number registered in admin settings. Please contact support.');return;
+    }
+    resetCode=Math.floor(100000+Math.random()*900000).toString();
+    const msg=`Your Satvik Admin password reset code is: *${resetCode}*%0AThis code expires in 10 minutes.`;
+    window.open(`https://wa.me/91${phone10}?text=${msg}`,'_blank');
+    document.getElementById('forgotStep2').style.display='block';
+    document.getElementById('forgotErr').style.display='none';
+    showToast('Code sent! Check WhatsApp.');
+    setTimeout(()=>{resetCode='';},600000);
+  }catch(e){
+    showForgotErr('Error: '+e.message);
+  }finally{
+    btn.textContent='Send Reset Code on WhatsApp';btn.disabled=false;
   }
-  // Check whatsapp number matches restaurant data
-  const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-  const storedPhone=(data?.data?.whatsapp||'').replace(/\D/g,'').replace(/^91/,'').slice(-10);
-  if(storedPhone!==phone){
-    document.getElementById('forgotErr').textContent='This number is not registered with this restaurant.';
-    document.getElementById('forgotErr').style.display='block';return;
-  }
-  resetCode=Math.floor(100000+Math.random()*900000).toString();
-  const msg=`Your Satvik Admin password reset code is: *${resetCode}*%0AThis code expires in 10 minutes.`;
-  window.open(`https://wa.me/91${phone}?text=${msg}`,'_blank');
-  document.getElementById('forgotStep2').style.display='block';
-  document.getElementById('forgotErr').textContent='';
-  document.getElementById('forgotErr').style.display='none';
-  showToast('Code sent on WhatsApp!');
-  setTimeout(()=>{resetCode='';},600000); // expire in 10 min
+}
+function showForgotErr(msg){
+  const el=document.getElementById('forgotErr');
+  el.textContent=msg;el.style.display='block';
+}
 }
 async function confirmReset(){
   const code=document.getElementById('forgotCode').value.trim();
@@ -529,6 +605,13 @@ function renderForm(){
   document.getElementById('rName').value=DATA.restaurantName||'';document.getElementById('rSub').value=DATA.restaurantSub||'';
   document.getElementById('rWA').value=DATA.whatsapp||'';document.getElementById('rGR').value=DATA.googleReview||'';
   document.getElementById('rSpecial').value=DATA.todaySpecial||'';
+  // Bill settings
+  const gstVal=String(DATA.gstPercent||0);
+  const gstEl=document.querySelector(`input[name="gst"][value="${gstVal}"]`);
+  if(gstEl)gstEl.checked=true;
+  document.getElementById('billGSTIN').value=DATA.gstNumber||'';
+  document.getElementById('billAddress').value=DATA.billAddress||'';
+  document.getElementById('billFooter').value=DATA.billFooter||'Thank you for dining with us! 🙏 Visit again soon.';
   const cats=document.getElementById('cats');cats.innerHTML='';(DATA.menu||[]).forEach(cat=>renderCat(cat));
 }
 function renderCat(cat){
@@ -612,7 +695,20 @@ function collectData(){
     const items=[];b.querySelectorAll('.item-row').forEach(r=>{const name=r.querySelector('.iname').value.trim();if(!name)return;const img=r.querySelector('.iimg')?.value.trim()||'';items.push({name,desc:r.querySelector('.idesc').value.trim(),price:parseFloat(r.querySelector('.iprice').value)||0,veg:r.querySelector('.iveg').checked,available:r.querySelector('.iavail').checked,image:img||undefined});});
     menu.push({category,items});
   });
-  return{restaurantName:document.getElementById('rName').value.trim(),restaurantSub:document.getElementById('rSub').value.trim(),whatsapp:document.getElementById('rWA').value.trim(),googleReview:document.getElementById('rGR').value.trim(),todaySpecial:document.getElementById('rSpecial').value.trim(),menu};
+  const gstChecked=document.querySelector('input[name="gst"]:checked');
+  return{
+    restaurantName:document.getElementById('rName').value.trim(),
+    restaurantSub:document.getElementById('rSub').value.trim(),
+    whatsapp:document.getElementById('rWA').value.trim(),
+    googleReview:document.getElementById('rGR').value.trim(),
+    todaySpecial:document.getElementById('rSpecial').value.trim(),
+    gstPercent:parseFloat(gstChecked?.value||0),
+    gstNumber:document.getElementById('billGSTIN').value.trim(),
+    billAddress:document.getElementById('billAddress').value.trim(),
+    billFooter:document.getElementById('billFooter').value.trim(),
+    totalTables:DATA.totalTables||12,
+    menu
+  };
 }
 document.getElementById('saveBtn').addEventListener('click',async()=>{
   const saveBtn=document.getElementById('saveBtn');saveBtn.disabled=true;saveBtn.textContent='Saving...';
@@ -772,6 +868,113 @@ async function changePassword(){
   document.getElementById('cpNew').value='';
   document.getElementById('cpConfirm').value='';
   showToast('✅ Password updated successfully!');
+}
+
+/* ===== DAILY WHATSAPP REPORT ===== */
+async function openDailyReport(){
+  const panel=document.getElementById('dailyReportPanel');
+  const isOpen=panel.style.display!=='none';
+  if(isOpen){panel.style.display='none';return;}
+  panel.style.display='block';
+  panel.scrollIntoView({behavior:'smooth'});
+  document.getElementById('reportPreview').textContent='⏳ Generating report...';
+  document.getElementById('waReportBtn').disabled=true;
+
+  try{
+    const now=new Date();
+    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+    const {data,error}=await sb.from('orders')
+      .select('total,items,table_no,payment_method,payment_status,status,waiter_id,waiter_name,note,placed_at,order_num')
+      .eq('restaurant_id',RESTAURANT_ID)
+      .eq('payment_status','paid')
+      .gte('placed_at',todayStart.toISOString());
+    if(error)throw error;
+
+    const orders=data||[];
+    const totalRev=orders.reduce((s,o)=>s+(o.total||0),0);
+    const totalOrders=orders.length;
+    const avgOrder=totalOrders>0?Math.round(totalRev/totalOrders):0;
+
+    // Payment breakdown
+    const cash=orders.filter(o=>o.payment_method==='cash').reduce((s,o)=>s+(o.total||0),0);
+    const upi=orders.filter(o=>o.payment_method==='upi').reduce((s,o)=>s+(o.total||0),0);
+    const card=orders.filter(o=>o.payment_method==='card').reduce((s,o)=>s+(o.total||0),0);
+    const untagged=totalRev-cash-upi-card;
+
+    // Dine-in vs parcel
+    const parcelOrders=orders.filter(o=>String(o.table_no).startsWith('Parcel'));
+    const dineOrders=orders.filter(o=>!String(o.table_no).startsWith('Parcel'));
+    const parcelRev=parcelOrders.reduce((s,o)=>s+(o.total||0),0);
+    const dineRev=dineOrders.reduce((s,o)=>s+(o.total||0),0);
+
+    // Top dishes
+    const dishCounts={};
+    orders.forEach(o=>(o.items||[]).forEach(i=>{
+      if(!i.name||i.name.includes('WAITER'))return;
+      dishCounts[i.name]=(dishCounts[i.name]||0)+(i.qty||1);
+    }));
+    const topDishes=Object.entries(dishCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    // Source breakdown
+    const qrOrders=orders.filter(o=>!o.waiter_id&&!(o.note||'').includes('counter')&&!(o.note||'').includes('Parcel')).length;
+    const waiterOrds=orders.filter(o=>!!o.waiter_id).length;
+    const counterOrds=orders.filter(o=>(o.note||'').includes('counter')||(o.note||'').includes('Parcel')).length;
+
+    // Tables served
+    const uniqueTables=new Set(dineOrders.map(o=>o.table_no));
+
+    const dateStr=now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+    const timeStr=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+
+    const lines=[
+      `📊 ${DATA?.restaurantName||'Satvik Restaurant'}`,
+      `Daily Sales Report — ${dateStr}`,
+      `Generated at ${timeStr}`,
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `💰 REVENUE`,
+      `   Total:     ₹${totalRev.toLocaleString('en-IN')}`,
+      `   Orders:    ${totalOrders}`,
+      `   Avg Order: ₹${avgOrder}`,
+      ``,
+      `💳 PAYMENT SPLIT`,
+      `   Cash:  ₹${cash.toLocaleString('en-IN')}`,
+      `   UPI:   ₹${upi.toLocaleString('en-IN')}`,
+      `   Card:  ₹${card.toLocaleString('en-IN')}`,
+      untagged>0?`   Other: ₹${untagged.toLocaleString('en-IN')}`:'',
+      ``,
+      `🍽️ DINE-IN vs PARCEL`,
+      `   Dine-in: ₹${dineRev.toLocaleString('en-IN')} (${dineOrders.length} orders, ${uniqueTables.size} tables)`,
+      `   Parcel:  ₹${parcelRev.toLocaleString('en-IN')} (${parcelOrders.length} orders)`,
+      ``,
+      `📱 ORDER SOURCE`,
+      `   QR Self-Order: ${qrOrders}`,
+      `   Waiter:        ${waiterOrds}`,
+      `   Counter/Walk-in: ${counterOrds}`,
+      ``,
+      topDishes.length?`🏆 TOP DISHES`:'',
+      ...topDishes.map(([name,qty],i)=>`   ${i+1}. ${name} — ${qty}x`),
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━━━`,
+      `Powered by HK Digital Solutions`
+    ].filter(l=>l!==undefined&&l!=='');
+
+    const reportText=lines.join('\n');
+    document.getElementById('reportPreview').textContent=reportText;
+    document.getElementById('waReportBtn').disabled=false;
+    document.getElementById('waReportBtn').dataset.report=reportText;
+  }catch(e){
+    document.getElementById('reportPreview').textContent='Error generating report: '+e.message;
+    console.error(e);
+  }
+}
+
+function sendDailyReport(){
+  const report=document.getElementById('waReportBtn').dataset.report;
+  if(!report)return;
+  const phone=(DATA?.whatsapp||'').replace(/\D/g,'');
+  const wa=phone?`https://wa.me/${phone}?text=${encodeURIComponent(report)}`:`https://wa.me/?text=${encodeURIComponent(report)}`;
+  window.open(wa,'_blank');
+  showToast('✅ Opening WhatsApp with report!');
 }
 
 /* ===== WEEKLY & MONTHLY REPORTS ===== */

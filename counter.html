@@ -30,7 +30,8 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .clock{font-size:12px;color:var(--muted);font-weight:600;}
 .lock-btn{background:none;border:1px solid var(--line);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Poppins',sans-serif;}
-.new-order-btn{background:var(--green);color:#fff;border:none;padding:8px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;}
+.new-order-btn{background:var(--green);color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;transition:opacity .2s;}
+.new-order-btn:hover{opacity:.85;}
 
 /* NEW ORDER MODAL */
 .no-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:none;align-items:center;justify-content:center;padding:16px;}
@@ -82,7 +83,8 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line);}
 @media(max-width:600px){.stats{grid-template-columns:repeat(3,1fr);}}
-.stat{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;}
+.stat{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center;transition:transform .15s;}
+.stat:hover{transform:scale(1.02);}
 .sv{font-size:18px;font-weight:700;color:var(--gold);}
 .sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:1px;}
 .sv.purple{color:var(--purple);}
@@ -111,7 +113,8 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 .pcnt{background:rgba(255,255,255,.1);padding:1px 8px;border-radius:999px;font-size:11px;}
 
 /* TABLE CARDS */
-.tcard{background:var(--card2);border-radius:10px;overflow:hidden;animation:fadeIn .25s ease;border:1px solid var(--line);display:flex;flex-direction:column;}
+.tcard{background:var(--card2);border-radius:12px;overflow:hidden;animation:fadeIn .25s ease;border:1px solid var(--line);display:flex;flex-direction:column;transition:transform .15s;}
+.tcard:hover{transform:translateY(-1px);}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .tcard.bill{border-color:var(--purple);}
 .tcard.active{border-color:#27AE60;}
@@ -330,7 +333,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
     <span>TOTAL</span><span id="printTotal">Rs 0</span>
   </div>
   <div style="border-top:1px dashed #000;margin:6px 0"></div>
-  <div style="text-align:center;margin-top:8px;font-size:11px">Thank you for dining with us!</div>
+  <div style="text-align:center;margin-top:8px;font-size:11px" id="printFooter">Thank you for dining with us!</div>
   <div style="text-align:center;margin-top:10px;font-size:9px">Powered by HK Digital Solutions</div>
   <div style="margin-top:6px"></div>
 </div>
@@ -344,7 +347,7 @@ const COUNTER_PASSWORD="counter2026"; // ← Change this to a secure password
 
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},paidToday=[],payBreakdown={cash:0,upi:0,card:0};
-let MENU_DATA=null,RESTAURANT_INFO={name:'Satvik Restaurant',sub:'Pure Veg · Varanasi',review:''};
+let MENU_DATA=null,RESTAURANT_INFO={name:'Satvik Restaurant',sub:'Pure Veg · Varanasi',review:'',gstPercent:0,gstNumber:'',billAddress:'',billFooter:'Thank you for dining with us! 🙏'};
 let noCart={}; // new order cart: {itemKey: {item, qty}}
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 
@@ -416,7 +419,15 @@ async function loadAll(){
     if(menuErr) console.error('Background menu load error:',menuErr);
     if(rdata?.data?.menu?.length){
       MENU_DATA=rdata.data.menu;
-      RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
+      RESTAURANT_INFO={
+        name:rdata.data.restaurantName||'Satvik Restaurant',
+        sub:rdata.data.restaurantSub||'',
+        review:rdata.data.googleReview||'',
+        gstPercent:rdata.data.gstPercent||0,
+        gstNumber:rdata.data.gstNumber||'',
+        billAddress:rdata.data.billAddress||'',
+        billFooter:rdata.data.billFooter||'Thank you for dining with us! 🙏'
+      };
     }
   }catch(e){console.error('Menu load error:',e);}
 
@@ -642,7 +653,15 @@ async function openNewOrderModal(){
       if(error){console.error('Supabase error:',error);throw error;}
       if(rdata?.data?.menu?.length){
         MENU_DATA=rdata.data.menu;
-        RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
+        RESTAURANT_INFO={
+        name:rdata.data.restaurantName||'Satvik Restaurant',
+        sub:rdata.data.restaurantSub||'',
+        review:rdata.data.googleReview||'',
+        gstPercent:rdata.data.gstPercent||0,
+        gstNumber:rdata.data.gstNumber||'',
+        billAddress:rdata.data.billAddress||'',
+        billFooter:rdata.data.billFooter||'Thank you for dining with us! 🙏'
+      };
       }else{
         console.warn('Menu data structure was:',rdata);
         toast('No menu found. Please add menu items in Admin panel first.',true);
@@ -804,10 +823,26 @@ async function submitNewOrder(){
 }
 
 /* ===== PRINT BILL ===== */
+function calcGST(subtotal,gstPct){
+  if(!gstPct)return{subtotal,gstAmt:0,total:subtotal};
+  // GST inclusive pricing (most Indian restaurants include GST in menu price)
+  const gstAmt=Math.round(subtotal*gstPct/(100+gstPct));
+  return{subtotal,gstAmt,total:subtotal};
+}
+
 function printTableBill(tableNo,allItems,grandTotal){
+  const {gstAmt}=calcGST(grandTotal,RESTAURANT_INFO.gstPercent);
+  const gstPct=RESTAURANT_INFO.gstPercent;
+  const isParcel=String(tableNo).startsWith('Parcel');
+
   document.getElementById('printRestName').textContent=RESTAURANT_INFO.name;
   document.getElementById('printRestSub').textContent=(RESTAURANT_INFO.sub||'').replace(/·/g,'-');
-  const isParcel=String(tableNo).startsWith('Parcel');
+  if(RESTAURANT_INFO.billAddress){
+    document.getElementById('printRestSub').textContent+='\n'+(RESTAURANT_INFO.billAddress);
+  }
+  if(RESTAURANT_INFO.gstNumber){
+    document.getElementById('printRestSub').textContent+='\nGSTIN: '+RESTAURANT_INFO.gstNumber;
+  }
   document.getElementById('printTable').textContent=isParcel?tableNo:'Table '+tableNo;
   document.getElementById('printDate').textContent=new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   document.getElementById('printLines').innerHTML=Object.values(allItems).map(i=>
@@ -815,8 +850,11 @@ function printTableBill(tableNo,allItems,grandTotal){
       <span style="flex:1">${i.name} x${i.qty}</span>
       <span style="white-space:nowrap">Rs ${i.total}</span>
     </div>`
-  ).join('');
+  ).join('')+(gstPct>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px dashed #000;margin-top:4px;font-size:11px"><span>Subtotal (incl. ${gstPct}% GST)</span><span>Rs ${grandTotal}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;padding:1px 0"><span>GST @${gstPct}% (incl.)</span><span>Rs ${gstAmt}</span></div>`:'');
   document.getElementById('printTotal').textContent='Rs '+grandTotal;
+  // Footer
+  const footerEl=document.getElementById('printFooter');
+  if(footerEl) footerEl.textContent=RESTAURANT_INFO.billFooter||'Thank you!';
   window.print();
 }
 
@@ -841,11 +879,25 @@ function confirmSendWhatsApp(){
   }
   if(!waPendingData)return;
   const {tableNo,allItems,grandTotal}=waPendingData;
-  let msg=`🙏 *${RESTAURANT_INFO.name}*\n${RESTAURANT_INFO.sub}\n\n*Your Bill — Table ${tableNo}*\n`;
+  const {gstAmt}=calcGST(grandTotal,RESTAURANT_INFO.gstPercent);
+  const gstPct=RESTAURANT_INFO.gstPercent;
+  const isParcel=String(tableNo).startsWith('Parcel');
+
+  let msg=`🙏 *${RESTAURANT_INFO.name}*\n${RESTAURANT_INFO.sub||''}`;
+  if(RESTAURANT_INFO.billAddress) msg+=`\n${RESTAURANT_INFO.billAddress}`;
+  if(RESTAURANT_INFO.gstNumber) msg+=`\nGSTIN: ${RESTAURANT_INFO.gstNumber}`;
+  msg+=`\n\n*Your Bill — ${isParcel?tableNo:'Table '+tableNo}*\n`;
+  msg+=`━━━━━━━━━━━━━━━━━━━\n`;
   Object.values(allItems).forEach(i=>{msg+=`${i.name} ×${i.qty} — ₹${i.total}\n`;});
-  msg+=`\n*Total: ₹${grandTotal}*\n\nThank you for dining with us! 🙏`;
-  if(RESTAURANT_INFO.review) msg+=`\n\n⭐ Loved the food? Rate us: ${RESTAURANT_INFO.review}`;
-  msg+=`\n\n🎉 See you again soon!`;
+  msg+=`━━━━━━━━━━━━━━━━━━━\n`;
+  if(gstPct>0){
+    msg+=`Subtotal: ₹${grandTotal}\n`;
+    msg+=`GST @${gstPct}% (incl.): ₹${gstAmt}\n`;
+  }
+  msg+=`*Total: ₹${grandTotal}*\n\n`;
+  msg+=`${RESTAURANT_INFO.billFooter||'Thank you for dining with us! 🙏'}`;
+  if(RESTAURANT_INFO.review) msg+=`\n\n⭐ Rate us: ${RESTAURANT_INFO.review}`;
+
   const waLink=`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
   const a=document.createElement('a');
   a.href=waLink;a.target='_blank';a.rel='noopener';
