@@ -17,11 +17,16 @@ header .h-right{display:flex;gap:8px;align-items:center;}
 .hdr-btn:hover{background:rgba(255,255,255,.2);}
 .hdr-btn.wa{background:#25D366;border-color:#25D366;}
 .hdr-btn.wa:hover{background:#1da851;}
-.login-box{max-width:340px;margin:60px auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:26px 22px;text-align:center;}
-.login-box h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:20px;margin-bottom:5px;}
-.login-box p{font-size:12px;color:var(--muted);margin-bottom:16px;}
-.login-box input{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;margin-bottom:10px;font-family:'Poppins',sans-serif;}
-.login-box button{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;}
+.login-box{max-width:360px;width:calc(100% - 32px);margin:0 auto;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:32px 28px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.1);}
+.login-box h2{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:22px;margin-bottom:5px;}
+.login-box p{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.login-box input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;margin-bottom:12px;font-family:'Poppins',sans-serif;background:var(--cream);}
+.login-box input:focus{outline:none;border-color:var(--green);}
+.login-box button{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;transition:opacity .2s;}
+.login-box button:hover{opacity:.9;}
+/* Full-screen login wrapper */
+#loginWrapper{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--cream);z-index:200;padding:16px;}
+#loginWrapper .watermark{position:absolute;bottom:18px;left:0;right:0;}
 .login-err{color:var(--red);font-size:12px;margin-top:6px;display:none;}
 main{max-width:720px;margin:0 auto;padding:18px 14px;}
 .quick-links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
@@ -212,6 +217,7 @@ textarea{resize:vertical;min-height:55px;}
 </head>
 <body>
 <div class="loading hidden" id="loading"><div class="spin"></div></div>
+<div id="loginWrapper">
 <div class="login-box" id="loginBox">
   <h2>Admin Login</h2><p>Menu Manager</p>
   <input type="password" id="loginPass" placeholder="Enter admin password"/>
@@ -236,6 +242,8 @@ textarea{resize:vertical;min-height:55px;}
   <div style="margin-top:10px;text-align:center">
     <span style="font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="showLogin()">← Back to Login</span>
   </div>
+</div>
+<div class="watermark">Powered by <a href="https://hkdigitalsolutions.in" target="_blank">HK Digital Solutions</a></div>
 </div>
 <div id="adminPanel" class="hidden">
   <header>
@@ -361,12 +369,21 @@ textarea{resize:vertical;min-height:55px;}
     <!-- DAILY WHATSAPP REPORT PANEL -->
     <div class="panel panel-accent" id="dailyReportPanel" style="display:none">
       <h2>📊 Daily Sales Report</h2>
-      <div class="section-label">Preview</div>
-      <div class="report-preview" id="reportPreview">Generating report...</div>
-      <button class="wa-report-btn" id="waReportBtn" onclick="sendDailyReport()">
-        <span>📲</span> Send on WhatsApp
-      </button>
-      <p class="hint" style="margin-top:8px;text-align:center">Opens WhatsApp with today's summary pre-filled. Send it to yourself or your team.</p>
+      <div id="reportLoading" style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
+        <div style="font-size:28px;margin-bottom:8px">⏳</div>Fetching today's data...
+      </div>
+      <!-- PDF PREVIEW CARD (hidden until data loads) -->
+      <div id="reportCard" style="display:none;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)">
+        <!-- rendered by buildReportCard() -->
+      </div>
+      <div id="reportActions" style="display:none;margin-top:12px;display:none;gap:8px;flex-direction:column">
+        <button onclick="downloadReportPDF()" style="width:100%;padding:13px;background:#1A1A1A;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+          ⬇️ Download PDF
+        </button>
+        <button onclick="shareReportWhatsApp()" style="width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+          📲 Share via WhatsApp
+        </button>
+      </div>
     </div>
 
     <!-- BILL SETTINGS -->
@@ -436,7 +453,7 @@ async function tryLogin(){
     const {data,error}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
     if(error||!data){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
     if(pass===data.password){
-      document.getElementById('loginBox').classList.add('hidden');
+      document.getElementById('loginWrapper').style.display='none';
       document.getElementById('adminPanel').classList.remove('hidden');
       document.getElementById('loading').classList.remove('hidden');
       loadAll();
@@ -450,8 +467,7 @@ async function tryLogin(){
 
 function showForgotPassword(){
   document.getElementById('loginBox').classList.add('hidden');
-  document.getElementById('forgotBox').classList.remove('hidden');
-  document.getElementById('forgotErr').style.display='none';
+  document.getElementById('forgotBox').classList.remove('hidden');  document.getElementById('forgotErr').style.display='none';
   document.getElementById('forgotErr').textContent='';
 }
 function showLogin(){
@@ -489,7 +505,6 @@ async function sendResetCode(){
 function showForgotErr(msg){
   const el=document.getElementById('forgotErr');
   el.textContent=msg;el.style.display='block';
-}
 }
 async function confirmReset(){
   const code=document.getElementById('forgotCode').value.trim();
@@ -871,20 +886,23 @@ async function changePassword(){
 }
 
 /* ===== DAILY WHATSAPP REPORT ===== */
+let REPORT_DATA=null;
+
 async function openDailyReport(){
   const panel=document.getElementById('dailyReportPanel');
   const isOpen=panel.style.display!=='none';
   if(isOpen){panel.style.display='none';return;}
   panel.style.display='block';
   panel.scrollIntoView({behavior:'smooth'});
-  document.getElementById('reportPreview').textContent='⏳ Generating report...';
-  document.getElementById('waReportBtn').disabled=true;
+  document.getElementById('reportLoading').style.display='block';
+  document.getElementById('reportCard').style.display='none';
+  document.getElementById('reportActions').style.display='none';
 
   try{
     const now=new Date();
     const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
     const {data,error}=await sb.from('orders')
-      .select('total,items,table_no,payment_method,payment_status,status,waiter_id,waiter_name,note,placed_at,order_num')
+      .select('total,items,table_no,payment_method,payment_status,status,waiter_id,note,placed_at,order_num')
       .eq('restaurant_id',RESTAURANT_ID)
       .eq('payment_status','paid')
       .gte('placed_at',todayStart.toISOString());
@@ -894,87 +912,219 @@ async function openDailyReport(){
     const totalRev=orders.reduce((s,o)=>s+(o.total||0),0);
     const totalOrders=orders.length;
     const avgOrder=totalOrders>0?Math.round(totalRev/totalOrders):0;
-
-    // Payment breakdown
     const cash=orders.filter(o=>o.payment_method==='cash').reduce((s,o)=>s+(o.total||0),0);
     const upi=orders.filter(o=>o.payment_method==='upi').reduce((s,o)=>s+(o.total||0),0);
     const card=orders.filter(o=>o.payment_method==='card').reduce((s,o)=>s+(o.total||0),0);
-    const untagged=totalRev-cash-upi-card;
-
-    // Dine-in vs parcel
     const parcelOrders=orders.filter(o=>String(o.table_no).startsWith('Parcel'));
     const dineOrders=orders.filter(o=>!String(o.table_no).startsWith('Parcel'));
     const parcelRev=parcelOrders.reduce((s,o)=>s+(o.total||0),0);
     const dineRev=dineOrders.reduce((s,o)=>s+(o.total||0),0);
-
-    // Top dishes
     const dishCounts={};
     orders.forEach(o=>(o.items||[]).forEach(i=>{
-      if(!i.name||i.name.includes('WAITER'))return;
+      if(!i.name)return;
       dishCounts[i.name]=(dishCounts[i.name]||0)+(i.qty||1);
     }));
     const topDishes=Object.entries(dishCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-
-    // Source breakdown
-    const qrOrders=orders.filter(o=>!o.waiter_id&&!(o.note||'').includes('counter')&&!(o.note||'').includes('Parcel')).length;
-    const waiterOrds=orders.filter(o=>!!o.waiter_id).length;
-    const counterOrds=orders.filter(o=>(o.note||'').includes('counter')||(o.note||'').includes('Parcel')).length;
-
-    // Tables served
     const uniqueTables=new Set(dineOrders.map(o=>o.table_no));
-
-    const dateStr=now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+    const dateStr=now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     const timeStr=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
 
-    const lines=[
-      `📊 ${DATA?.restaurantName||'Satvik Restaurant'}`,
-      `Daily Sales Report — ${dateStr}`,
-      `Generated at ${timeStr}`,
-      `━━━━━━━━━━━━━━━━━━━━━━`,
-      `💰 REVENUE`,
-      `   Total:     ₹${totalRev.toLocaleString('en-IN')}`,
-      `   Orders:    ${totalOrders}`,
-      `   Avg Order: ₹${avgOrder}`,
-      ``,
-      `💳 PAYMENT SPLIT`,
-      `   Cash:  ₹${cash.toLocaleString('en-IN')}`,
-      `   UPI:   ₹${upi.toLocaleString('en-IN')}`,
-      `   Card:  ₹${card.toLocaleString('en-IN')}`,
-      untagged>0?`   Other: ₹${untagged.toLocaleString('en-IN')}`:'',
-      ``,
-      `🍽️ DINE-IN vs PARCEL`,
-      `   Dine-in: ₹${dineRev.toLocaleString('en-IN')} (${dineOrders.length} orders, ${uniqueTables.size} tables)`,
-      `   Parcel:  ₹${parcelRev.toLocaleString('en-IN')} (${parcelOrders.length} orders)`,
-      ``,
-      `📱 ORDER SOURCE`,
-      `   QR Self-Order: ${qrOrders}`,
-      `   Waiter:        ${waiterOrds}`,
-      `   Counter/Walk-in: ${counterOrds}`,
-      ``,
-      topDishes.length?`🏆 TOP DISHES`:'',
-      ...topDishes.map(([name,qty],i)=>`   ${i+1}. ${name} — ${qty}x`),
-      ``,
-      `━━━━━━━━━━━━━━━━━━━━━━`,
-      `Powered by HK Digital Solutions`
-    ].filter(l=>l!==undefined&&l!=='');
-
-    const reportText=lines.join('\n');
-    document.getElementById('reportPreview').textContent=reportText;
-    document.getElementById('waReportBtn').disabled=false;
-    document.getElementById('waReportBtn').dataset.report=reportText;
+    REPORT_DATA={totalRev,totalOrders,avgOrder,cash,upi,card,parcelOrders,dineOrders,parcelRev,dineRev,topDishes,uniqueTables,dateStr,timeStr,now,orders};
+    buildReportCard(REPORT_DATA);
+    document.getElementById('reportLoading').style.display='none';
+    document.getElementById('reportCard').style.display='block';
+    document.getElementById('reportActions').style.display='flex';
   }catch(e){
-    document.getElementById('reportPreview').textContent='Error generating report: '+e.message;
+    document.getElementById('reportLoading').innerHTML=`<div style="color:#C0392B">❌ Error: ${e.message}</div>`;
     console.error(e);
   }
 }
 
-function sendDailyReport(){
-  const report=document.getElementById('waReportBtn').dataset.report;
-  if(!report)return;
+function buildReportCard(d){
+  const rname=DATA?.restaurantName||'Satvik Restaurant';
+  const rsub=DATA?.restaurantSub||'Pure Veg · Varanasi';
+  const cashPct=d.totalRev>0?Math.round(d.cash/d.totalRev*100):0;
+  const upiPct=d.totalRev>0?Math.round(d.upi/d.totalRev*100):0;
+  const cardPct=d.totalRev>0?Math.round(d.card/d.totalRev*100):0;
+  const dinePct=d.totalRev>0?Math.round(d.dineRev/d.totalRev*100):0;
+  const parcelPct=d.totalRev>0?Math.round(d.parcelRev/d.totalRev*100):0;
+
+  const topDishesHTML=d.topDishes.length
+    ? d.topDishes.map(([name,qty],i)=>{
+        const maxQty=d.topDishes[0][1];
+        const barW=Math.round(qty/maxQty*100);
+        const medals=['🥇','🥈','🥉','4️⃣','5️⃣'];
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+            <span>${medals[i]} ${name}</span><span style="font-weight:700;color:#4A7C59">${qty}x</span>
+          </div>
+          <div style="background:#F0EDE6;border-radius:20px;height:6px;overflow:hidden">
+            <div style="width:${barW}%;background:linear-gradient(90deg,#4A7C59,#6BAF84);height:100%;border-radius:20px;transition:width .8s"></div>
+          </div>
+        </div>`;
+      }).join('')
+    : '<p style="color:#aaa;font-size:12px">No orders yet today</p>';
+
+  const html=`
+  <div id="pdfReportContent" style="background:#fff;font-family:'Segoe UI',sans-serif;width:100%">
+    <!-- HEADER -->
+    <div style="background:linear-gradient(135deg,#1A1A1A 0%,#2D4A35 100%);padding:28px 24px 20px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:rgba(255,255,255,.04);border-radius:50%"></div>
+      <div style="position:absolute;bottom:-30px;left:40px;width:80px;height:80px;background:rgba(212,160,23,.08);border-radius:50%"></div>
+      <div style="font-size:11px;color:#6BAF84;letter-spacing:3px;text-transform:uppercase;font-weight:700;margin-bottom:6px">Daily Sales Report</div>
+      <div style="font-size:24px;font-weight:800;color:#fff;margin-bottom:2px">${rname}</div>
+      <div style="font-size:12px;color:#A0B8A8">${rsub}</div>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end">
+        <div style="font-size:12px;color:#A0B8A8">${d.dateStr}</div>
+        <div style="font-size:11px;color:#6BAF84">Generated ${d.timeStr}</div>
+      </div>
+    </div>
+
+    <!-- HERO REVENUE -->
+    <div style="background:linear-gradient(135deg,#4A7C59,#2D5E3A);padding:24px;text-align:center">
+      <div style="font-size:11px;color:rgba(255,255,255,.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Total Revenue</div>
+      <div style="font-size:42px;font-weight:800;color:#fff;letter-spacing:-1px">₹${d.totalRev.toLocaleString('en-IN')}</div>
+      <div style="display:flex;justify-content:center;gap:24px;margin-top:14px">
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#fff">${d.totalOrders}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:1px">Orders</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.2)"></div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#fff">₹${d.avgOrder.toLocaleString('en-IN')}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:1px">Avg Order</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.2)"></div>
+        <div style="text-align:center">
+          <div style="font-size:20px;font-weight:700;color:#fff">${d.uniqueTables.size}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:1px">Tables</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div style="padding:20px">
+
+      <!-- PAYMENT SPLIT -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">💳 Payment Split</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div style="background:#EAF6EE;border-radius:10px;padding:12px;text-align:center;border:1px solid #C8E6D0">
+            <div style="font-size:17px;font-weight:800;color:#27AE60">₹${d.cash.toLocaleString('en-IN')}</div>
+            <div style="font-size:10px;color:#555;margin-top:2px">Cash</div>
+            <div style="font-size:10px;font-weight:700;color:#27AE60">${cashPct}%</div>
+          </div>
+          <div style="background:#EEF4FF;border-radius:10px;padding:12px;text-align:center;border:1px solid #C8D8F5">
+            <div style="font-size:17px;font-weight:800;color:#2980B9">₹${d.upi.toLocaleString('en-IN')}</div>
+            <div style="font-size:10px;color:#555;margin-top:2px">UPI</div>
+            <div style="font-size:10px;font-weight:700;color:#2980B9">${upiPct}%</div>
+          </div>
+          <div style="background:#FDF3E3;border-radius:10px;padding:12px;text-align:center;border:1px solid #F0D8A8">
+            <div style="font-size:17px;font-weight:800;color:#E67E22">₹${d.card.toLocaleString('en-IN')}</div>
+            <div style="font-size:10px;color:#555;margin-top:2px">Card</div>
+            <div style="font-size:10px;font-weight:700;color:#E67E22">${cardPct}%</div>
+          </div>
+        </div>
+        <!-- Payment bar -->
+        <div style="display:flex;border-radius:20px;overflow:hidden;height:8px;margin-top:10px;gap:2px">
+          ${cashPct>0?`<div style="width:${cashPct}%;background:#27AE60;border-radius:2px"></div>`:''}
+          ${upiPct>0?`<div style="width:${upiPct}%;background:#2980B9;border-radius:2px"></div>`:''}
+          ${cardPct>0?`<div style="width:${cardPct}%;background:#E67E22;border-radius:2px"></div>`:''}
+        </div>
+      </div>
+
+      <!-- DINE-IN VS PARCEL -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">🍽️ Dine-in vs Parcel</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:#F9F5EE;border-radius:10px;padding:14px;border:1px solid #E8DFC8">
+            <div style="font-size:18px">🍽️</div>
+            <div style="font-size:16px;font-weight:800;color:#1A1208;margin-top:4px">₹${d.dineRev.toLocaleString('en-IN')}</div>
+            <div style="font-size:10px;color:#888;margin-top:2px">Dine-in · ${d.dineOrders.length} orders · ${d.uniqueTables.size} tables · ${dinePct}%</div>
+          </div>
+          <div style="background:#FFF8EE;border-radius:10px;padding:14px;border:1px solid #F0DDB8">
+            <div style="font-size:18px">📦</div>
+            <div style="font-size:16px;font-weight:800;color:#1A1208;margin-top:4px">₹${d.parcelRev.toLocaleString('en-IN')}</div>
+            <div style="font-size:10px;color:#888;margin-top:2px">Parcel · ${d.parcelOrders.length} orders · ${parcelPct}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TOP DISHES -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">🏆 Top Dishes</div>
+        <div style="background:#FAFAF8;border-radius:10px;padding:14px;border:1px solid #EEE">
+          ${topDishesHTML}
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="border-top:1px solid #EEE;padding-top:14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:10px;color:#BBB">Powered by HK Digital Solutions</div>
+        <div style="font-size:10px;color:#BBB">${d.dateStr}</div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('reportCard').innerHTML=html;
+}
+
+async function downloadReportPDF(){
+  const el=document.getElementById('pdfReportContent');
+  if(!el){showToast('Report not ready',true);return;}
+  showToast('⏳ Generating PDF...');
+  try{
+    // Load html2canvas + jsPDF from CDN
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false});
+    const imgData=canvas.toDataURL('image/png');
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'px',format:[canvas.width/2,canvas.height/2]});
+    pdf.addImage(imgData,'PNG',0,0,canvas.width/2,canvas.height/2);
+    const rname=(DATA?.restaurantName||'Satvik').replace(/\s+/g,'-');
+    const d=new Date();
+    pdf.save(`${rname}-Report-${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}.pdf`);
+    showToast('✅ PDF downloaded!');
+  }catch(e){showToast('PDF error: '+e.message,true);console.error(e);}
+}
+
+function shareReportWhatsApp(){
+  if(!REPORT_DATA)return;
+  const d=REPORT_DATA;
+  const rname=DATA?.restaurantName||'Satvik Restaurant';
+  const msg=[
+    `📊 *${rname} — Daily Report*`,
+    `📅 ${d.dateStr}`,
+    `━━━━━━━━━━━━━━━━`,
+    `💰 Revenue: *₹${d.totalRev.toLocaleString('en-IN')}*`,
+    `🧾 Orders: ${d.totalOrders} | Avg: ₹${d.avgOrder}`,
+    ``,
+    `💳 *Payments*`,
+    `  Cash: ₹${d.cash.toLocaleString('en-IN')}`,
+    `  UPI:  ₹${d.upi.toLocaleString('en-IN')}`,
+    `  Card: ₹${d.card.toLocaleString('en-IN')}`,
+    ``,
+    `🍽️ Dine-in: ₹${d.dineRev.toLocaleString('en-IN')} (${d.dineOrders.length} orders)`,
+    `📦 Parcel: ₹${d.parcelRev.toLocaleString('en-IN')} (${d.parcelOrders.length} orders)`,
+    d.topDishes.length?`\n🏆 *Top Dishes*`:'',
+    ...d.topDishes.map(([name,qty],i)=>`  ${i+1}. ${name} — ${qty}x`),
+    ``,
+    `_Powered by HK Digital Solutions_`
+  ].filter(Boolean).join('\n');
   const phone=(DATA?.whatsapp||'').replace(/\D/g,'');
-  const wa=phone?`https://wa.me/${phone}?text=${encodeURIComponent(report)}`:`https://wa.me/?text=${encodeURIComponent(report)}`;
+  const wa=phone?`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;
   window.open(wa,'_blank');
-  showToast('✅ Opening WhatsApp with report!');
+  showToast('✅ Opening WhatsApp!');
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    if(document.querySelector(`script[src="${src}"]`)){res();return;}
+    const s=document.createElement('script');s.src=src;
+    s.onload=res;s.onerror=()=>rej(new Error('Failed to load: '+src));
+    document.head.appendChild(s);
+  });
 }
 
 /* ===== WEEKLY & MONTHLY REPORTS ===== */
