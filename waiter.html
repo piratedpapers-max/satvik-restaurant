@@ -493,11 +493,12 @@ async function loadTableOrders(){
   }
   const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
   try{
-    // Active orders
+    // Active orders — includes bill_pending from kitchen (no served_at) but NOT waiter-served ones
     const {data:active}=await sb.from('orders').select('*')
       .eq('restaurant_id',RESTAURANT_ID)
       .in('table_no',ASSIGNED_TABLES)
-      .in('status',['new','cooking','ready'])
+      .in('status',['new','cooking','ready','bill_pending'])
+      .is('served_at',null)
       .gte('placed_at',todayStart.toISOString())
       .order('placed_at',{ascending:true});
     tableOrders={};
@@ -533,7 +534,7 @@ function renderDashboard(){
   const all=Object.values(tableOrders);
   const newOrds=all.filter(o=>o.status==='new');
   const cooking=all.filter(o=>o.status==='cooking');
-  const ready=all.filter(o=>o.status==='ready');
+  const ready=all.filter(o=>o.status==='ready'||o.status==='bill_pending');
   const total=all.length;
 
   const badge=document.getElementById('activeBadge');
@@ -569,7 +570,7 @@ function kCol(title,orders,hdrCls,showServeBtn){
 
 function oCard(o,showServeBtn){
   const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-  const isReady=o.status==='ready';
+  const isReady=o.status==='ready'||o.status==='bill_pending';
   const src=getSource(o);
   const items=(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div>${i.name}</div></div>`).join('');
   const serveBtn=showServeBtn?`<button class="serve-btn" onclick="markServed('${o.id}')">✅ Served</button>`:'';
@@ -676,8 +677,9 @@ function subscribeToOrders(){
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
       const order=p.new;
-      // If order becomes bill_pending (served by waiter) — move active → served
-      if(order.status==='bill_pending'&&tableOrders[order.id]){
+      // If order becomes bill_pending WITH served_at = waiter marked it served
+      // If bill_pending WITHOUT served_at = kitchen sent to counter directly, keep in active
+      if(order.status==='bill_pending'&&order.served_at&&tableOrders[order.id]){
         servedOrders[order.id]=order;
         delete tableOrders[order.id];
         updateServedBadge();
