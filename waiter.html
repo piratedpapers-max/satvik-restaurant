@@ -573,9 +573,11 @@ function oCard(o,showServeBtn){
 /* ── MARK SERVED ── */
 async function markServed(orderId){
   try{
+    // Only mark as served — do NOT set payment_status:'paid' here.
+    // Payment is handled by the counter. Setting paid here would remove
+    // the order from the counter's bill pending panel before payment is collected.
     const {error}=await sb.from('orders').update({
-      status:'served',
-      payment_status:'paid',
+      status:'bill_pending',
       served_at:new Date().toISOString()
     }).eq('id',orderId);
     if(error)throw error;

@@ -143,6 +143,42 @@ textarea{resize:vertical;min-height:55px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .watermark{text-align:center;padding:14px;font-size:10.5px;color:var(--muted);letter-spacing:.5px;}
 .watermark a{color:var(--muted);text-decoration:none;font-weight:600;}
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:600px){
+  main{padding:12px 10px 0;}
+  .panel{padding:12px 10px;}
+  .orders-summary{gap:6px;}
+  .os-card{min-width:70px;padding:8px 10px;}
+  .os-val{font-size:15px;}
+  .orders-table{font-size:11px;}
+  .orders-table th,.orders-table td{padding:6px 6px;}
+  .a-grid{grid-template-columns:repeat(2,1fr);}
+  .report-cards{grid-template-columns:repeat(2,1fr);}
+  .token-grid{grid-template-columns:1fr 1fr;}
+  .report-tab,.download-btn{font-size:11px;padding:7px 12px;}
+  .save-bar{padding:10px 12px;gap:6px;}
+  .save-bar button{padding:11px;font-size:12px;}
+  .waiter-card{flex-direction:column;gap:8px;}
+  .waiter-card>div:last-child{flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-items:center;}
+  .wc-btn{font-size:10px;padding:5px 8px;}
+  header h1{font-size:17px;}
+  .kitchen-link{font-size:12px;padding:11px;}
+  .report-table{font-size:11px;}
+  .report-table th,.report-table td{padding:6px 6px;white-space:nowrap;}
+  .login-box{margin:30px 14px;}
+  .img-row{flex-wrap:wrap;}
+  .item-top{flex-wrap:wrap;}
+  .item-top input[type="number"]{width:70px;}
+  .cat-hdr{flex-wrap:wrap;}
+  .orders-table th:nth-child(3),.orders-table td:nth-child(3){max-width:120px;overflow:hidden;text-overflow:ellipsis;}
+}
+@media(max-width:400px){
+  .a-grid{grid-template-columns:1fr 1fr;}
+  .report-cards{grid-template-columns:1fr 1fr;}
+  .token-grid{grid-template-columns:1fr;}
+  .os-card{min-width:60px;}
+  .panel h2{font-size:15px;}
+}
 </style>
 </head>
 <body>
@@ -364,8 +400,8 @@ async function sendResetCode(){
     document.getElementById('forgotErr').style.display='block';return;
   }
   // Check whatsapp number matches restaurant data
-  const {data}=await sb.from('restaurant_data').select('whatsapp,data').eq('id',RESTAURANT_ID).single();
-  const storedPhone=(data?.data?.whatsapp||'').replace(/^91/,'').slice(-10);
+  const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+  const storedPhone=(data?.data?.whatsapp||'').replace(/\D/g,'').replace(/^91/,'').slice(-10);
   if(storedPhone!==phone){
     document.getElementById('forgotErr').textContent='This number is not registered with this restaurant.';
     document.getElementById('forgotErr').style.display='block';return;
