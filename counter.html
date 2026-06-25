@@ -30,8 +30,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .clock{font-size:12px;color:var(--muted);font-weight:600;}
 .lock-btn{background:none;border:1px solid var(--line);color:var(--muted);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Poppins',sans-serif;}
-.new-order-btn{background:var(--green);color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;transition:opacity .2s;}
-.new-order-btn:hover{opacity:.85;}
+.new-order-btn{background:var(--green);color:#fff;border:none;padding:8px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;}
 
 /* NEW ORDER MODAL */
 .no-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:400;display:none;align-items:center;justify-content:center;padding:16px;}
@@ -83,8 +82,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line);}
 @media(max-width:600px){.stats{grid-template-columns:repeat(3,1fr);}}
-.stat{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 8px;text-align:center;transition:transform .15s;}
-.stat:hover{transform:scale(1.02);}
+.stat{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;}
 .sv{font-size:18px;font-weight:700;color:var(--gold);}
 .sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:1px;}
 .sv.purple{color:var(--purple);}
@@ -113,8 +111,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 .pcnt{background:rgba(255,255,255,.1);padding:1px 8px;border-radius:999px;font-size:11px;}
 
 /* TABLE CARDS */
-.tcard{background:var(--card2);border-radius:12px;overflow:hidden;animation:fadeIn .25s ease;border:1px solid var(--line);display:flex;flex-direction:column;transition:transform .15s;}
-.tcard:hover{transform:translateY(-1px);}
+.tcard{background:var(--card2);border-radius:10px;overflow:hidden;animation:fadeIn .25s ease;border:1px solid var(--line);display:flex;flex-direction:column;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .tcard.bill{border-color:var(--purple);}
 .tcard.active{border-color:#27AE60;}
@@ -150,6 +147,90 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
+
+/* ── EDIT / CANCEL BUTTONS ON ACTIVE CARDS ── */
+.tcard-actions-row{display:flex;gap:5px;padding:8px 12px 10px;border-top:1px solid var(--line);}
+.tcard-edit-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(41,128,185,.15);border:1px solid rgba(41,128,185,.4);color:#5DADE2;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:background .18s,border-color .18s,transform .12s;}
+.tcard-edit-btn:hover{background:rgba(41,128,185,.28);border-color:#5DADE2;transform:translateY(-1px);}
+.tcard-edit-btn:active{transform:translateY(0);}
+.tcard-cancel-btn{display:flex;align-items:center;justify-content:center;gap:5px;background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.35);color:#E74C3C;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:background .18s,border-color .18s,transform .12s;}
+.tcard-cancel-btn:hover{background:rgba(192,57,43,.25);border-color:#E74C3C;transform:translateY(-1px);}
+.tcard-cancel-btn:active{transform:translateY(0);}
+
+/* ── EDIT ORDER MODAL ── */
+.edit-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:500;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(0px);transition:background .3s,backdrop-filter .3s;}
+.edit-modal-bg.show{display:flex;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);}
+.edit-modal{background:#1A1A1A;border:1px solid #2E2E2E;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;transform:translateY(110%);transition:transform .35s cubic-bezier(.32,.72,0,1);box-shadow:0 -12px 60px rgba(0,0,0,.7);}
+.edit-modal-bg.show .edit-modal{transform:translateY(0);}
+.edit-modal-handle{width:36px;height:4px;background:#333;border-radius:99px;margin:10px auto 0;flex:0 0 auto;}
+.edit-modal-hdr{padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #252525;flex:0 0 auto;}
+.edit-modal-title{display:flex;flex-direction:column;gap:2px;}
+.edit-modal-title h3{font-family:'Yatra One',sans-serif;font-size:18px;color:var(--gold);}
+.edit-modal-title span{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.edit-modal-close{width:30px;height:30px;border-radius:50%;background:#252525;border:none;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
+.edit-modal-close:hover{background:#333;color:#fff;}
+.edit-modal-body{overflow-y:auto;flex:1;display:flex;flex-direction:column;}
+
+/* Current items section */
+.edit-section-label{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:12px 18px 6px;}
+.edit-current-items{padding:0 12px;display:flex;flex-direction:column;gap:4px;}
+.edit-item-row{display:flex;align-items:center;gap:10px;background:#212121;border:1px solid #2A2A2A;border-radius:10px;padding:9px 12px;transition:border-color .15s;}
+.edit-item-row:hover{border-color:#353535;}
+.edit-item-info{flex:1;min-width:0;}
+.edit-item-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.edit-item-price{font-size:11px;color:var(--muted);margin-top:1px;}
+.edit-stepper{display:flex;align-items:center;gap:0;background:#161616;border:1px solid #303030;border-radius:8px;overflow:hidden;}
+.edit-stepper-btn{width:30px;height:30px;border:none;background:transparent;color:var(--text);font-size:16px;font-weight:700;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;}
+.edit-stepper-btn:hover{background:#2A2A2A;}
+.edit-stepper-val{min-width:28px;text-align:center;font-weight:700;font-size:13px;color:var(--gold);}
+.edit-remove-btn{width:28px;height:28px;border-radius:7px;border:none;background:rgba(192,57,43,.15);color:#E74C3C;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex:0 0 auto;}
+.edit-remove-btn:hover{background:rgba(192,57,43,.3);}
+
+/* Add more items section */
+.edit-divider{height:1px;background:#222;margin:10px 18px;}
+.edit-add-section{padding:0 12px 12px;}
+.edit-cat-tabs{display:flex;gap:5px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none;}
+.edit-cat-tabs::-webkit-scrollbar{display:none;}
+.edit-cat-tab{flex:0 0 auto;background:#1E1E1E;border:1px solid #2E2E2E;color:var(--muted);font-size:10px;font-weight:700;padding:5px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:all .15s;font-family:'Poppins',sans-serif;}
+.edit-cat-tab.active{background:var(--green);border-color:var(--green);color:#fff;}
+.edit-menu-items{display:flex;flex-direction:column;gap:3px;max-height:200px;overflow-y:auto;}
+.edit-menu-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;transition:background .12s;cursor:pointer;}
+.edit-menu-row:hover{background:#1E1E1E;}
+.edit-menu-name{flex:1;font-size:12px;font-weight:600;color:var(--text);}
+.edit-menu-price{font-size:11px;color:var(--muted);margin-right:4px;}
+.edit-add-quick{width:26px;height:26px;border-radius:6px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.edit-add-quick:hover{background:var(--green);color:#fff;}
+
+/* Footer */
+.edit-modal-foot{flex:0 0 auto;padding:12px 16px 20px;border-top:1px solid #252525;background:#161616;display:flex;gap:8px;align-items:center;}
+.edit-total-badge{flex:1;display:flex;flex-direction:column;}
+.edit-total-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+.edit-total-val{font-family:'Yatra One',sans-serif;font-size:20px;color:var(--gold);}
+.edit-save-btn{background:linear-gradient(135deg,#27AE60,#1E8449);color:#fff;border:none;padding:12px 22px;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;transition:opacity .2s,transform .12s;white-space:nowrap;}
+.edit-save-btn:hover{opacity:.9;transform:translateY(-1px);}
+.edit-save-btn:active{transform:translateY(0);}
+.edit-save-btn:disabled{background:#2A2A2A;color:var(--muted);cursor:not-allowed;transform:none;}
+
+/* Change badge on items that were edited */
+.edit-item-row.modified{border-color:rgba(212,160,23,.4);background:#1E1C12;}
+.edit-item-row.added{border-color:rgba(39,174,96,.4);background:#0E1A12;animation:rowPop .3s ease;}
+@keyframes rowPop{from{transform:scale(.97);opacity:.6}to{transform:scale(1);opacity:1}}
+
+/* ── CANCEL CONFIRM MODAL ── */
+.cancel-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;transition:background .25s,backdrop-filter .25s;backdrop-filter:blur(0px);}
+.cancel-modal-bg.show{display:flex;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);}
+.cancel-modal{background:#1A1A1A;border:1px solid #2E2E2E;border-radius:18px;padding:28px 24px;max-width:340px;width:100%;text-align:center;transform:scale(.88);opacity:0;transition:transform .28s cubic-bezier(.32,.72,0,1),opacity .25s;}
+.cancel-modal-bg.show .cancel-modal{transform:scale(1);opacity:1;}
+.cancel-modal-icon{font-size:44px;margin-bottom:10px;display:block;}
+.cancel-modal-title{font-family:'Yatra One',sans-serif;font-size:19px;color:#E74C3C;margin-bottom:6px;}
+.cancel-modal-sub{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+.cancel-modal-table{display:inline-block;background:#212121;border:1px solid #2E2E2E;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;color:var(--gold);margin-bottom:20px;}
+.cancel-btn-row{display:flex;gap:8px;}
+.cancel-btn-no{flex:1;background:#212121;border:1px solid #333;color:var(--text);padding:12px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;transition:background .15s;}
+.cancel-btn-no:hover{background:#2A2A2A;}
+.cancel-btn-yes{flex:1;background:linear-gradient(135deg,#C0392B,#96281B);color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;transition:opacity .15s,transform .12s;}
+.cancel-btn-yes:hover{opacity:.88;transform:translateY(-1px);}
+.cancel-btn-yes:active{transform:translateY(0);}
 </style>
 </head>
 <body>
@@ -300,6 +381,55 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 
 <!-- Print Area (hidden, shown only when printing) -->
 <!-- WhatsApp Phone Entry Modal -->
+
+<!-- ══════════════════════════════════════════
+     EDIT ORDER MODAL
+══════════════════════════════════════════ -->
+<div class="edit-modal-bg" id="editModalBg" onclick="closeEditModal(event)">
+  <div class="edit-modal" id="editModal">
+    <div class="edit-modal-handle"></div>
+    <div class="edit-modal-hdr">
+      <div class="edit-modal-title">
+        <h3 id="editModalTitle">Edit Order</h3>
+        <span id="editModalSubtitle">MODIFY ITEMS • UPDATE KITCHEN</span>
+      </div>
+      <button class="edit-modal-close" onclick="closeEditModal()">&times;</button>
+    </div>
+    <div class="edit-modal-body">
+      <div class="edit-section-label">Current Items</div>
+      <div class="edit-current-items" id="editCurrentItems"></div>
+      <div class="edit-divider"></div>
+      <div class="edit-section-label" style="padding-bottom:4px">Add More Items</div>
+      <div class="edit-add-section">
+        <div class="edit-cat-tabs" id="editCatTabs"></div>
+        <div class="edit-menu-items" id="editMenuItems"></div>
+      </div>
+    </div>
+    <div class="edit-modal-foot">
+      <div class="edit-total-badge">
+        <span class="edit-total-label">New Total</span>
+        <span class="edit-total-val" id="editTotalVal">₹0</span>
+      </div>
+      <button class="edit-save-btn" id="editSaveBtn" onclick="saveEditedOrder()">Update Kitchen ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     CANCEL ORDER CONFIRM MODAL
+══════════════════════════════════════════ -->
+<div class="cancel-modal-bg" id="cancelModalBg">
+  <div class="cancel-modal">
+    <span class="cancel-modal-icon">🗑️</span>
+    <div class="cancel-modal-title">Cancel Order?</div>
+    <div class="cancel-modal-sub">This will remove all items from the kitchen queue. This action cannot be undone.</div>
+    <div class="cancel-modal-table" id="cancelModalTable">Table —</div>
+    <div class="cancel-btn-row">
+      <button class="cancel-btn-no" onclick="closeCancelModal()">Keep It</button>
+      <button class="cancel-btn-yes" id="cancelConfirmBtn" onclick="confirmCancelOrder()">Yes, Cancel</button>
+    </div>
+  </div>
+</div>
 <div class="no-modal-bg" id="waModalBg">
   <div class="no-modal" style="max-width:340px">
     <div class="no-modal-hdr" style="background:#25D366">
@@ -333,7 +463,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
     <span>TOTAL</span><span id="printTotal">Rs 0</span>
   </div>
   <div style="border-top:1px dashed #000;margin:6px 0"></div>
-  <div style="text-align:center;margin-top:8px;font-size:11px" id="printFooter">Thank you for dining with us!</div>
+  <div style="text-align:center;margin-top:8px;font-size:11px">Thank you for dining with us!</div>
   <div style="text-align:center;margin-top:10px;font-size:9px">Powered by HK Digital Solutions</div>
   <div style="margin-top:6px"></div>
 </div>
@@ -347,7 +477,7 @@ const COUNTER_PASSWORD="counter2026"; // ← Change this to a secure password
 
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},paidToday=[],payBreakdown={cash:0,upi:0,card:0};
-let MENU_DATA=null,RESTAURANT_INFO={name:'Satvik Restaurant',sub:'Pure Veg · Varanasi',review:'',gstPercent:0,gstNumber:'',billAddress:'',billFooter:'Thank you for dining with us! 🙏'};
+let MENU_DATA=null,RESTAURANT_INFO={name:'Satvik Restaurant',sub:'Pure Veg · Varanasi',review:''};
 let noCart={}; // new order cart: {itemKey: {item, qty}}
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 
@@ -419,15 +549,7 @@ async function loadAll(){
     if(menuErr) console.error('Background menu load error:',menuErr);
     if(rdata?.data?.menu?.length){
       MENU_DATA=rdata.data.menu;
-      RESTAURANT_INFO={
-        name:rdata.data.restaurantName||'Satvik Restaurant',
-        sub:rdata.data.restaurantSub||'',
-        review:rdata.data.googleReview||'',
-        gstPercent:rdata.data.gstPercent||0,
-        gstNumber:rdata.data.gstNumber||'',
-        billAddress:rdata.data.billAddress||'',
-        billFooter:rdata.data.billFooter||'Thank you for dining with us! 🙏'
-      };
+      RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
     }
   }catch(e){console.error('Menu load error:',e);}
 
@@ -565,25 +687,30 @@ function tableCard(tno,tbl,type){
   const isBill=type==='bill';
   const statusInfo=isBill?'':`<div style="font-size:9px;color:var(--muted);margin-top:2px">${[...tbl.statuses].join(', ')}</div>`;
   const allItemsJson=JSON.stringify(allItems).replace(/'/g,"&#39;");
+  const idsJson=JSON.stringify(ids).replace(/'/g,"&#39;");
+  const activeActions=!isBill?`<div class="tcard-actions-row">
+    <button class="tcard-edit-btn" onclick='openEditModal(${idsJson},"${tno}")'>&#9998; Edit Order</button>
+    <button class="tcard-cancel-btn" onclick='openCancelModal(${idsJson},"${tno}")'>&#x2715; Cancel</button>
+  </div>`:'';
   const actions=isBill?`<div style="display:flex;gap:5px;padding:8px 12px;border-top:1px solid var(--line)">
-    <button class="pay-btn-full pay-btn-cash" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","cash")'>💵 Cash</button>
-    <button class="pay-btn-full pay-btn-upi" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","upi")'>📱 UPI</button>
-    <button class="pay-btn-full pay-btn-card" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","card")'>💳 Card</button>
+    <button class="pay-btn-full pay-btn-cash" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","cash")'>&#128181; Cash</button>
+    <button class="pay-btn-full pay-btn-upi" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","upi")'>&#128241; UPI</button>
+    <button class="pay-btn-full pay-btn-card" onclick='confirmPay(${JSON.stringify(ids)},"${tno}","card")'>&#128179; Card</button>
   </div>
   <div style="display:flex;gap:5px;padding:0 12px 10px">
-    <button class="pay-btn-full bill-action-btn" onclick='printTableBill("${tno}",${allItemsJson},${grandTotal})'>🖨️ Print</button>
-    <button class="pay-btn-full wa-action-btn" onclick='sendWhatsAppBill("${tno}",${allItemsJson},${grandTotal})'>📱 WhatsApp</button>
+    <button class="pay-btn-full bill-action-btn" onclick='printTableBill("${tno}",${allItemsJson},${grandTotal})'>&#128424; Print</button>
+    <button class="pay-btn-full wa-action-btn" onclick='sendWhatsAppBill("${tno}",${allItemsJson},${grandTotal})'>&#128241; WhatsApp</button>
   </div>`:'';
   return `<div class="tcard ${type}">
     <div class="tcard-top">
       <div class="tcard-name">Table ${tno}</div>
-      <div class="tcard-meta"><div class="tcard-time">Since ${time}</div>${nums.length?`<div class="tcard-nums">${nums.join(' ')}</div>`:''}${statusInfo}</div>
+      <div class="tcard-meta"><div class="tcard-time">Since ${time}</div>${nums.length?`<div class="tcard-nums">${nums.join(' ')}</div>`:''  }${statusInfo}</div>
     </div>
     <div class="tcard-body">
-      ${Object.values(allItems).map(i=>`<div class="tcard-item"><span class="tcard-item-name">${i.name} ×${i.qty}</span><span class="tcard-item-price">₹${i.total}</span></div>`).join('')}
-      <div class="tcard-total"><span>Total</span><span>₹${grandTotal}</span></div>
+      ${Object.values(allItems).map(i=>`<div class="tcard-item"><span class="tcard-item-name">${i.name} x${i.qty}</span><span class="tcard-item-price">&#8377;${i.total}</span></div>`).join('')}
+      <div class="tcard-total"><span>Total</span><span>&#8377;${grandTotal}</span></div>
     </div>
-    ${actions}
+    ${activeActions}${actions}
   </div>`;
 }
 
@@ -653,15 +780,7 @@ async function openNewOrderModal(){
       if(error){console.error('Supabase error:',error);throw error;}
       if(rdata?.data?.menu?.length){
         MENU_DATA=rdata.data.menu;
-        RESTAURANT_INFO={
-        name:rdata.data.restaurantName||'Satvik Restaurant',
-        sub:rdata.data.restaurantSub||'',
-        review:rdata.data.googleReview||'',
-        gstPercent:rdata.data.gstPercent||0,
-        gstNumber:rdata.data.gstNumber||'',
-        billAddress:rdata.data.billAddress||'',
-        billFooter:rdata.data.billFooter||'Thank you for dining with us! 🙏'
-      };
+        RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
       }else{
         console.warn('Menu data structure was:',rdata);
         toast('No menu found. Please add menu items in Admin panel first.',true);
@@ -784,25 +903,25 @@ async function getNextParcelNum(){
   }
 }
 
+let isSubmittingOrder=false;
 async function submitNewOrder(){
+  if(isSubmittingOrder)return;
   const isParcel=document.getElementById('parcelToggle').checked;
   const items=Object.values(noCart);
   if(!items.length)return;
-
-  // Generate parcel number NOW at submit time (not on toggle — avoids wasting numbers)
-  let tableNo;
-  if(isParcel){
-    const parcelNum=await getNextParcelNum();
-    tableNo=`Parcel #${parcelNum}`;
-    document.getElementById('parcelRefBox').textContent='📦 '+tableNo;
-  } else {
-    tableNo=document.getElementById('noTableNum').value.trim();
-    if(!tableNo){toast('Enter a table number.',true);return;}
-  }
-
+  isSubmittingOrder=true;
   const btn=document.getElementById('noSubmitBtn');
   btn.disabled=true;btn.textContent='Sending...';
   try{
+    let tableNo;
+    if(isParcel){
+      const parcelNum=await getNextParcelNum();
+      tableNo=`Parcel #${parcelNum}`;
+      document.getElementById('parcelRefBox').textContent='📦 '+tableNo;
+    } else {
+      tableNo=document.getElementById('noTableNum').value.trim();
+      if(!tableNo){toast('Enter a table number.',true);isSubmittingOrder=false;btn.disabled=false;btn.textContent='Send to Kitchen';return;}
+    }
     const orderNum=await getNextOrderNumCounter();
     const total=items.reduce((s,c)=>s+c.item.price*c.qty,0);
     const note=isParcel?'📦 Parcel / Takeaway order':'Order taken at counter';
@@ -818,31 +937,15 @@ async function submitNewOrder(){
     const label=isParcel?tableNo:`Table ${tableNo}`;
     toast(`✅ Order #${orderNum} sent to kitchen — ${label}`);
     closeNewOrderModal();
-  }catch(e){console.error(e);toast('Error: '+e.message,true);}
-  finally{btn.disabled=false;btn.textContent='Send to Kitchen';}
+  }catch(e){console.error(e);toast('Error: '+e.message,true);btn.disabled=false;btn.textContent='Send to Kitchen';}
+  finally{isSubmittingOrder=false;}
 }
 
 /* ===== PRINT BILL ===== */
-function calcGST(subtotal,gstPct){
-  if(!gstPct)return{subtotal,gstAmt:0,total:subtotal};
-  // GST inclusive pricing (most Indian restaurants include GST in menu price)
-  const gstAmt=Math.round(subtotal*gstPct/(100+gstPct));
-  return{subtotal,gstAmt,total:subtotal};
-}
-
 function printTableBill(tableNo,allItems,grandTotal){
-  const {gstAmt}=calcGST(grandTotal,RESTAURANT_INFO.gstPercent);
-  const gstPct=RESTAURANT_INFO.gstPercent;
-  const isParcel=String(tableNo).startsWith('Parcel');
-
   document.getElementById('printRestName').textContent=RESTAURANT_INFO.name;
   document.getElementById('printRestSub').textContent=(RESTAURANT_INFO.sub||'').replace(/·/g,'-');
-  if(RESTAURANT_INFO.billAddress){
-    document.getElementById('printRestSub').textContent+='\n'+(RESTAURANT_INFO.billAddress);
-  }
-  if(RESTAURANT_INFO.gstNumber){
-    document.getElementById('printRestSub').textContent+='\nGSTIN: '+RESTAURANT_INFO.gstNumber;
-  }
+  const isParcel=String(tableNo).startsWith('Parcel');
   document.getElementById('printTable').textContent=isParcel?tableNo:'Table '+tableNo;
   document.getElementById('printDate').textContent=new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   document.getElementById('printLines').innerHTML=Object.values(allItems).map(i=>
@@ -850,11 +953,8 @@ function printTableBill(tableNo,allItems,grandTotal){
       <span style="flex:1">${i.name} x${i.qty}</span>
       <span style="white-space:nowrap">Rs ${i.total}</span>
     </div>`
-  ).join('')+(gstPct>0?`<div style="display:flex;justify-content:space-between;padding:3px 0;border-top:1px dashed #000;margin-top:4px;font-size:11px"><span>Subtotal (incl. ${gstPct}% GST)</span><span>Rs ${grandTotal}</span></div><div style="display:flex;justify-content:space-between;font-size:11px;padding:1px 0"><span>GST @${gstPct}% (incl.)</span><span>Rs ${gstAmt}</span></div>`:'');
+  ).join('');
   document.getElementById('printTotal').textContent='Rs '+grandTotal;
-  // Footer
-  const footerEl=document.getElementById('printFooter');
-  if(footerEl) footerEl.textContent=RESTAURANT_INFO.billFooter||'Thank you!';
   window.print();
 }
 
@@ -879,25 +979,11 @@ function confirmSendWhatsApp(){
   }
   if(!waPendingData)return;
   const {tableNo,allItems,grandTotal}=waPendingData;
-  const {gstAmt}=calcGST(grandTotal,RESTAURANT_INFO.gstPercent);
-  const gstPct=RESTAURANT_INFO.gstPercent;
-  const isParcel=String(tableNo).startsWith('Parcel');
-
-  let msg=`🙏 *${RESTAURANT_INFO.name}*\n${RESTAURANT_INFO.sub||''}`;
-  if(RESTAURANT_INFO.billAddress) msg+=`\n${RESTAURANT_INFO.billAddress}`;
-  if(RESTAURANT_INFO.gstNumber) msg+=`\nGSTIN: ${RESTAURANT_INFO.gstNumber}`;
-  msg+=`\n\n*Your Bill — ${isParcel?tableNo:'Table '+tableNo}*\n`;
-  msg+=`━━━━━━━━━━━━━━━━━━━\n`;
+  let msg=`🙏 *${RESTAURANT_INFO.name}*\n${RESTAURANT_INFO.sub}\n\n*Your Bill — Table ${tableNo}*\n`;
   Object.values(allItems).forEach(i=>{msg+=`${i.name} ×${i.qty} — ₹${i.total}\n`;});
-  msg+=`━━━━━━━━━━━━━━━━━━━\n`;
-  if(gstPct>0){
-    msg+=`Subtotal: ₹${grandTotal}\n`;
-    msg+=`GST @${gstPct}% (incl.): ₹${gstAmt}\n`;
-  }
-  msg+=`*Total: ₹${grandTotal}*\n\n`;
-  msg+=`${RESTAURANT_INFO.billFooter||'Thank you for dining with us! 🙏'}`;
-  if(RESTAURANT_INFO.review) msg+=`\n\n⭐ Rate us: ${RESTAURANT_INFO.review}`;
-
+  msg+=`\n*Total: ₹${grandTotal}*\n\nThank you for dining with us! 🙏`;
+  if(RESTAURANT_INFO.review) msg+=`\n\n⭐ Loved the food? Rate us: ${RESTAURANT_INFO.review}`;
+  msg+=`\n\n🎉 See you again soon!`;
   const waLink=`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
   const a=document.createElement('a');
   a.href=waLink;a.target='_blank';a.rel='noopener';
@@ -980,6 +1066,235 @@ function renderTableGrid(){
     grid.appendChild(p);
   }
 }
+
+/* ════════════════════════════════════════════════════════
+   EDIT ORDER LOGIC
+════════════════════════════════════════════════════════ */
+let editState = { orderIds:[], tableNo:'', editCart:{}, originalItems:{} };
+let isSavingEdit = false;
+
+function openEditModal(idsJson, tableNo){
+  const ids = typeof idsJson === 'string' ? JSON.parse(idsJson) : idsJson;
+  // Gather all items from these orders
+  const combined = {};
+  ids.forEach(id => {
+    const ord = orders[id];
+    if(!ord) return;
+    (ord.items||[]).forEach(it => {
+      if(!combined[it.name]) combined[it.name] = { name:it.name, price:it.price, qty:0, total:0 };
+      combined[it.name].qty += it.qty;
+      combined[it.name].total += it.total;
+    });
+  });
+
+  editState = { orderIds: ids, tableNo, editCart: JSON.parse(JSON.stringify(combined)), originalItems: JSON.parse(JSON.stringify(combined)) };
+
+  const isParcel = String(tableNo).startsWith('Parcel');
+  document.getElementById('editModalTitle').textContent = isParcel ? tableNo : 'Table ' + tableNo;
+  document.getElementById('editModalSubtitle').textContent = 'EDIT ORDER • UPDATES KITCHEN LIVE';
+
+  renderEditCurrentItems();
+  renderEditCatTabs();
+  updateEditTotal();
+
+  const bg = document.getElementById('editModalBg');
+  bg.style.display = 'flex';
+  requestAnimationFrame(()=>{ bg.classList.add('show'); });
+}
+
+function closeEditModal(e){
+  if(e && e.target !== document.getElementById('editModalBg')) return;
+  const bg = document.getElementById('editModalBg');
+  bg.classList.remove('show');
+  setTimeout(()=>{ bg.style.display = 'none'; }, 350);
+}
+
+function renderEditCurrentItems(){
+  const el = document.getElementById('editCurrentItems');
+  const items = Object.values(editState.editCart);
+  if(!items.length){
+    el.innerHTML = '<div style="padding:12px 6px;font-size:12px;color:var(--muted);text-align:center">No items — add from menu below</div>';
+    return;
+  }
+  el.innerHTML = items.map(it => {
+    const isOrig = editState.originalItems[it.name];
+    const wasModified = isOrig && it.qty !== isOrig.qty;
+    const cls = wasModified ? 'edit-item-row modified' : 'edit-item-row';
+    return `<div class="${cls}" id="editrow-${btoa(it.name)}">
+      <div class="edit-item-info">
+        <div class="edit-item-name">${it.name}</div>
+        <div class="edit-item-price">₹${it.price} each</div>
+      </div>
+      <div class="edit-stepper">
+        <button class="edit-stepper-btn" onclick="editChangeQty('${it.name}',-1)">−</button>
+        <span class="edit-stepper-val" id="editqv-${btoa(it.name)}">${it.qty}</span>
+        <button class="edit-stepper-btn" onclick="editChangeQty('${it.name}',1)">+</button>
+      </div>
+      <button class="edit-remove-btn" onclick="editRemoveItem('${it.name}')" title="Remove item">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function editChangeQty(name, delta){
+  if(!editState.editCart[name]) return;
+  const next = Math.max(1, editState.editCart[name].qty + delta);
+  editState.editCart[name].qty = next;
+  editState.editCart[name].total = editState.editCart[name].price * next;
+  // Update qty display
+  const qvEl = document.getElementById('editqv-'+btoa(name));
+  if(qvEl) qvEl.textContent = next;
+  // Mark row as modified
+  const row = document.getElementById('editrow-'+btoa(name));
+  if(row && editState.originalItems[name] && next !== editState.originalItems[name].qty) row.className = 'edit-item-row modified';
+  else if(row) row.className = 'edit-item-row';
+  updateEditTotal();
+}
+
+function editRemoveItem(name){
+  delete editState.editCart[name];
+  renderEditCurrentItems();
+  updateEditTotal();
+}
+
+function editAddItem(name, price){
+  if(editState.editCart[name]){
+    editChangeQty(name, 1);
+  } else {
+    editState.editCart[name] = { name, price, qty:1, total:price };
+    renderEditCurrentItems();
+    updateEditTotal();
+    // Scroll to top of current items to show new addition
+    document.getElementById('editCurrentItems').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  // Flash the row
+  setTimeout(()=>{
+    const row = document.getElementById('editrow-'+btoa(name));
+    if(row){ row.classList.add('added'); setTimeout(()=>row.classList.remove('added'),400); }
+  },50);
+}
+
+function updateEditTotal(){
+  const total = Object.values(editState.editCart).reduce((s,it)=>s+it.price*it.qty, 0);
+  document.getElementById('editTotalVal').textContent = '₹' + total;
+  const hasItems = Object.keys(editState.editCart).length > 0;
+  document.getElementById('editSaveBtn').disabled = !hasItems || isSavingEdit;
+}
+
+function renderEditCatTabs(){
+  if(!MENU_DATA){ loadMenuForEdit(); return; }
+  const tabs = document.getElementById('editCatTabs');
+  tabs.innerHTML = MENU_DATA.map((cat,i)=>`<button class="edit-cat-tab ${i===0?'active':''}" onclick="selectEditCat(${i})">${cat.category}</button>`).join('');
+  selectEditCat(0);
+}
+
+async function loadMenuForEdit(){
+  if(MENU_DATA) return;
+  try{
+    const {data,error} = await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    if(!error && data?.data?.menu?.length){ MENU_DATA = data.data.menu; renderEditCatTabs(); }
+  }catch(e){ console.error(e); }
+}
+
+function selectEditCat(idx){
+  document.querySelectorAll('.edit-cat-tab').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  const cat = MENU_DATA?.[idx];
+  if(!cat) return;
+  document.getElementById('editMenuItems').innerHTML = (cat.items||[]).filter(it=>it.available!==false).map(it=>`
+    <div class="edit-menu-row">
+      <span class="edit-menu-name">${it.name}</span>
+      <span class="edit-menu-price">₹${it.price}</span>
+      <button class="edit-add-quick" onclick="editAddItem('${it.name.replace(/'/g,"\'")}',${it.price})">+</button>
+    </div>`).join('');
+}
+
+async function saveEditedOrder(){
+  if(isSavingEdit) return;
+  const items = Object.values(editState.editCart);
+  if(!items.length){ toast('Add at least one item.',true); return; }
+  isSavingEdit = true;
+  const btn = document.getElementById('editSaveBtn');
+  btn.disabled = true; btn.textContent = 'Updating...';
+
+  try{
+    // Strategy: update the FIRST order with all items merged; dismiss extras
+    const primaryId = editState.orderIds[0];
+    const total = items.reduce((s,it)=>s+it.price*it.qty, 0);
+    const mappedItems = items.map(it=>({ name:it.name, qty:it.qty, price:it.price, total:it.price*it.qty }));
+
+    const {error} = await sb.from('orders').update({
+      items: mappedItems,
+      total,
+      status: orders[primaryId]?.status === 'bill_pending' ? 'bill_pending' : 'new',
+      updated_at: new Date().toISOString()
+    }).eq('id', primaryId);
+    if(error) throw error;
+
+    // Dismiss any extra orders on same table (merged into primary)
+    for(let i=1; i<editState.orderIds.length; i++){
+      await sb.from('orders').update({ status:'dismissed', updated_at:new Date().toISOString() }).eq('id', editState.orderIds[i]);
+    }
+
+    toast('✅ Order updated — kitchen notified!');
+    closeEditModal();
+    await loadAll();
+  }catch(e){
+    console.error(e);
+    toast('Error updating order: '+e.message, true);
+    btn.disabled = false; btn.textContent = 'Update Kitchen ✓';
+  }finally{
+    isSavingEdit = false;
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   CANCEL ORDER LOGIC
+════════════════════════════════════════════════════════ */
+let cancelState = { orderIds:[], tableNo:'' };
+let isCancellingOrder = false;
+
+function openCancelModal(idsJson, tableNo){
+  const ids = typeof idsJson === 'string' ? JSON.parse(idsJson) : idsJson;
+  cancelState = { orderIds: ids, tableNo };
+  const isParcel = String(tableNo).startsWith('Parcel');
+  document.getElementById('cancelModalTable').textContent = isParcel ? tableNo : 'Table ' + tableNo;
+  const bg = document.getElementById('cancelModalBg');
+  bg.style.display = 'flex';
+  requestAnimationFrame(()=>bg.classList.add('show'));
+}
+
+function closeCancelModal(){
+  const bg = document.getElementById('cancelModalBg');
+  bg.classList.remove('show');
+  setTimeout(()=>{ bg.style.display = 'none'; }, 280);
+}
+
+async function confirmCancelOrder(){
+  if(isCancellingOrder) return;
+  isCancellingOrder = true;
+  const btn = document.getElementById('cancelConfirmBtn');
+  btn.disabled = true; btn.textContent = 'Cancelling...';
+  try{
+    for(const id of cancelState.orderIds){
+      const {error} = await sb.from('orders').update({
+        status:'dismissed',
+        updated_at: new Date().toISOString()
+      }).eq('id', id);
+      if(error) throw error;
+      if(orders[id]) delete orders[id];
+    }
+    const label = String(cancelState.tableNo).startsWith('Parcel') ? cancelState.tableNo : 'Table '+cancelState.tableNo;
+    toast('🗑️ Order cancelled — '+label);
+    closeCancelModal();
+    render(); updateStats();
+  }catch(e){
+    console.error(e);
+    toast('Error cancelling: '+e.message, true);
+    btn.disabled = false; btn.textContent = 'Yes, Cancel';
+  }finally{
+    isCancellingOrder = false;
+  }
+}
+
 </script>
 </body>
 </html>
