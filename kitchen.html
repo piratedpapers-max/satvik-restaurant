@@ -127,7 +127,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
-// Kitchen PIN is managed via Admin panel → stored in Supabase restaurant_data.kitchen_password
+const KITCHEN_PIN="1234"; // ← Change this
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},soundOn=true,pinInput='';
 let audioCtx=null;
@@ -140,29 +140,10 @@ function primeAudio(){
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 function pk(k){primeAudio();if(pinInput.length>=4)return;pinInput+=k;updateDots();}
 function pd(){pinInput=pinInput.slice(0,-1);updateDots();document.getElementById('pinErr').textContent='';}
-async function pe(){
-  if(!pinInput.length)return;
+function pe(){
   primeAudio();
-  document.querySelectorAll('.pin-btn').forEach(b=>b.disabled=true);
-  document.getElementById('pinErr').textContent='';
-  try{
-    const {data,error}=await sb.from('restaurant_data').select('kitchen_password').eq('id',RESTAURANT_ID).single();
-    if(error)throw error;
-    const storedPin=data?.kitchen_password;
-    if(!storedPin||pinInput===storedPin){
-      sessionStorage.setItem('k_auth','1');
-      document.getElementById('pinScreen').classList.add('hide');
-      loadOrders();subscribe();primeAudio();
-    }else{
-      document.getElementById('pinErr').textContent='Incorrect PIN. Try again.';
-      pinInput='';updateDots();
-    }
-  }catch(e){
-    document.getElementById('pinErr').textContent='Connection error. Retry.';
-    pinInput='';updateDots();
-  }finally{
-    document.querySelectorAll('.pin-btn').forEach(b=>b.disabled=false);
-  }
+  if(pinInput===KITCHEN_PIN){sessionStorage.setItem('k_auth','1');document.getElementById('pinScreen').classList.add('hide');loadOrders();subscribe();}
+  else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinInput='';updateDots();}
 }
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
 function logout(){sessionStorage.removeItem('k_auth');pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
@@ -197,7 +178,7 @@ function beep(f=660){
 }
 function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';b.classList.toggle('on',soundOn);}
 async function loadOrders(){
-  const today=new Date();today.setHours(0,0,0,0);
+  const today=getISTDayStart();
   const {data}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID)
     .in('status',['new','cooking','ready','waiter']).gte('placed_at',today.toISOString()).order('placed_at',{ascending:true});
   if(data){orders={};data.forEach(o=>{orders[o.id]=o;});}
