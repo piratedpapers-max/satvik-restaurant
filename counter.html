@@ -136,7 +136,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 
 /* WAITER ALERTS */
 .waiter-bar{background:var(--red);display:none;padding:10px 16px;font-size:13px;font-weight:700;align-items:center;gap:8px;cursor:pointer;}
-.conn-alert{background:#B8860B;color:#fff;padding:10px 16px;font-size:13px;font-weight:700;text-align:center;animation:connPulse 1s infinite;}
+.conn-alert{background:#B8860B;color:#fff;padding:10px 16px;font-size:13px;font-weight:700;text-align:center;animation:connPulse 1s infinite;position:relative;z-index:750;}
 .conn-alert.hide{display:none;}
 @keyframes connPulse{0%,100%{opacity:1}50%{opacity:.6}}
 .waiter-bar.show{display:flex;}
@@ -144,7 +144,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 /* WATERMARK */
 .watermark{text-align:center;padding:12px;font-size:10px;color:#333;}
 /* TOAST */
-.toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;}
+.toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:600;z-index:700;transition:transform .3s;white-space:nowrap;}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
 
@@ -1224,14 +1224,13 @@ async function saveEditedOrder(){
     const {error} = await sb.from('orders').update({
       items: mappedItems,
       total,
-      status: orders[primaryId]?.status === 'bill_pending' ? 'bill_pending' : 'new',
-      updated_at: new Date().toISOString()
+      status: orders[primaryId]?.status === 'bill_pending' ? 'bill_pending' : 'new'
     }).eq('id', primaryId);
     if(error) throw error;
 
     // Dismiss any extra orders on same table (merged into primary)
     for(let i=1; i<editState.orderIds.length; i++){
-      await sb.from('orders').update({ status:'dismissed', updated_at:new Date().toISOString() }).eq('id', editState.orderIds[i]);
+      await sb.from('orders').update({ status:'dismissed' }).eq('id', editState.orderIds[i]);
     }
 
     toast('✅ Order updated — kitchen notified!');
@@ -1276,8 +1275,7 @@ async function confirmCancelOrder(){
   try{
     for(const id of cancelState.orderIds){
       const {error} = await sb.from('orders').update({
-        status:'dismissed',
-        updated_at: new Date().toISOString()
+        status:'dismissed'
       }).eq('id', id);
       if(error) throw error;
       if(orders[id]) delete orders[id];
