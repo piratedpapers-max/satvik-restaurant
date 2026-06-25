@@ -474,8 +474,8 @@ async function showApp(){
 async function loadStats(){
   try{
     const now=new Date();
-    const todayStart=getISTDayStart();
-    const monthStart=getISTMonthStart();
+    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
     const [{data:td},{data:md}]=await Promise.all([
       sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).eq('payment_status','paid').gte('placed_at',todayStart.toISOString()),
       sb.from('orders').select('id').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).gte('placed_at',monthStart.toISOString())
@@ -491,7 +491,7 @@ async function loadTableOrders(){
   if(!ASSIGNED_TABLES.length){
     renderDashboard();return;
   }
-  const now=new Date();const todayStart=getISTDayStart();
+  const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
   try{
     // Active orders — includes bill_pending from kitchen (no served_at) but NOT waiter-served ones
     const {data:active}=await sb.from('orders').select('*')
