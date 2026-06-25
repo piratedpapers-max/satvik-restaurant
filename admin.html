@@ -437,6 +437,8 @@ textarea{resize:vertical;min-height:55px;}
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
+function getISTDayStart(){const now=new Date();const istOff=5.5*60*60*1000;const istNow=new Date(now.getTime()+istOff);const istMid=new Date(Date.UTC(istNow.getUTCFullYear(),istNow.getUTCMonth(),istNow.getUTCDate()));return new Date(istMid.getTime()-istOff);}
+function getISTMonthStart(){const now=new Date();const istOff=5.5*60*60*1000;const istNow=new Date(now.getTime()+istOff);const istMonth=new Date(Date.UTC(istNow.getUTCFullYear(),istNow.getUTCMonth(),1));return new Date(istMonth.getTime()-istOff);}
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 // ── CLOUDINARY CONFIG (fill in after creating free account at cloudinary.com) ──
 const CLOUDINARY_CLOUD_NAME="dmzk3gkty";
