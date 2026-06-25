@@ -748,8 +748,8 @@ function tableCard(tno,tbl,type){
   const kotCount=tbl.orders.length;
   const actions=isBill?`<div style="display:flex;gap:6px;padding:8px 12px 10px;border-top:1px solid var(--line)">
     <button style="flex:2;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:Poppins,sans-serif;background:linear-gradient(135deg,#6B1EA0,#4A0E6B);color:#fff;" onclick='openSettle(${JSON.stringify(ids)},"${tno}",${grandTotal})'>&#128179; Settle Bill</button>
-    <button class="pay-btn-full bill-action-btn" style="flex:1" onclick='printTableBill("${tno}",${allItemsJson},${grandTotal})'>&#128424;</button>
-    <button class="pay-btn-full wa-action-btn" style="flex:1" onclick='sendWhatsAppBill("${tno}",${allItemsJson},${grandTotal})'>&#128241;</button>
+    <button class="pay-btn-full bill-action-btn" style="flex:1" onclick='printTableBill("${tno}",${allItemsJson},${grandTotal})'>Print</button>
+    <button class="pay-btn-full wa-action-btn" style="flex:1" onclick='sendWhatsAppBill("${tno}",${allItemsJson},${grandTotal})'>WA</button>
   </div>`:'';
   return `<div class="tcard ${type}">
     <div class="tcard-top">
@@ -1102,7 +1102,7 @@ function openSettle(idsJson,tableNo,grandTotal){
       <input type="number" class="cash-input" id="cashTendered" placeholder="&#8377;${grandTotal}" min="${grandTotal}" oninput="calcChange(${grandTotal})"/>
       <div class="change-row">
         <span style="font-size:12px;color:var(--muted)">Change to Return</span>
-        <span class="change-amt" id="changeAmt">&#8377;0</span>
+        <span class="change-amt" id="changeAmt">\u20B90</span>
       </div>
     </div>
     <button class="settle-confirm-btn" id="settleConfirmBtn" disabled onclick="confirmSettle()">&#10003; Confirm Payment</button>
@@ -1118,7 +1118,7 @@ function selectPay(m,total){
   else cashBox.classList.remove('show');
   document.getElementById('settleConfirmBtn').disabled=false;
 }
-function calcChange(total){const t=parseFloat(document.getElementById('cashTendered').value)||0;const ch=Math.max(0,t-total);const el=document.getElementById('changeAmt');el.textContent='&#8377;'+ch;el.style.color=t>=total?'#27AE60':'#E74C3C';}
+function calcChange(total){const t=parseFloat(document.getElementById('cashTendered').value)||0;const ch=Math.max(0,t-total);const el=document.getElementById('changeAmt');el.textContent='\u20B9'+ch;el.style.color=t>=total?'#27AE60':'#E74C3C';}
 function closeSettle(){document.getElementById('settleBg').classList.remove('show');settlePending=null;selectedPayMethod=null;}
 
 async function confirmSettle(){
