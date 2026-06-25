@@ -355,7 +355,7 @@ textarea{resize:vertical;min-height:55px;}
     </div>
 
     <div class="panel">
-      <h2>🔑 Change Password</h2>
+      <h2>🔑 Change Admin Password</h2>
       <p class="hint">Change your admin login password. Make sure to remember the new password.</p>
       <label>Current Password</label>
       <input type="password" id="cpCurrent" placeholder="Current password"/>
@@ -363,7 +363,39 @@ textarea{resize:vertical;min-height:55px;}
       <input type="password" id="cpNew" placeholder="New password (min 4 characters)"/>
       <label>Confirm New Password</label>
       <input type="password" id="cpConfirm" placeholder="Confirm new password"/>
-      <button class="gen-btn" style="margin-top:12px" onclick="changePassword()">🔑 Update Password</button>
+      <button class="gen-btn" style="margin-top:12px" onclick="changePassword()">🔑 Update Admin Password</button>
+    </div>
+
+    <!-- KITCHEN PASSWORD PANEL -->
+    <div class="panel">
+      <h2>🍳 Kitchen Panel Password</h2>
+      <p class="hint">Set or change the password for kitchen staff to access the kitchen display screen.</p>
+      <div id="kitchenPassStatus" style="background:#F0FBF4;border:1px solid #A9DFBF;border-radius:8px;padding:10px 14px;font-size:12px;color:#1E8449;font-weight:600;margin-bottom:12px;display:none">✅ Kitchen password is set</div>
+      <div id="kitchenPassUnset" style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:8px;padding:10px 14px;font-size:12px;color:#B7950B;font-weight:600;margin-bottom:12px">⚠️ No kitchen password set — kitchen panel is open to anyone</div>
+      <label>New Kitchen Password</label>
+      <input type="password" id="kpNew" placeholder="New kitchen password (min 4 characters)"/>
+      <label>Confirm Password</label>
+      <input type="password" id="kpConfirm" placeholder="Confirm kitchen password"/>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="gen-btn" style="flex:1;min-width:160px" onclick="changeKitchenPassword()">🍳 Set Kitchen Password</button>
+        <button class="gen-btn" id="removeKitchenPassBtn" style="flex:1;min-width:160px;background:#E74C3C;display:none" onclick="removeKitchenPassword()">🗑️ Remove Password</button>
+      </div>
+    </div>
+
+    <!-- COUNTER PASSWORD PANEL -->
+    <div class="panel">
+      <h2>🧾 Counter Panel Password</h2>
+      <p class="hint">Set or change the password for counter staff to access billing and order management.</p>
+      <div id="counterPassStatus" style="background:#F0FBF4;border:1px solid #A9DFBF;border-radius:8px;padding:10px 14px;font-size:12px;color:#1E8449;font-weight:600;margin-bottom:12px;display:none">✅ Counter password is set</div>
+      <div id="counterPassUnset" style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:8px;padding:10px 14px;font-size:12px;color:#B7950B;font-weight:600;margin-bottom:12px">⚠️ No counter password set — counter panel is open to anyone</div>
+      <label>New Counter Password</label>
+      <input type="password" id="copNew" placeholder="New counter password (min 4 characters)"/>
+      <label>Confirm Password</label>
+      <input type="password" id="copConfirm" placeholder="Confirm counter password"/>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="gen-btn" style="flex:1;min-width:160px" onclick="changeCounterPassword()">🧾 Set Counter Password</button>
+        <button class="gen-btn" id="removeCounterPassBtn" style="flex:1;min-width:160px;background:#E74C3C;display:none" onclick="removeCounterPassword()">🗑️ Remove Password</button>
+      </div>
     </div>
 
     <!-- DAILY WHATSAPP REPORT PANEL -->
@@ -530,7 +562,23 @@ async function loadAll(){
   loadReport('week');
 }
 async function loadMenuData(){
-  try{const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();if(error)throw error;DATA=(data?.data?.menu?.length)?data.data:getDefault();}catch(e){DATA=getDefault();}
+  try{
+    const {data,error}=await sb.from('restaurant_data').select('data,kitchen_password,counter_password').eq('id',RESTAURANT_ID).single();
+    if(error)throw error;
+    DATA=(data?.data?.menu?.length)?data.data:getDefault();
+    // Kitchen password status
+    if(data?.kitchen_password){
+      document.getElementById('kitchenPassStatus').style.display='block';
+      document.getElementById('kitchenPassUnset').style.display='none';
+      document.getElementById('removeKitchenPassBtn').style.display='';
+    }
+    // Counter password status
+    if(data?.counter_password){
+      document.getElementById('counterPassStatus').style.display='block';
+      document.getElementById('counterPassUnset').style.display='none';
+      document.getElementById('removeCounterPassBtn').style.display='';
+    }
+  }catch(e){DATA=getDefault();}
   renderForm();
 }
 async function loadAnalytics(){
@@ -1310,6 +1358,65 @@ function downloadReport(){
   URL.revokeObjectURL(url);
   showToast('✅ Report downloaded!');
 }
+
+/* ════════════════════════════════════════════════════
+   KITCHEN PASSWORD MANAGEMENT
+════════════════════════════════════════════════════ */
+async function changeKitchenPassword(){
+  const np=document.getElementById('kpNew').value.trim();
+  const cp=document.getElementById('kpConfirm').value.trim();
+  if(!np||!cp){showToast('Fill in both fields.',true);return;}
+  if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
+  if(np!==cp){showToast('Passwords do not match.',true);return;}
+  const {error}=await sb.from('restaurant_data').update({kitchen_password:np}).eq('id',RESTAURANT_ID);
+  if(error){showToast('Error: '+error.message,true);return;}
+  document.getElementById('kpNew').value='';
+  document.getElementById('kpConfirm').value='';
+  document.getElementById('kitchenPassStatus').style.display='block';
+  document.getElementById('kitchenPassUnset').style.display='none';
+  document.getElementById('removeKitchenPassBtn').style.display='';
+  showToast('✅ Kitchen password updated!');
+}
+
+async function removeKitchenPassword(){
+  if(!confirm('Remove kitchen password? The kitchen panel will be accessible to anyone.'))return;
+  const {error}=await sb.from('restaurant_data').update({kitchen_password:null}).eq('id',RESTAURANT_ID);
+  if(error){showToast('Error: '+error.message,true);return;}
+  document.getElementById('kitchenPassStatus').style.display='none';
+  document.getElementById('kitchenPassUnset').style.display='block';
+  document.getElementById('removeKitchenPassBtn').style.display='none';
+  showToast('Kitchen password removed.');
+}
+
+/* ════════════════════════════════════════════════════
+   COUNTER PASSWORD MANAGEMENT
+════════════════════════════════════════════════════ */
+async function changeCounterPassword(){
+  const np=document.getElementById('copNew').value.trim();
+  const cp=document.getElementById('copConfirm').value.trim();
+  if(!np||!cp){showToast('Fill in both fields.',true);return;}
+  if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
+  if(np!==cp){showToast('Passwords do not match.',true);return;}
+  const {error}=await sb.from('restaurant_data').update({counter_password:np}).eq('id',RESTAURANT_ID);
+  if(error){showToast('Error: '+error.message,true);return;}
+  document.getElementById('copNew').value='';
+  document.getElementById('copConfirm').value='';
+  document.getElementById('counterPassStatus').style.display='block';
+  document.getElementById('counterPassUnset').style.display='none';
+  document.getElementById('removeCounterPassBtn').style.display='';
+  showToast('✅ Counter password updated!');
+}
+
+async function removeCounterPassword(){
+  if(!confirm('Remove counter password? The counter panel will be accessible to anyone.'))return;
+  const {error}=await sb.from('restaurant_data').update({counter_password:null}).eq('id',RESTAURANT_ID);
+  if(error){showToast('Error: '+error.message,true);return;}
+  document.getElementById('counterPassStatus').style.display='none';
+  document.getElementById('counterPassUnset').style.display='block';
+  document.getElementById('removeCounterPassBtn').style.display='none';
+  showToast('Counter password removed.');
+}
+
 </script>
 </body>
 </html>

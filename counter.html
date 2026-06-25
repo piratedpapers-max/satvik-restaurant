@@ -473,7 +473,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
-const COUNTER_PASSWORD="counter2026"; // ← Change this to a secure password
+// Counter password is managed via Admin panel → stored in Supabase restaurant_data.counter_password
 
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},paidToday=[],payBreakdown={cash:0,upi:0,card:0};
@@ -512,14 +512,28 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)primeAudio
 setInterval(primeAudio,15000);
 
 /* LOGIN */
-function tryLogin(){
+async function tryLogin(){
   primeAudio();
-  const val=document.getElementById('loginPass').value;
-  if(val===COUNTER_PASSWORD){
-    sessionStorage.setItem('counter_auth','1');
-    document.getElementById('loginScreen').classList.add('hide');
-    loadAll();subscribe();
-  }else{document.getElementById('loginErr').textContent='Incorrect password.';}
+  const val=document.getElementById('loginPass').value.trim();
+  if(!val){document.getElementById('loginErr').textContent='Enter a password.';return;}
+  const btn=document.querySelector('.login-btn');
+  btn.disabled=true;btn.textContent='Checking...';
+  try{
+    const {data,error}=await sb.from('restaurant_data').select('counter_password').eq('id',RESTAURANT_ID).single();
+    if(error)throw error;
+    const storedPass=data?.counter_password;
+    if(!storedPass||val===storedPass){
+      sessionStorage.setItem('counter_auth','1');
+      document.getElementById('loginScreen').classList.add('hide');
+      loadAll();subscribe();primeAudio();
+    }else{
+      document.getElementById('loginErr').textContent='Incorrect password. Try again.';
+    }
+  }catch(e){
+    document.getElementById('loginErr').textContent='Connection error. Please retry.';
+  }finally{
+    btn.disabled=false;btn.textContent='Access Counter →';
+  }
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 function logout(){sessionStorage.removeItem('counter_auth');document.getElementById('loginScreen').classList.remove('hide');document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent='';}
