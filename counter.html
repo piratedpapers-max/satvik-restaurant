@@ -505,20 +505,22 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 <div id="printArea">
   <div style="text-align:center;margin-bottom:6px;">
     <div style="font-weight:700;font-size:15px;letter-spacing:0.5px" id="printRestName">Satvik Restaurant</div>
-    <div style="font-size:11px" id="printRestSub">Pure Veg - Varanasi</div>
+    <div style="font-size:11px;white-space:pre-line" id="printRestSub">Pure Veg - Varanasi</div>
   </div>
   <div style="border-top:1px dashed #000;margin:6px 0"></div>
   <div style="display:flex;justify-content:space-between;font-size:12px">
     <span id="printTable">Table —</span><span id="printDate"></span>
   </div>
+  <div style="font-size:11px;color:#444;margin-top:2px" id="printCustomer"></div>
   <div style="border-top:1px dashed #000;margin:6px 0"></div>
   <div id="printLines" style="font-size:12px"></div>
   <div style="border-top:1px dashed #000;margin:6px 0"></div>
-  <div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px">
+  <div id="printGST" style="font-size:11px;color:#444"></div>
+  <div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-top:4px">
     <span>TOTAL</span><span id="printTotal">Rs 0</span>
   </div>
   <div style="border-top:1px dashed #000;margin:6px 0"></div>
-  <div style="text-align:center;margin-top:8px;font-size:11px">Thank you for dining with us!</div>
+  <div style="text-align:center;margin-top:8px;font-size:11px" id="printFooter">Thank you for dining with us!</div>
   <div style="text-align:center;margin-top:10px;font-size:9px">Powered by HK Digital Solutions</div>
   <div style="margin-top:6px"></div>
 </div>
@@ -997,18 +999,28 @@ async function submitNewOrder(){
 
 /* ===== PRINT BILL ===== */
 function printTableBill(tableNo,allItems,grandTotal){
-  document.getElementById('printRestName').textContent=RESTAURANT_INFO.name;
-  document.getElementById('printRestSub').textContent=(RESTAURANT_INFO.sub||'').replace(/·/g,'-');
+  const gstPct=RESTAURANT_INFO.gstPercent||0;
+  const {cgst,sgst,gstAmt}=calcGST(grandTotal,gstPct);
   const isParcel=String(tableNo).startsWith('Parcel');
+  document.getElementById('printRestName').textContent=RESTAURANT_INFO.name;
+  let sub=(RESTAURANT_INFO.sub||'').replace(/·/g,'-');
+  if(RESTAURANT_INFO.billAddress)sub+='\n'+RESTAURANT_INFO.billAddress;
+  if(RESTAURANT_INFO.gstNumber)sub+='\nGSTIN: '+RESTAURANT_INFO.gstNumber;
+  document.getElementById('printRestSub').textContent=sub;
   document.getElementById('printTable').textContent=isParcel?tableNo:'Table '+tableNo;
   document.getElementById('printDate').textContent=new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('printCustomer').textContent='';
   document.getElementById('printLines').innerHTML=Object.values(allItems).map(i=>
     `<div style="display:flex;justify-content:space-between;padding:2px 0;gap:8px">
       <span style="flex:1">${i.name} x${i.qty}</span>
       <span style="white-space:nowrap">Rs ${i.total}</span>
     </div>`
   ).join('');
+  document.getElementById('printGST').innerHTML=gstPct?
+    `<div style="display:flex;justify-content:space-between;padding:1px 0"><span>CGST @${gstPct/2}%</span><span>Rs ${cgst}</span></div>
+     <div style="display:flex;justify-content:space-between;padding:1px 0"><span>SGST @${gstPct/2}%</span><span>Rs ${sgst}</span></div>`:'';
   document.getElementById('printTotal').textContent='Rs '+grandTotal;
+  document.getElementById('printFooter').textContent=RESTAURANT_INFO.billFooter||'Thank you for dining with us!';
   window.print();
 }
 
