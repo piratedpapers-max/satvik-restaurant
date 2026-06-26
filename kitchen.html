@@ -79,37 +79,6 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 .watermark{text-align:center;padding:10px;font-size:10px;color:#333;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;}
 .toast.show{transform:translate(-50%,0);}
-
-/* ── LIGHT MODE — KITCHEN ── */
-body.light-mode{
-  --bg:#F2F2F7;--card:#FFFFFF;--card2:#F8F8F8;
-  --line:#E0E0E0;--text:#111;--muted:#888;
-  --green:#4A7C59;--gold:#B8860B;--orange:#D4620A;--red:#C0392B;
-}
-body.light-mode header{background:#fff;border-bottom-color:var(--green);box-shadow:0 2px 8px rgba(0,0,0,.08);}
-body.light-mode .order-card{background:#fff;border-color:#E0E0E0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-body.light-mode .order-card .oc-head{background:#F8F8F8;border-bottom-color:#E0E0E0;}
-body.light-mode .order-card .table-label{color:#333;}
-body.light-mode .order-card .item-row{border-bottom-color:#F0F0F0;}
-body.light-mode .order-card .item-name{color:#111;}
-body.light-mode .order-card .item-qty{color:#555;}
-body.light-mode .stats{background:#fff;border-bottom:1px solid #E0E0E0;}
-body.light-mode .stat .sv{color:var(--green);}
-body.light-mode .stat .sl{color:#666;}
-body.light-mode .pin-screen{background:#F2F2F7;}
-body.light-mode .pin-btn{background:#fff;border-color:#ddd;color:#111;}
-body.light-mode .pin-dots span{background:#ccc;}
-body.light-mode .pin-dots span.filled{background:var(--green);}
-body.light-mode .conn-alert{color:#fff;}
-body.light-mode .sbtn{background:#F2F2F7;border-color:#ddd;color:#333;}
-body.light-mode .lock-btn{background:#F2F2F7;border-color:#ddd;color:#333;}
-
-/* ── THEME TOGGLE ── */
-.theme-toggle-btn{background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex:0 0 auto;}
-.theme-toggle-btn:hover{border-color:rgba(255,255,255,.4);color:#fff;}
-body.light-mode .theme-toggle-btn{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.6);}
-body.light-mode .theme-toggle-btn:hover{border-color:rgba(0,0,0,.5);color:#000;}
-
 </style>
 </head>
 <body>
@@ -137,7 +106,6 @@ body.light-mode .theme-toggle-btn:hover{border-color:rgba(0,0,0,.5);color:#000;}
     <div class="ldot" id="ldot"></div><span class="ltext">LIVE</span>
     <button class="sbtn on" id="sndBtn" onclick="toggleSound()">🔔</button>
     <span class="clock" id="clock"></span>
-    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
     <button class="lock-btn" onclick="logout()">🔒</button>
   </div>
 </header>
@@ -353,42 +321,24 @@ function toast(text){toastEl.textContent=text;toastEl.classList.add('show');setT
 ══════════════════════════════════════════ */
 async function fetchPlanAndGate(){
   try{
-    const {data,error}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-    if(error||!data)return; // no row = legacy client, allow access
-    const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(error){console.warn('Plan fetch error:',error.message);return;}
+    if(!data||!data.length){console.warn('No subscription row for',RESTAURANT_ID);return;}
+    const row=data[0];
+    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
     if(expired){showExpiredScreen();}
-    // Show plan badge
     const planColors={basic:'#7A7ACF',growth:'#00A86B',premium:'#FFD700'};
-    const plan=data.plan||'basic';
+    const plan=row.plan||'basic';
     const badge=document.createElement('div');
-    badge.style.cssText=`position:fixed;top:8px;right:12px;font-size:9px;font-weight:700;padding:3px 10px;border-radius:99px;background:${planColors[plan]}22;color:${planColors[plan]};border:1px solid ${planColors[plan]}55;letter-spacing:1px;z-index:200;`;
+    badge.style.cssText=`position:fixed;top:8px;right:48px;font-size:9px;font-weight:700;padding:3px 10px;border-radius:99px;background:${planColors[plan]}22;color:${planColors[plan]};border:1px solid ${planColors[plan]}55;letter-spacing:1px;z-index:200;`;
     badge.textContent=plan.toUpperCase();
     document.body.appendChild(badge);
-  }catch(e){console.warn('Plan check failed',e);}
+  }catch(e){console.warn('Plan check failed:',e);}
 }
 
 function showExpiredScreen(){
-  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Kitchen display is locked. Please contact HK Digital to renew.</p><a href="https://wa.me/918102806704?text=Hi, I need to renew my subscription - ${RESTAURANT_ID}" style="display:inline-block;background:#25D366;color:#fff;padding:13px 28px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a></div></div>`;
+  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Kitchen display is locked. Please contact HK Digital to renew.</p><a href="https://wa.me/91XXXXXXXXXX?text=Hi, I need to renew my subscription - ${RESTAURANT_ID}" style="display:inline-block;background:#25D366;color:#fff;padding:13px 28px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a></div></div>`;
 }
-
-
-/* ══════════════════════════════════════════
-   THEME TOGGLE
-══════════════════════════════════════════ */
-function toggleTheme(){
-  const isLight=document.body.classList.toggle('light-mode');
-  document.querySelectorAll('.theme-toggle-btn').forEach(b=>b.textContent=isLight?'☀️':'🌙');
-  localStorage.setItem('hk_theme',isLight?'light':'dark');
-}
-(function initTheme(){
-  const saved=localStorage.getItem('hk_theme');
-  if(saved==='light'){
-    document.body.classList.add('light-mode');
-    document.addEventListener('DOMContentLoaded',()=>{
-      document.querySelectorAll('.theme-toggle-btn').forEach(b=>b.textContent='☀️');
-    });
-  }
-})();
 
 </script>
 </body>

@@ -238,43 +238,6 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 .feature-locked{opacity:.4;pointer-events:none;position:relative;}
 .feature-locked::after{content:'🔒';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;}
 
-
-/* ── LIGHT MODE — COUNTER ── */
-body.light-mode{
-  --bg:#F2F2F7;--card:#FFFFFF;--card2:#F8F8F8;
-  --line:#E0E0E0;--text:#111;--muted:#888;
-  --green:#4A7C59;--gold:#B8860B;--orange:#D4620A;
-  --red:#C0392B;--purple:#6B3FA0;--blue:#1A5A99;
-}
-body.light-mode header{background:#fff;border-bottom-color:var(--purple);box-shadow:0 2px 8px rgba(0,0,0,.08);}
-body.light-mode .stat{background:#fff;border:1px solid #E0E0E0;}
-body.light-mode .stat .sl{color:#666;}
-body.light-mode .tcard{background:#fff;border-color:#E0E0E0;}
-body.light-mode .tcard-top{background:#fff;}
-body.light-mode .tcard-name{color:#111;}
-body.light-mode .tcard-time,.tcard-meta{color:#666;}
-body.light-mode .section-hdr{background:#F2F2F7;border-color:#E0E0E0;}
-body.light-mode .no-modal{background:#fff;}
-body.light-mode .no-modal-bg{background:rgba(0,0,0,.4);}
-body.light-mode .edit-modal{background:#F8F8F8;border-color:#E0E0E0;}
-body.light-mode .edit-item-row{background:#fff;border-color:#E0E0E0;}
-body.light-mode .edit-stepper{background:#F2F2F7;border-color:#E0E0E0;}
-body.light-mode .edit-stepper-btn{color:#111;}
-body.light-mode .edit-modal-foot{background:#F2F2F7;border-color:#E0E0E0;}
-body.light-mode .cancel-modal{background:#fff;border-color:#E0E0E0;}
-body.light-mode .cancel-btn-no{background:#F2F2F7;border-color:#E0E0E0;color:#111;}
-body.light-mode .lock-btn{background:#fff;border-color:#ddd;color:#333;}
-body.light-mode .lock-btn:hover{background:#f5f5f5;}
-body.light-mode .new-order-btn{box-shadow:0 2px 6px rgba(0,0,0,.1);}
-body.light-mode .login-screen{background:#F2F2F7;}
-body.light-mode .login-input{background:#fff;border-color:#ddd;color:#111;}
-
-/* ── THEME TOGGLE ── */
-.theme-toggle-btn{background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex:0 0 auto;}
-.theme-toggle-btn:hover{border-color:rgba(255,255,255,.4);color:#fff;}
-body.light-mode .theme-toggle-btn{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.6);}
-body.light-mode .theme-toggle-btn:hover{border-color:rgba(0,0,0,.5);color:#000;}
-
 </style>
 </head>
 <body>
@@ -304,7 +267,6 @@ body.light-mode .theme-toggle-btn:hover{border-color:rgba(0,0,0,.5);color:#000;}
     <button class="new-order-btn" style="background:#2980B9" onclick="openTableMgmt()">🪑 Tables</button>
     <div class="ldot" id="ldot"></div>
     <span class="clock" id="clock"></span>
-    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
     <button class="lock-btn" onclick="logout()">🔒 Lock</button>
   </div>
 </header>
@@ -1362,17 +1324,19 @@ const PLAN_FEATURES={
   growth:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report'],
   premium:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding']
 };
-let CURRENT_PLAN='premium';
+let CURRENT_PLAN='basic'; // safe default
 
 async function fetchPlanAndGate(){
   try{
-    const {data,error}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-    if(error||!data)return;
-    CURRENT_PLAN=data.plan||'premium';
-    const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(error){console.warn('Plan fetch error:',error.message);return;}
+    if(!data||!data.length){console.warn('No subscription row for',RESTAURANT_ID);return;}
+    const row=data[0];
+    CURRENT_PLAN=row.plan||'basic';
+    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
     if(expired){showExpiredScreen();return;}
     applyCounterGating();
-  }catch(e){console.warn('Plan check failed',e);}
+  }catch(e){console.warn('Plan check failed:',e);}
 }
 
 function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.premium).includes(f);}
@@ -1431,27 +1395,8 @@ function applyCounterGating(){
 }
 
 function showExpiredScreen(){
-  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Your subscription has expired. Please contact HK Digital to renew.</p><a href="https://wa.me/918102806704?text=Hi, I need to renew my subscription - ${RESTAURANT_ID}" style="display:inline-block;background:#25D366;color:#fff;padding:13px 28px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a></div></div>`;
+  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Your subscription has expired. Please contact HK Digital to renew.</p><a href="https://wa.me/91XXXXXXXXXX?text=Hi, I need to renew my subscription - ${RESTAURANT_ID}" style="display:inline-block;background:#25D366;color:#fff;padding:13px 28px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a></div></div>`;
 }
-
-
-/* ══════════════════════════════════════════
-   THEME TOGGLE
-══════════════════════════════════════════ */
-function toggleTheme(){
-  const isLight=document.body.classList.toggle('light-mode');
-  document.querySelectorAll('.theme-toggle-btn').forEach(b=>b.textContent=isLight?'☀️':'🌙');
-  localStorage.setItem('hk_theme',isLight?'light':'dark');
-}
-(function initTheme(){
-  const saved=localStorage.getItem('hk_theme');
-  if(saved==='light'){
-    document.body.classList.add('light-mode');
-    document.addEventListener('DOMContentLoaded',()=>{
-      document.querySelectorAll('.theme-toggle-btn').forEach(b=>b.textContent='☀️');
-    });
-  }
-})();
 
 </script>
 </body>
