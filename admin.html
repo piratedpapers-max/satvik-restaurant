@@ -213,18 +213,6 @@ textarea{resize:vertical;min-height:55px;}
   .os-card{min-width:60px;}
   .panel h2{font-size:15px;}
 }
-
-/* ── PLAN GATE OVERLAY ── */
-.plan-gate{position:relative;}
-.plan-gate-lock{position:absolute;inset:0;background:rgba(10,10,15,.82);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:50;backdrop-filter:blur(3px);}
-.plan-gate-lock .lock-icon{font-size:28px;}
-.plan-gate-lock .lock-title{font-size:13px;font-weight:700;color:#fff;}
-.plan-gate-lock .lock-sub{font-size:11px;color:rgba(255,255,255,.55);text-align:center;padding:0 16px;}
-.plan-gate-lock .lock-btn{margin-top:6px;background:linear-gradient(135deg,#6C63FF,#8B85FF);color:#fff;border:none;padding:8px 18px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;}
-/* Upgrade toast banner */
-#upgradeBanner{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120%);background:linear-gradient(135deg,#6C63FF,#8B85FF);color:#fff;padding:12px 22px;border-radius:99px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(108,99,255,.4);}
-#upgradeBanner.show{transform:translateX(-50%) translateY(0);}
-
 </style>
 </head>
 <body>
@@ -367,7 +355,7 @@ textarea{resize:vertical;min-height:55px;}
     </div>
 
     <div class="panel">
-      <h2>🔑 Change Admin Password</h2>
+      <h2>🔑 Change Password</h2>
       <p class="hint">Change your admin login password. Make sure to remember the new password.</p>
       <label>Current Password</label>
       <input type="password" id="cpCurrent" placeholder="Current password"/>
@@ -375,39 +363,7 @@ textarea{resize:vertical;min-height:55px;}
       <input type="password" id="cpNew" placeholder="New password (min 4 characters)"/>
       <label>Confirm New Password</label>
       <input type="password" id="cpConfirm" placeholder="Confirm new password"/>
-      <button class="gen-btn" style="margin-top:12px" onclick="changePassword()">🔑 Update Admin Password</button>
-    </div>
-
-    <!-- KITCHEN PASSWORD PANEL -->
-    <div class="panel">
-      <h2>🍳 Kitchen Panel Password</h2>
-      <p class="hint">Set or change the password for kitchen staff to access the kitchen display screen.</p>
-      <div id="kitchenPassStatus" style="background:#F0FBF4;border:1px solid #A9DFBF;border-radius:8px;padding:10px 14px;font-size:12px;color:#1E8449;font-weight:600;margin-bottom:12px;display:none">✅ Kitchen password is set</div>
-      <div id="kitchenPassUnset" style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:8px;padding:10px 14px;font-size:12px;color:#B7950B;font-weight:600;margin-bottom:12px">⚠️ No kitchen password set — kitchen panel is open to anyone</div>
-      <label>New Kitchen Password</label>
-      <input type="password" id="kpNew" placeholder="New kitchen password (min 4 characters)"/>
-      <label>Confirm Password</label>
-      <input type="password" id="kpConfirm" placeholder="Confirm kitchen password"/>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="gen-btn" style="flex:1;min-width:160px" onclick="changeKitchenPassword()">🍳 Set Kitchen Password</button>
-        <button class="gen-btn" id="removeKitchenPassBtn" style="flex:1;min-width:160px;background:#E74C3C;display:none" onclick="removeKitchenPassword()">🗑️ Remove Password</button>
-      </div>
-    </div>
-
-    <!-- COUNTER PASSWORD PANEL -->
-    <div class="panel">
-      <h2>🧾 Counter Panel Password</h2>
-      <p class="hint">Set or change the password for counter staff to access billing and order management.</p>
-      <div id="counterPassStatus" style="background:#F0FBF4;border:1px solid #A9DFBF;border-radius:8px;padding:10px 14px;font-size:12px;color:#1E8449;font-weight:600;margin-bottom:12px;display:none">✅ Counter password is set</div>
-      <div id="counterPassUnset" style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:8px;padding:10px 14px;font-size:12px;color:#B7950B;font-weight:600;margin-bottom:12px">⚠️ No counter password set — counter panel is open to anyone</div>
-      <label>New Counter Password</label>
-      <input type="password" id="copNew" placeholder="New counter password (min 4 characters)"/>
-      <label>Confirm Password</label>
-      <input type="password" id="copConfirm" placeholder="Confirm counter password"/>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="gen-btn" style="flex:1;min-width:160px" onclick="changeCounterPassword()">🧾 Set Counter Password</button>
-        <button class="gen-btn" id="removeCounterPassBtn" style="flex:1;min-width:160px;background:#E74C3C;display:none" onclick="removeCounterPassword()">🗑️ Remove Password</button>
-      </div>
+      <button class="gen-btn" style="margin-top:12px" onclick="changePassword()">🔑 Update Password</button>
     </div>
 
     <!-- DAILY WHATSAPP REPORT PANEL -->
@@ -476,12 +432,13 @@ textarea{resize:vertical;min-height:55px;}
 </div>
 <div class="toast" id="toast"></div>
 <div class="watermark">Powered by <a href="#" target="_blank">HK Digital Solutions</a></div>
-<div id="upgradeBanner"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
+function getISTDayStart(){const now=new Date();const istOff=5.5*60*60*1000;const istNow=new Date(now.getTime()+istOff);const istMid=new Date(Date.UTC(istNow.getUTCFullYear(),istNow.getUTCMonth(),istNow.getUTCDate()));return new Date(istMid.getTime()-istOff);}
+function getISTMonthStart(){const now=new Date();const istOff=5.5*60*60*1000;const istNow=new Date(now.getTime()+istOff);const istMonth=new Date(Date.UTC(istNow.getUTCFullYear(),istNow.getUTCMonth(),1));return new Date(istMonth.getTime()-istOff);}
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 // ── CLOUDINARY CONFIG (fill in after creating free account at cloudinary.com) ──
 const CLOUDINARY_CLOUD_NAME="dmzk3gkty";
@@ -575,29 +532,12 @@ async function loadAll(){
   loadReport('week');
 }
 async function loadMenuData(){
-  fetchPlanAndGate();
-  try{
-    const {data,error}=await sb.from('restaurant_data').select('data,kitchen_password,counter_password').eq('id',RESTAURANT_ID).single();
-    if(error)throw error;
-    DATA=(data?.data?.menu?.length)?data.data:getDefault();
-    // Kitchen password status
-    if(data?.kitchen_password){
-      document.getElementById('kitchenPassStatus').style.display='block';
-      document.getElementById('kitchenPassUnset').style.display='none';
-      document.getElementById('removeKitchenPassBtn').style.display='';
-    }
-    // Counter password status
-    if(data?.counter_password){
-      document.getElementById('counterPassStatus').style.display='block';
-      document.getElementById('counterPassUnset').style.display='none';
-      document.getElementById('removeCounterPassBtn').style.display='';
-    }
-  }catch(e){DATA=getDefault();}
+  try{const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();if(error)throw error;DATA=(data?.data?.menu?.length)?data.data:getDefault();}catch(e){DATA=getDefault();}
   renderForm();
 }
 async function loadAnalytics(){
-  const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
-  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const now=new Date();const todayStart=getISTDayStart();
+  const monthStart=getISTMonthStart();
   try{
     const {data:td}=await sb.from('orders').select('total,items,table_no').eq('restaurant_id',RESTAURANT_ID).eq('payment_status','paid').gte('placed_at',todayStart.toISOString());
     const {data:md}=await sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('payment_status','paid').gte('placed_at',monthStart.toISOString());
@@ -611,7 +551,7 @@ async function loadAnalytics(){
     const topTbl=Object.entries(tblCounts).sort((a,b)=>b[1]-a[1])[0];
     document.getElementById('aTR').textContent='₹'+tr;document.getElementById('aTO').textContent=tc+' orders';
     document.getElementById('aMR').textContent='₹'+mr;document.getElementById('aMO').textContent=mc+' orders';
-    document.getElementById('aAV').textContent='₹'+av;document.getElementById('aBT').textContent=topTbl?'T'+topTbl[0]:'—';
+    document.getElementById('aAV').textContent='₹'+av;document.getElementById('aBT').textContent=topTbl?(String(topTbl[0]).startsWith('Parcel')?topTbl[0]:'T'+topTbl[0]):'—';
     const dishCounts={};(td||[]).forEach(o=>{(o.items||[]).forEach(i=>{if(i.name&&!i.name.includes('WAITER')){dishCounts[i.name]=(dishCounts[i.name]||0)+i.qty;}});});
     const topDishes=Object.entries(dishCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
     const maxC=topDishes[0]?topDishes[0][1]:1;
@@ -622,7 +562,7 @@ async function loadTodayOrders(){
   const wrap=document.getElementById('ordersTableWrap');
   try{
     const today=new Date();
-    const dayStart=new Date(today);dayStart.setHours(0,0,0,0);
+    const dayStart=getISTDayStart();
     const {data,error}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID).gte('placed_at',dayStart.toISOString()).order('placed_at',{ascending:false});
     if(error)throw error;
     const orders=(data||[]).filter(o=>o.payment_status!=='na');
@@ -643,7 +583,7 @@ async function loadTodayOrders(){
         const stLabel=statusLabel[st]||st;
         return `<tr>
           <td><strong>#${o.order_num||'—'}</strong></td>
-          <td><strong>T${o.table_no}</strong></td>
+          <td><strong>${String(o.table_no).startsWith('Parcel')?o.table_no:'T'+o.table_no}</strong></td>
           <td><div style="font-size:11px">${itemStr||'—'}</div>${o.note?`<div style="color:#C2410C;font-size:10px;margin-top:2px">📝 ${o.note}</div>`:''}</td>
           <td><strong>₹${o.total||0}</strong></td>
           <td><span class="o-status ${st}">${stLabel}</span></td>
@@ -900,8 +840,8 @@ async function loadWaiterAnalytics(waiterId,waiterName){
   });
   try{
     const now=new Date();
-    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
-    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const todayStart=getISTDayStart();
+    const monthStart=getISTMonthStart();
     const [{data:td},{data:md}]=await Promise.all([
       sb.from('orders').select('total,table_no').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',waiterId).eq('payment_status','paid').gte('placed_at',todayStart.toISOString()),
       sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',waiterId).eq('payment_status','paid').gte('placed_at',monthStart.toISOString())
@@ -962,7 +902,7 @@ async function openDailyReport(){
 
   try{
     const now=new Date();
-    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+    const todayStart=getISTDayStart();
     const {data,error}=await sb.from('orders')
       .select('total,items,table_no,payment_method,payment_status,status,waiter_id,note,placed_at,order_num')
       .eq('restaurant_id',RESTAURANT_ID)
@@ -1208,7 +1148,7 @@ function getReportRange(tab){
     const diffToMon=day===0?-6:1-day;
     start=new Date(now);
     start.setDate(now.getDate()+diffToMon);
-    start.setHours(0,0,0,0);
+    // IST day start already handled by getISTDayStart
     end=new Date(start);
     end.setDate(start.getDate()+6);
     end.setHours(23,59,59,999);
@@ -1372,150 +1312,6 @@ function downloadReport(){
   URL.revokeObjectURL(url);
   showToast('✅ Report downloaded!');
 }
-
-/* ════════════════════════════════════════════════════
-   KITCHEN PASSWORD MANAGEMENT
-════════════════════════════════════════════════════ */
-async function changeKitchenPassword(){
-  const np=document.getElementById('kpNew').value.trim();
-  const cp=document.getElementById('kpConfirm').value.trim();
-  if(!np||!cp){showToast('Fill in both fields.',true);return;}
-  if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
-  if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({kitchen_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
-  document.getElementById('kpNew').value='';
-  document.getElementById('kpConfirm').value='';
-  document.getElementById('kitchenPassStatus').style.display='block';
-  document.getElementById('kitchenPassUnset').style.display='none';
-  document.getElementById('removeKitchenPassBtn').style.display='';
-  showToast('✅ Kitchen password updated!');
-}
-
-async function removeKitchenPassword(){
-  if(!confirm('Remove kitchen password? The kitchen panel will be accessible to anyone.'))return;
-  const {error}=await sb.from('restaurant_data').update({kitchen_password:null}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
-  document.getElementById('kitchenPassStatus').style.display='none';
-  document.getElementById('kitchenPassUnset').style.display='block';
-  document.getElementById('removeKitchenPassBtn').style.display='none';
-  showToast('Kitchen password removed.');
-}
-
-/* ════════════════════════════════════════════════════
-   COUNTER PASSWORD MANAGEMENT
-════════════════════════════════════════════════════ */
-async function changeCounterPassword(){
-  const np=document.getElementById('copNew').value.trim();
-  const cp=document.getElementById('copConfirm').value.trim();
-  if(!np||!cp){showToast('Fill in both fields.',true);return;}
-  if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
-  if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({counter_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
-  document.getElementById('copNew').value='';
-  document.getElementById('copConfirm').value='';
-  document.getElementById('counterPassStatus').style.display='block';
-  document.getElementById('counterPassUnset').style.display='none';
-  document.getElementById('removeCounterPassBtn').style.display='';
-  showToast('✅ Counter password updated!');
-}
-
-async function removeCounterPassword(){
-  if(!confirm('Remove counter password? The counter panel will be accessible to anyone.'))return;
-  const {error}=await sb.from('restaurant_data').update({counter_password:null}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
-  document.getElementById('counterPassStatus').style.display='none';
-  document.getElementById('counterPassUnset').style.display='block';
-  document.getElementById('removeCounterPassBtn').style.display='none';
-  showToast('Counter password removed.');
-}
-
-
-/* ══════════════════════════════════════════
-   PLAN GATING
-══════════════════════════════════════════ */
-const PLAN_FEATURES={
-  basic:['qr_ordering','kitchen','counter'],
-  growth:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report'],
-  premium:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding']
-};
-
-let CURRENT_PLAN='basic'; // safe default until fetched
-
-async function fetchPlanAndGate(){
-  try{
-    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(error){console.warn('Plan fetch error:',error.message);return;}
-    if(!data||!data.length){console.warn('No subscription found for',RESTAURANT_ID);return;}
-    const row=data[0];
-    CURRENT_PLAN=row.plan||'basic';
-    const now=new Date();
-    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<now);
-    if(expired){showExpiredScreen();return;}
-    applyPlanGating();
-  }catch(e){console.warn('Plan check failed:',e);}
-}
-
-function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.premium).includes(f);}
-
-function showUpgradeToast(featureName,requiredPlan){
-  const banner=document.getElementById('upgradeBanner');
-  const planLabel=requiredPlan==='growth'?'Growth ₹599':'Premium ₹999';
-  banner.textContent=`🔒 ${featureName} — Upgrade to ${planLabel} to unlock`;
-  banner.classList.add('show');
-  setTimeout(()=>banner.classList.remove('show'),3500);
-}
-
-function lockSection(el,title,sub,requiredPlan){
-  if(!el)return;
-  el.style.position='relative';
-  const lock=document.createElement('div');
-  lock.className='plan-gate-lock';
-  lock.innerHTML=`<span class="lock-icon">🔒</span><span class="lock-title">${title}</span><span class="lock-sub">${sub}</span><button class="lock-btn" onclick="showUpgradeToast('${title}','${requiredPlan}')">Upgrade Plan</button>`;
-  el.appendChild(lock);
-}
-
-function applyPlanGating(){
-  // --- GROWTH features (not in basic) ---
-  if(!hasFeature('menu_images')){
-    document.querySelectorAll('.img-upload-btn').forEach(btn=>{
-      btn.disabled=true;btn.title='Upgrade to Growth to upload images';
-      btn.onclick=(e)=>{e.preventDefault();showUpgradeToast('Menu Images','growth');};
-    });
-    document.querySelectorAll('.iimg').forEach(inp=>inp.disabled=true);
-  }
-  if(!hasFeature('gst')){
-    const gstPanel=document.querySelector('.gst-row')?.closest('.panel');
-    if(gstPanel)lockSection(gstPanel,'GST & Bill Settings','Available on Growth plan','growth');
-  }
-  if(!hasFeature('whatsapp_report')){
-    const waShareBtn=document.querySelector('button[onclick*="shareWA"], button[onclick*="whatsapp"], a[href*="wa.me"]');
-    if(waShareBtn){waShareBtn.disabled=true;waShareBtn.onclick=(e)=>{e.preventDefault();showUpgradeToast('WhatsApp Report','growth');};}
-  }
-  // --- PREMIUM features ---
-  if(!hasFeature('pdf_reports')){
-    const pdfBtn=document.querySelector('button[onclick*="downloadReportPDF"]');
-    if(pdfBtn){pdfBtn.disabled=true;pdfBtn.onclick=(e)=>{e.preventDefault();showUpgradeToast('PDF Reports','premium');};}
-  }
-  if(!hasFeature('custom_branding')){
-    // lock restaurant name/tagline editing
-    const brandPanel=document.querySelector('#rName')?.closest('.panel');
-    if(brandPanel&&CURRENT_PLAN==='basic')lockSection(brandPanel,'Custom Branding','Restaurant name & tagline editing available on Growth+','growth');
-  }
-  // Show plan badge in header
-  const planColors={basic:'#7A7ACF',growth:'#00A86B',premium:'#FFD700'};
-  const planBadge=document.createElement('span');
-  planBadge.style.cssText=`display:inline-block;background:${planColors[CURRENT_PLAN]||'#7A7ACF'}22;color:${planColors[CURRENT_PLAN]||'#7A7ACF'};border:1px solid ${planColors[CURRENT_PLAN]||'#7A7ACF'}55;font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:1px;margin-left:8px;vertical-align:middle;`;
-  planBadge.textContent=CURRENT_PLAN.toUpperCase();
-  const h1=document.querySelector('h1,.admin-title,.brand-name');
-  if(h1)h1.appendChild(planBadge);
-}
-
-function showExpiredScreen(){
-  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Your subscription has expired or been suspended. Please contact HK Digital to renew your plan and restore access.</p><a href="https://wa.me/91XXXXXXXXXX?text=Hi, I need to renew my restaurant subscription - ${RESTAURANT_ID}" style="display:inline-block;background:#25D366;color:#fff;padding:13px 28px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none">📱 Contact on WhatsApp</a></div></div>`;
-}
-
 </script>
 </body>
 </html>
