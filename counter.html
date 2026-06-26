@@ -387,6 +387,8 @@ header{
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .watermark{text-align:center;padding:16px;font-size:10px;color:var(--muted);}
 
+.waiter-bar{position:fixed;top:0;left:0;right:0;background:#E67E22;color:#fff;padding:8px 16px;font-size:12px;font-weight:700;text-align:center;z-index:950;cursor:pointer;display:none;}
+.waiter-bar.show{display:block;}
 </style>
 </head>
 <body>
@@ -423,33 +425,37 @@ header{
   </div>
 </header>
 
-<div class="stats">
+<div class="stats-bar">
   <div class="stat"><div class="sv purple" id="sBillPending">0</div><div class="sl">Bill Pending</div></div>
-  <div class="stat"><div class="sv" id="sActiveTables">0</div><div class="sl">Active Tables</div></div>
+  <div class="stat"><div class="sv amber" id="sActiveTables">0</div><div class="sl">Active Tables</div></div>
   <div class="stat"><div class="sv green" id="sPaidToday">0</div><div class="sl">Paid Today</div></div>
   <div class="stat"><div class="sv green" id="sRevToday">₹0</div><div class="sl">Revenue Today</div></div>
   <div class="stat"><div class="sv" id="sAvgOrder">₹0</div><div class="sl">Avg Order</div></div>
 </div>
 
-<div class="pay-breakdown">
-  <div class="pay-stat"><div class="pay-val cash" id="pCash">₹0</div><div class="pay-lbl">💵 Cash</div></div>
-  <div class="pay-stat"><div class="pay-val upi" id="pUPI">₹0</div><div class="pay-lbl">📱 UPI</div></div>
-  <div class="pay-stat"><div class="pay-val card" id="pCard">₹0</div><div class="pay-lbl">💳 Card</div></div>
+<div class="payment-stats">
+  <div class="pstat"><div class="pstat-val" style="color:var(--green)" id="pCash">₹0</div><div class="pstat-lbl"><span class="pstat-dot" style="background:var(--green)"></span>Cash</div></div>
+  <div class="pstat"><div class="pstat-val" style="color:var(--blue)" id="pUPI">₹0</div><div class="pstat-lbl"><span class="pstat-dot" style="background:var(--blue)"></span>UPI</div></div>
+  <div class="pstat"><div class="pstat-val" style="color:var(--purple)" id="pCard">₹0</div><div class="pstat-lbl"><span class="pstat-dot" style="background:var(--purple)"></span>Card</div></div>
 </div>
 
 <div class="main-layout">
   <!-- BILL PENDING -->
-  <div class="panel">
-    <div class="panel-hdr bill">🧾 Bill Pending <span class="pcnt" id="cntBill">0</span></div>
-    <div class="panel-body" id="colBill">
-      <div class="empty-panel"><div class="empty-icon">🎉</div><div>No pending bills</div></div>
+  <div class="panel-col">
+    <div class="section-hdr">
+      <div class="section-hdr-title">🧾 Bill Pending <span class="section-badge" id="cntBill">0</span></div>
+    </div>
+    <div class="orders-list" id="colBill">
+      <div style="text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:36px;margin-bottom:8px">🎉</div><div style="font-size:13px">No pending bills</div></div>
     </div>
   </div>
   <!-- ALL ACTIVE TABLES -->
-  <div class="panel">
-    <div class="panel-hdr active">🪑 All Active Tables <span class="pcnt" id="cntActive">0</span></div>
-    <div class="panel-body" id="colActive">
-      <div class="empty-panel"><div class="empty-icon">🍽️</div><div>No active tables</div></div>
+  <div class="panel-col">
+    <div class="section-hdr">
+      <div class="section-hdr-title">⚡ All Active Tables <span class="section-badge green" id="cntActive">0</span></div>
+    </div>
+    <div class="orders-list" id="colActive">
+      <div style="text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:36px;margin-bottom:8px">🍽️</div><div style="font-size:13px">No active tables</div></div>
     </div>
   </div>
 </div>
@@ -489,8 +495,8 @@ header{
       <div style="padding:12px 14px;border-top:1px solid #eee;background:#f9f9f9">
         <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Set Total Tables in Restaurant</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="number" id="tmCountInput" min="1" max="100" style="flex:1;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:'Poppins',sans-serif" placeholder="e.g. 12"/>
-          <button onclick="saveTotalTables()" style="background:#2980B9;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif">Save</button>
+          <input type="number" id="tmCountInput" min="1" max="100" style="flex:1;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:var(--sans)" placeholder="e.g. 12"/>
+          <button onclick="saveTotalTables()" style="background:#2980B9;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:var(--sans)">Save</button>
         </div>
         <div style="font-size:11px;color:#aaa;margin-top:6px">Update this when tables are added or removed from the restaurant.</div>
       </div>
@@ -833,7 +839,7 @@ function render(){
   // Render bill pending
   const billCol=document.getElementById('colBill');
   if(Object.keys(billByTable).length===0){
-    billCol.innerHTML=`<div class="empty-panel"><div class="empty-icon">🎉</div><div>No pending bills</div></div>`;
+    billCol.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:36px;margin-bottom:8px">🎉</div><div style="font-size:13px;font-weight:600">No pending bills</div></div>`;
   }else{
     billCol.innerHTML=Object.entries(billByTable).sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([tno,tbl])=>tableCard(tno,tbl,'bill')).join('');
   }
@@ -841,7 +847,7 @@ function render(){
   // Render all active tables
   const activeCol=document.getElementById('colActive');
   if(Object.keys(byTable).length===0){
-    activeCol.innerHTML=`<div class="empty-panel"><div class="empty-icon">🍽️</div><div>No active tables</div></div>`;
+    activeCol.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--muted)"><div style="font-size:36px;margin-bottom:8px">🍽️</div><div style="font-size:13px;font-weight:600">No active tables</div></div>`;
   }else{
     activeCol.innerHTML=Object.entries(byTable).sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([tno,tbl])=>tableCard(tno,tbl,'active')).join('');
   }
