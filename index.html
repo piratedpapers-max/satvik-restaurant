@@ -184,7 +184,7 @@ main{padding:14px 14px 0;}
       <div class="step" id="step-cooking"><div class="step-dot">🔥</div><div class="step-label">Cooking</div></div>
       <div class="step" id="step-ready"><div class="step-dot">✅</div><div class="step-label">Ready</div></div>
       <div class="step" id="step-bill_pending"><div class="step-dot">🧾</div><div class="step-label">Bill</div></div>
-      <div class="step" id="step-paid"><div class="step-dot">💚</div><div class="step-label">Paid</div></div>
+      <div class="step" id="step-served"><div class="step-dot">💚</div><div class="step-label">Paid</div></div>
     </div>
     <div class="bill-box">
       <div class="bill-rest"><div class="bill-rest-name" id="trackRestName">Satvik Restaurant</div><div class="bill-rest-sub" id="trackRestSub">Pure Veg · Varanasi</div></div>
@@ -201,19 +201,6 @@ main{padding:14px 14px 0;}
       <div class="phone-skip" id="phoneSkip">No thanks</div>
     </div>
     <button class="order-btn" id="orderMoreBtn" onclick="closeTracking()" style="margin-bottom:10px">➕ Order More Items</button>
-
-    <!-- PAID CELEBRATION -->
-    <div id="paidBox" style="display:none;background:linear-gradient(135deg,#EAF6EE,#FDFDF5);border:2px solid #27AE60;border-radius:16px;padding:24px;text-align:center;margin-bottom:12px;">
-      <div style="font-size:48px;margin-bottom:8px">🎉</div>
-      <div style="font-size:20px;font-weight:700;color:#1E8449;margin-bottom:4px">Payment Done!</div>
-      <div style="font-size:13px;color:#555;margin-bottom:16px">Thank you for dining at Satvik Restaurant</div>
-      <div style="font-size:12px;color:#888">We hope you enjoyed your meal 🙏<br/>See you again soon!</div>
-    </div>
-
-    <!-- CALL WAITER BUTTON -->
-    <button id="callWaiterBtn" onclick="callWaiter()" style="width:100%;padding:14px;background:linear-gradient(135deg,#E67E22,#D35400);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s;">
-      🙋 Call Waiter
-    </button>
     <div class="review-box">
       <div class="review-title">Enjoyed dining with us? Rate us! 🙏</div>
       <div class="review-stars">⭐⭐⭐⭐⭐</div>
@@ -360,49 +347,28 @@ async function loadTableBill(){
     const nums=data.filter(o=>o.order_num>0).map(o=>'#'+o.order_num);
     document.getElementById('trackOrderNum').textContent=nums.length?'Orders: '+nums.join(', '):'';
     updateStatusUI(latestStatus);updateTrackBanner(latestStatus);
-    if(latestStatus==='served'||latestStatus==='paid'){localStorage.removeItem(STORAGE_KEY);activeOrderIds=[];}
+    if(latestStatus==='served'){localStorage.removeItem(STORAGE_KEY);activeOrderIds=[];}
   }catch(e){console.error(e);}
 }
 function updateStatusUI(status){
-  const steps=['new','cooking','ready','bill_pending','paid'];const idx=steps.indexOf(status);
-  const labels={
-    new:{txt:'\u23F3 Order received!',sub:'Kitchen is confirming your order...'},
-    cooking:{txt:'\uD83D\uDD25 Being prepared!',sub:'Our chef is cooking your food right now'},
-    ready:{txt:'\u2705 Food is ready!',sub:'Waiter is bringing your food to the table'},
-    bill_pending:{txt:'\uD83E\uDFBE Bill ready \u2014 please pay at the counter',sub:'Your food has been served. Pay at the counter when ready.'},
-    served:{txt:'\uD83C\uDF7D\uFE0F Enjoy your meal!',sub:'Thank you for dining with us \uD83D\uDE4F'},
-    paid:{txt:'\uD83D\uDC9A Thank you! Payment received',sub:'We hope you enjoyed your meal. See you again soon! \uD83D\uDE4F'}
-  };
+  const steps=['new','cooking','ready','bill_pending','served'];const idx=steps.indexOf(status);
+  const labels={new:{txt:'⏳ Order received!',sub:'Kitchen is confirming your order...'},cooking:{txt:'🔥 Being prepared!',sub:'Our chef is cooking your food right now'},ready:{txt:'✅ Food is ready!',sub:'Waiter is bringing your food to the table'},bill_pending:{txt:'🧾 Bill ready — please pay',sub:'Call the waiter or pay at the counter'},served:{txt:'🍽️ Enjoy your meal!',sub:'Thank you for dining with us 🙏'}};
   const l=labels[status]||labels.new;
-  document.getElementById('trackStatus').textContent=l.txt;
-  document.getElementById('trackSub').textContent=l.sub;
-  const displaySteps=['new','cooking','ready','bill_pending','paid'];
-  displaySteps.forEach((s,i)=>{
-    const el=document.getElementById('step-'+s)||document.getElementById('step-served');
-    if(!el)return;
-    el.className='step';
-    if(i<idx)el.classList.add('done');
-    else if(i===idx)el.classList.add('active');
-  });
+  document.getElementById('trackStatus').textContent=l.txt;document.getElementById('trackSub').textContent=l.sub;
+  steps.forEach((s,i)=>{const el=document.getElementById('step-'+s);if(!el)return;el.className='step';if(i<idx)el.classList.add('done');else if(i===idx)el.classList.add('active');});
   document.getElementById('statusSteps').style.setProperty('--progress',Math.min(idx/(steps.length-1)*100,100)+'%');
   const orderMoreBtn=document.getElementById('orderMoreBtn');
-  if(orderMoreBtn) orderMoreBtn.style.display=(status==='bill_pending'||status==='served'||status==='paid')?'none':'flex';
-  // Show paid celebration
-  const paidBox=document.getElementById('paidBox');
-  if(paidBox) paidBox.style.display=(status==='paid')?'block':'none';
-  // Hide call waiter when paid
-  const callBtn=document.getElementById('callWaiterBtn');
-  if(callBtn) callBtn.style.display=(status==='paid')?'none':'flex';
+  if(orderMoreBtn) orderMoreBtn.style.display=(status==='bill_pending'||status==='served')?'none':'flex';
   const phoneBox=document.getElementById('phoneBox');
   const alreadySent=localStorage.getItem(STORAGE_KEY+'_phone_sent');
-  if(phoneBox&&!alreadySent){
-    phoneBox.classList.toggle('show',['ready','bill_pending'].includes(status));
+  if(phoneBox && !alreadySent){
+    phoneBox.classList.toggle('show',['ready','bill_pending','served'].includes(status));
   }
 }
 function updateTrackBanner(status){
   const banner=document.getElementById('trackBanner'),icon=document.getElementById('tbIcon'),top=document.getElementById('tbTop');
-  if(!status||status==='served'||status==='paid'){banner.className='track-banner';return;}
-  const map={new:{icon:'\u23F3',txt:'Order received \u2014 kitchen confirming',cls:''},cooking:{icon:'\uD83D\uDD25',txt:'Your food is being cooked!',cls:'cooking'},ready:{icon:'\u2705',txt:'Your food is ready!',cls:'ready'},bill_pending:{icon:'\uD83E\uDFBE',txt:'Bill ready \u2014 please pay at counter',cls:'bill_pending'}};
+  if(!status||status==='served'){banner.className='track-banner';return;}
+  const map={new:{icon:'⏳',txt:'Order received — kitchen confirming',cls:''},cooking:{icon:'🔥',txt:'Your food is being cooked!',cls:'cooking'},ready:{icon:'✅',txt:'Your food is ready!',cls:'ready'},bill_pending:{icon:'🧾',txt:'Bill ready — please pay',cls:'bill_pending'}};
   const m=map[status]||map.new;banner.className='track-banner show '+m.cls;icon.textContent=m.icon;top.textContent=m.txt;
 }
 let customerPollTimer=null;
@@ -457,36 +423,6 @@ document.getElementById('phoneSendBtn').addEventListener('click',async()=>{
     toast('✅ Opening WhatsApp...');
   }catch(e){console.error(e);toast('Could not send. Try again.',true);}
 });
-
-async function callWaiter(){
-  const btn=document.getElementById('callWaiterBtn');
-  if(!btn||!TABLE||!RESTAURANT_ID)return;
-  btn.disabled=true;btn.textContent='Calling...';
-  try{
-    await sb.from('orders').insert([{
-      restaurant_id:RESTAURANT_ID,
-      table_no:TABLE,
-      items:[{name:'\uD83D\uDE4B WAITER NEEDED',qty:1,price:0,total:0}],
-      total:0,
-      note:'Customer needs waiter',
-      status:'waiter',
-      order_num:0,
-      payment_status:'na',
-      placed_at:new Date().toISOString()
-    }]);
-    btn.textContent='\u2705 Waiter called!';
-    btn.style.background='linear-gradient(135deg,#27AE60,#1E8449)';
-    setTimeout(()=>{
-      btn.disabled=false;
-      btn.innerHTML='\uD83D\uDE4B Call Waiter';
-      btn.style.background='linear-gradient(135deg,#E67E22,#D35400)';
-    },8000);
-  }catch(e){
-    btn.disabled=false;
-    btn.innerHTML='\uD83D\uDE4B Call Waiter';
-    toast('Could not call waiter. Try again.',true);
-  }
-}
 
 init();
 </script>
