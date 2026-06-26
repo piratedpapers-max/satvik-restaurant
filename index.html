@@ -37,6 +37,8 @@ main{padding:14px 14px 0;}
 .sec-title::after{content:"";flex:1;height:1px;background:repeating-linear-gradient(to right,var(--line) 0 5px,transparent 5px 10px);}
 .item-card{display:flex;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;align-items:center;}
 .item-card.sold-out{opacity:.45;}
+.dish-img{width:80px;height:80px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);}
+.dish-img-placeholder{width:80px;height:80px;border-radius:10px;background:var(--line);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;}
 .iinfo{flex:1;min-width:0;}
 .iname{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:5px;}
 .vdot{width:12px;height:12px;border:1.5px solid var(--green);border-radius:2px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
@@ -45,12 +47,6 @@ main{padding:14px 14px 0;}
 .iprice{font-weight:700;font-size:14px;color:var(--ink);margin-top:5px;}
 .sold-tag{font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
 .qzone{flex:0 0 auto;}
-/* ── DISH IMAGE ── */
-.dish-img-wrap{flex:0 0 auto;width:80px;height:80px;border-radius:10px;overflow:hidden;background:var(--line);position:relative;}
-.dish-img{width:100%;height:100%;object-fit:cover;display:block;}
-.dish-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;background:#F5F0E8;}
-.sold-out-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;}
-.sold-out-overlay span{color:#fff;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transform:rotate(-20deg);}
 .add-btn{background:#fff;border:1.5px solid var(--green);color:var(--green);font-weight:700;font-size:11px;letter-spacing:1px;padding:7px 14px;border-radius:7px;cursor:pointer;text-transform:uppercase;}
 .stepper{display:flex;align-items:center;background:var(--green);border-radius:7px;overflow:hidden;}
 .stepper button{background:none;border:none;color:#fff;font-size:17px;font-weight:700;width:30px;height:30px;cursor:pointer;}
@@ -136,16 +132,6 @@ main{padding:14px 14px 0;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:11px 20px;border-radius:999px;font-size:12px;font-weight:600;z-index:700;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
-
-.theme-toggle{background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;}
-
-[data-theme="dark"]{--cream:#0F0F0F;--paper:#1A1A1A;--line:#2A2A2A;--ink:#F0EDE8;--muted:#666;}
-[data-theme="dark"] body{background:#0F0F0F !important;color:#F0EDE8 !important;}
-[data-theme="dark"] .item-card{background:#1A1A1A !important;border-color:#2A2A2A !important;}
-[data-theme="dark"] .cart-bar{background:#111 !important;border-color:#2A2A2A !important;}
-[data-theme="dark"] .cat-tab{background:#1A1A1A !important;color:#888 !important;border-color:#2A2A2A !important;}
-[data-theme="dark"] .cat-tab.active{background:#4A7C59 !important;color:#fff !important;}
-
 </style>
 </head>
 <body>
@@ -229,10 +215,6 @@ main{padding:14px 14px 0;}
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
-/* THEME */
-function initTheme(){const t=localStorage.getItem('hk_theme')||'light';document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';}
-function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'light';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('hk_theme',next);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=next==='dark'?'🌙':'☀️';}
-initTheme();
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const params=new URLSearchParams(window.location.search);
 const TOKEN=params.get('t');
@@ -291,9 +273,7 @@ function renderMenu(){
     (cat.items||[]).forEach(item=>{
       const key=cat.category+'::'+item.name,avail=item.available!==false;
       const card=document.createElement('div');card.className='item-card'+(avail?'':' sold-out');
-      const imgHtml=item.image
-        ?`<div class="dish-img-wrap"><img class="dish-img" src="${item.image}" alt="${item.name}" onerror="this.style.display='none';this.parentNode.querySelector('.dish-img-placeholder').style.display='flex'"/><div class="dish-img-placeholder" style="display:none">🍽️</div>${!avail?'<div class="sold-out-overlay"><span>Sold Out</span></div>':''}</div>`
-        :`<div class="dish-img-wrap"><div class="dish-img-placeholder">🍽️</div>${!avail?'<div class="sold-out-overlay"><span>Sold Out</span></div>':''}</div>`;
+      const imgHtml=item.image?`<img class="dish-img" src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="dish-img-placeholder" style="display:none">🍽️</div>`:`<div class="dish-img-placeholder">🍽️</div>`;
       card.innerHTML=`${imgHtml}<div class="iinfo"><div class="iname"><span class="vdot"></span>${item.name}</div><div class="idesc">${item.desc||''}</div><div class="iprice">₹${item.price}</div>${!avail?'<div class="sold-tag">Sold Out</div>':''}</div><div class="qzone" data-key="${key}"></div>`;
       sec.appendChild(card);if(avail)renderQty(card.querySelector('.qzone'),key,item);
     });menuMain.appendChild(sec);
@@ -330,8 +310,11 @@ function renderDrawer(){
   const t=getTotal();document.getElementById('subTotal').textContent=`₹${t}`;document.getElementById('grandTotal').textContent=`₹${t}`;
   document.getElementById('placeBtn').disabled=items.length===0;
 }
+let isPlacingOrder=false;
 document.getElementById('placeBtn').addEventListener('click',async()=>{
+  if(isPlacingOrder)return;
   const items=getItems();if(!items.length)return;
+  isPlacingOrder=true;
   const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order...';
   try{
     const orderNum=await getNextOrderNum();
@@ -343,6 +326,7 @@ document.getElementById('placeBtn').addEventListener('click',async()=>{
     updateBar();closeD();subscribeToOrders();await loadTableBill();openTracking();toast('✅ Order #'+orderNum+' sent to kitchen!');
     btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';
   }catch(e){console.error(e);toast('Could not place order. Please try again.',true);btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';}
+  finally{isPlacingOrder=false;}
 });
 document.getElementById('waiterBtn').addEventListener('click',async()=>{
   try{await sb.from('orders').insert([{restaurant_id:RESTAURANT_ID,table_no:TABLE,items:[{name:'🙋 WAITER NEEDED',qty:1,price:0,total:0}],total:0,note:'Customer needs waiter',status:'waiter',order_num:0,payment_status:'na',placed_at:new Date().toISOString()}]);closeD();toast('✅ Waiter has been called!');}
