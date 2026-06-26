@@ -136,16 +136,6 @@ main{padding:14px 14px 0;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:11px 20px;border-radius:999px;font-size:12px;font-weight:600;z-index:700;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
-
-.theme-toggle{background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;}
-
-[data-theme="dark"]{--cream:#0F0F0F;--paper:#1A1A1A;--line:#2A2A2A;--ink:#F0EDE8;--muted:#666;}
-[data-theme="dark"] body{background:#0F0F0F !important;color:#F0EDE8 !important;}
-[data-theme="dark"] .item-card{background:#1A1A1A !important;border-color:#2A2A2A !important;}
-[data-theme="dark"] .cart-bar{background:#111 !important;border-color:#2A2A2A !important;}
-[data-theme="dark"] .cat-tab{background:#1A1A1A !important;color:#888 !important;border-color:#2A2A2A !important;}
-[data-theme="dark"] .cat-tab.active{background:#4A7C59 !important;color:#fff !important;}
-
 </style>
 </head>
 <body>
@@ -229,10 +219,6 @@ main{padding:14px 14px 0;}
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
-/* THEME */
-function initTheme(){const t=localStorage.getItem('hk_theme')||'light';document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';}
-function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'light';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('hk_theme',next);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=next==='dark'?'🌙':'☀️';}
-initTheme();
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const params=new URLSearchParams(window.location.search);
 const TOKEN=params.get('t');
