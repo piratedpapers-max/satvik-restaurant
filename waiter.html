@@ -180,23 +180,6 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 .toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:#1A1208;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9998;white-space:nowrap;}
 .toast.show{opacity:1;}
 .toast.err{background:var(--red);}
-
-/* ── THEME TOGGLE BTN ── */
-.theme-btn{background:transparent;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.7);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;vertical-align:middle;}
-.theme-btn:hover{border-color:rgba(255,255,255,.5);color:#fff;}
-
-/* ── LIGHT MODE — WAITER ── */
-body.light-mode{--bg:#F2F2F7;--card:#FFFFFF;--line:#E0E0E0;--text:#111;--muted:#888;}
-body.light-mode header{background:#4A7C59;} /* keep green header */
-body.light-mode .order-card{background:#fff;border-color:#E0E0E0;}
-body.light-mode .menu-cat-btn{background:#fff;border-color:#ddd;color:#333;}
-body.light-mode .menu-cat-btn.active{background:#4A7C59;color:#fff;}
-body.light-mode .menu-item-row{background:#fff;border-color:#eee;}
-body.light-mode .item-name-w{color:#111;}
-body.light-mode .item-price-w{color:#555;}
-body.light-mode .cart-summary{background:#fff;border-color:#E0E0E0;}
-body.light-mode .pin-screen{background:#F2F2F7;}
-
 </style>
 </head>
 <body>
@@ -255,7 +238,6 @@ body.light-mode .pin-screen{background:#F2F2F7;}
       <div class="hdr-name" id="hdrName">Waiter</div>
       <div class="hdr-sub">Satvik Restaurant · Varanasi</div>
     </div>
-    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.8);">🌙</button>
     <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
   </header>
 
@@ -384,7 +366,6 @@ document.addEventListener('touchstart',primeAudio);
 async function init(){
   if(!TOKEN){showError('No Waiter Token','Open this page using the link sent by your admin.');return;}
   try{
-    checkWaiterSubscription();
     const {data,error}=await sb.from('waiters').select('*').eq('token',TOKEN).eq('restaurant_id',RESTAURANT_ID).single();
     if(error||!data){showError('Invalid Link','This waiter link is not recognised. Ask admin for your correct link.');return;}
     if(!data.active){showError('Link Deactivated','Your waiter link has been deactivated. Contact the restaurant admin.');return;}
@@ -523,11 +504,11 @@ async function loadTableOrders(){
     tableOrders={};
     (active||[]).forEach(o=>{tableOrders[o.id]=o;});
 
-    // Served today (bill_pending with served_at set today, by this waiter)
+    // Served today — includes both bill_pending (awaiting payment) AND paid (done)
     const {data:served}=await sb.from('orders').select('*')
       .eq('restaurant_id',RESTAURANT_ID)
       .eq('waiter_id',WAITER.id)
-      .eq('status','bill_pending')
+      .in('status',['bill_pending','paid'])
       .not('served_at','is',null)
       .gte('served_at',todayStart.toISOString())
       .order('served_at',{ascending:false});
@@ -687,11 +668,12 @@ function subscribeToOrders(){
       if(p.new.status==='waiter'&&ASSIGNED_TABLES.includes(tbl)){
         showCallAlert(tbl);return;
       }
-      // New order on one of our assigned tables
-      if(ASSIGNED_TABLES.includes(tbl)&&!['served','dismissed','waiter'].includes(p.new.status)){
+      // New order on assigned table OR parcel order placed by this waiter
+      const isMyParcel=tbl.startsWith('Parcel')&&p.new.waiter_id===WAITER.id;
+      if((ASSIGNED_TABLES.includes(tbl)||isMyParcel)&&!['served','dismissed','waiter'].includes(p.new.status)){
         tableOrders[p.new.id]=p.new;
         renderDashboard();
-        toast(`🆕 New order — Table ${tbl}`);
+        toast(`\uD83D\uDD35 New order \u2014 ${isMyParcel?tbl:'Table '+tbl}`);
       }
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
@@ -705,24 +687,32 @@ function subscribeToOrders(){
         renderDashboard();
         return;
       }
-      // If order gets paid — update servedOrders to reflect payment
+      // If order gets paid — update servedOrders to reflect payment (keep in history)
       if(order.payment_status==='paid'&&servedOrders[order.id]){
-        servedOrders[order.id]=order;
+        servedOrders[order.id]=order; // update with paid status
         updateServedBadge();
-        // Refresh served tab if open
         if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
         return;
       }
-      // Normal active order update
-      if(!tableOrders[order.id])return;
+      // Also catch paid orders that were served by this waiter but not yet in servedOrders
+      if(order.payment_status==='paid'&&order.waiter_id===WAITER.id&&order.served_at){
+        servedOrders[order.id]=order;
+        updateServedBadge();
+        if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
+        return;
+      }
+      // Normal active order update — check for assigned tables AND this waiter's parcel orders
+      const isMyParcel=String(order.table_no).startsWith('Parcel')&&order.waiter_id===WAITER.id;
+      if(!tableOrders[order.id]&&!isMyParcel)return;
       const wasReady=tableOrders[order.id]?.status==='ready';
-      const isNowReady=order.status==='ready';
+      const isNowReady=order.status==='ready'||order.status==='bill_pending';
       if(['served','dismissed','paid'].includes(order.status)){
         delete tableOrders[order.id];
       } else {
         tableOrders[order.id]=order;
         if(isNowReady&&!wasReady){
-          toast(`🍽️ Table ${order.table_no} — Order #${order.order_num} is READY!`);
+          const label=isMyParcel?order.table_no:'Table '+order.table_no;
+          toast(`\uD83C\uDF7D\uFE0F ${label} \u2014 Order #${order.order_num} is READY!`);
           playChime('ready');
           if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
         }
@@ -898,35 +888,6 @@ function toast(text,isErr){
 }
 
 init();
-
-/* ── SUBSCRIPTION EXPIRY CHECK — WAITER ── */
-async function checkWaiterSubscription(){
-  try{
-    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(error||!data||!data.length)return;
-    const row=data[0];
-    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
-    if(expired){
-      document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0F0F0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:360px;text-align:center"><div style="font-size:48px;margin-bottom:12px">🔒</div><h2 style="color:#FF4757;font-size:20px;margin-bottom:8px">Access Suspended</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Restaurant subscription has expired. Please contact HK Digital.</p><a href="https://wa.me/918102806704?text=${encodeURIComponent('Hi HK Digital, waiter app is locked. Restaurant: '+RESTAURANT_ID)}" style="display:inline-block;background:#25D366;color:#fff;padding:12px 24px;border-radius:99px;font-weight:700;text-decoration:none">📱 Contact HK Digital</a></div></div>`;
-    }
-  }catch(e){console.warn('Subscription check failed',e);}
-}
-
-/* ── THEME TOGGLE ── */
-function toggleTheme(){
-  const isLight=document.body.classList.toggle('light-mode');
-  document.querySelectorAll('.theme-btn').forEach(b=>b.textContent=isLight?'☀️':'🌙');
-  localStorage.setItem('hk_theme',isLight?'light':'dark');
-}
-(function initTheme(){
-  if(localStorage.getItem('hk_theme')==='light'){
-    document.body.classList.add('light-mode');
-    document.addEventListener('DOMContentLoaded',()=>{
-      document.querySelectorAll('.theme-btn').forEach(b=>b.textContent='☀️');
-    });
-  }
-})();
-
 </script>
 </body>
 </html>
