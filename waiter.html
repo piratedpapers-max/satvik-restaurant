@@ -180,6 +180,16 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 .toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:#1A1208;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9998;white-space:nowrap;}
 .toast.show{opacity:1;}
 .toast.err{background:var(--red);}
+
+.theme-toggle{background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;}
+
+[data-theme="light"]{--bg:#F7F3EA;--card:#FFFFFF;--card2:#FDFAF3;--line:#E5DCC8;--text:#1A1208;--muted:#7A6E5F;}
+[data-theme="light"] body{background:#F7F3EA !important;color:#1A1208 !important;}
+[data-theme="light"] .ocard{background:#fff !important;border-color:#E5DCC8 !important;}
+[data-theme="light"] .tab-bar{background:#fff !important;border-color:#E5DCC8 !important;}
+[data-theme="light"] .tab{color:#7A6E5F !important;}
+[data-theme="light"] .tab.active{color:#1A1208 !important;border-color:#1A1208 !important;}
+
 </style>
 </head>
 <body>
@@ -238,7 +248,7 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
       <div class="hdr-name" id="hdrName">Waiter</div>
       <div class="hdr-sub">Satvik Restaurant · Varanasi</div>
     </div>
-    <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
+    <button id="themeToggle" onclick="toggleTheme()" class="theme-toggle" title="Toggle"  onclick="lockApp()">🔒 Lock</button>
   </header>
 
   <!-- Assigned tables banner -->
@@ -318,6 +328,10 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
+/* THEME */
+function initTheme(){const t=localStorage.getItem('hk_theme')||'dark';document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('hk_theme',next);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=next==='dark'?'🌙':'☀️';}
+initTheme();
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ── STATE ── */
@@ -474,8 +488,8 @@ async function showApp(){
 async function loadStats(){
   try{
     const now=new Date();
-    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
-    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const todayStart=getISTDayStart();
+    const monthStart=getISTMonthStart();
     const [{data:td},{data:md}]=await Promise.all([
       sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).eq('payment_status','paid').gte('placed_at',todayStart.toISOString()),
       sb.from('orders').select('id').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',WAITER.id).gte('placed_at',monthStart.toISOString())
@@ -491,7 +505,7 @@ async function loadTableOrders(){
   if(!ASSIGNED_TABLES.length){
     renderDashboard();return;
   }
-  const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+  const now=new Date();const todayStart=getISTDayStart();
   try{
     // Active orders — includes bill_pending from kitchen (no served_at) but NOT waiter-served ones
     const {data:active}=await sb.from('orders').select('*')

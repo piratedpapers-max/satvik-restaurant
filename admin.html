@@ -213,6 +213,20 @@ textarea{resize:vertical;min-height:55px;}
   .os-card{min-width:60px;}
   .panel h2{font-size:15px;}
 }
+
+.theme-toggle{background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;}
+
+[data-theme="dark"]{--cream:#0F0F0F;--paper:#1A1A1A;--line:#2A2A2A;--ink:#F0EDE8;--muted:#666;}
+[data-theme="dark"] body{background:#0F0F0F !important;color:#F0EDE8;}
+[data-theme="dark"] .panel{background:#1A1A1A !important;border-color:#2A2A2A !important;}
+[data-theme="dark"] input,[data-theme="dark"] textarea{background:#111 !important;border-color:#2A2A2A !important;color:#F0EDE8 !important;}
+[data-theme="dark"] .a-card{background:#1A1A1A !important;border-color:#2A2A2A !important;}
+[data-theme="dark"] .save-bar{background:#000 !important;}
+[data-theme="dark"] .orders-table th{background:#111 !important;}
+[data-theme="dark"] .report-card{background:#1A1A1A !important;border-color:#2A2A2A !important;}
+[data-theme="dark"] #loginWrapper{background:#0F0F0F !important;}
+[data-theme="dark"] .login-box{background:#1A1A1A !important;border-color:#2A2A2A !important;}
+
 </style>
 </head>
 <body>
@@ -249,6 +263,7 @@ textarea{resize:vertical;min-height:55px;}
   <header>
     <div class="h-left"><h1>Satvik Restaurant — Admin</h1><p>Menu Manager & Analytics</p></div>
     <div class="h-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
       <button class="hdr-btn wa" onclick="openDailyReport()">📊 Daily Report</button>
     </div>
   </header>
@@ -439,6 +454,10 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
 function getISTDayStart(){const now=new Date();const istOff=5.5*60*60*1000;const istNow=new Date(now.getTime()+istOff);const istMid=new Date(Date.UTC(istNow.getUTCFullYear(),istNow.getUTCMonth(),istNow.getUTCDate()));return new Date(istMid.getTime()-istOff);}
 function getISTMonthStart(){const now=new Date();const istOff=5.5*60*60*1000;const istNow=new Date(now.getTime()+istOff);const istMonth=new Date(Date.UTC(istNow.getUTCFullYear(),istNow.getUTCMonth(),1));return new Date(istMonth.getTime()-istOff);}
+/* THEME */
+function initTheme(){const t=localStorage.getItem('hk_theme')||'light';document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'light';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('hk_theme',next);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=next==='dark'?'🌙':'☀️';}
+initTheme();
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 // ── CLOUDINARY CONFIG (fill in after creating free account at cloudinary.com) ──
 const CLOUDINARY_CLOUD_NAME="dmzk3gkty";

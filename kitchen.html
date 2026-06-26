@@ -79,6 +79,14 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 .watermark{text-align:center;padding:10px;font-size:10px;color:#333;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;}
 .toast.show{transform:translate(-50%,0);}
+
+.theme-toggle{background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;}
+
+[data-theme="light"]{--bg:#F7F3EA;--card:#FFFFFF;--card2:#FDFAF3;--line:#E5DCC8;--text:#1A1208;--muted:#7A6E5F;}
+[data-theme="light"] body{background:#F7F3EA !important;color:#1A1208 !important;}
+[data-theme="light"] .k-col{background:#fff !important;border-color:#E5DCC8 !important;}
+[data-theme="light"] .kcard{background:#F9F5EE !important;border-color:#E5DCC8 !important;}
+
 </style>
 </head>
 <body>
@@ -127,7 +135,11 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
-// Kitchen PIN is managed via Admin panel → stored in Supabase restaurant_data.kitchen_password
+const KITCHEN_PIN="1234"; // ← Change this
+/* THEME */
+function initTheme(){const t=localStorage.getItem('hk_theme')||'dark';document.documentElement.setAttribute('data-theme',t);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('hk_theme',next);const btn=document.getElementById('themeToggle');if(btn)btn.textContent=next==='dark'?'🌙':'☀️';}
+initTheme();
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},soundOn=true,pinInput='';
 let audioCtx=null;
@@ -140,33 +152,14 @@ function primeAudio(){
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 function pk(k){primeAudio();if(pinInput.length>=4)return;pinInput+=k;updateDots();}
 function pd(){pinInput=pinInput.slice(0,-1);updateDots();document.getElementById('pinErr').textContent='';}
-async function pe(){
-  if(!pinInput.length)return;
+function pe(){
   primeAudio();
-  document.querySelectorAll('.pin-btn').forEach(b=>b.disabled=true);
-  document.getElementById('pinErr').textContent='';
-  try{
-    const {data,error}=await sb.from('restaurant_data').select('kitchen_password').eq('id',RESTAURANT_ID).single();
-    if(error)throw error;
-    const storedPin=data?.kitchen_password;
-    if(!storedPin||pinInput===storedPin){
-      sessionStorage.setItem('k_auth','1');
-      document.getElementById('pinScreen').classList.add('hide');
-      loadOrders();subscribe();primeAudio();fetchPlanAndGate();
-    }else{
-      document.getElementById('pinErr').textContent='Incorrect PIN. Try again.';
-      pinInput='';updateDots();
-    }
-  }catch(e){
-    document.getElementById('pinErr').textContent='Connection error. Retry.';
-    pinInput='';updateDots();
-  }finally{
-    document.querySelectorAll('.pin-btn').forEach(b=>b.disabled=false);
-  }
+  if(pinInput===KITCHEN_PIN){sessionStorage.setItem('k_auth','1');document.getElementById('pinScreen').classList.add('hide');loadOrders();subscribe();}
+  else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinInput='';updateDots();}
 }
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
 function logout(){sessionStorage.removeItem('k_auth');pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
-if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();fetchPlanAndGate();});}
+if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();});}
 // Re-prime audio on EVERY click/tap (not just once) so it survives context suspension during idle periods
 document.addEventListener('click',primeAudio);
 document.addEventListener('touchstart',primeAudio);
@@ -197,7 +190,7 @@ function beep(f=660){
 }
 function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';b.classList.toggle('on',soundOn);}
 async function loadOrders(){
-  const today=new Date();today.setHours(0,0,0,0);
+  const today=getISTDayStart();
   const {data}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID)
     .in('status',['new','cooking','ready','waiter']).gte('placed_at',today.toISOString()).order('placed_at',{ascending:true});
   if(data){orders={};data.forEach(o=>{orders[o.id]=o;});}
@@ -313,33 +306,6 @@ async function doStatus(id,status){
 }
 const toastEl=document.getElementById('toast');
 function toast(text){toastEl.textContent=text;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3500);}
-
-/* ══════════════════════════════════════════
-   SUBSCRIPTION CHECK — KITCHEN
-   Kitchen display is available on all plans.
-   Only checks for expiry/suspension.
-══════════════════════════════════════════ */
-async function fetchPlanAndGate(){
-  try{
-    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(error){console.warn('Plan fetch error:',error.message);return;}
-    if(!data||!data.length){console.warn('No subscription row for',RESTAURANT_ID);return;}
-    const row=data[0];
-    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
-    if(expired){showExpiredScreen();}
-    const planColors={basic:'#7A7ACF',growth:'#00A86B',premium:'#FFD700'};
-    const plan=row.plan||'basic';
-    const badge=document.createElement('div');
-    badge.style.cssText=`position:fixed;top:8px;right:48px;font-size:9px;font-weight:700;padding:3px 10px;border-radius:99px;background:${planColors[plan]}22;color:${planColors[plan]};border:1px solid ${planColors[plan]}55;letter-spacing:1px;z-index:200;`;
-    badge.textContent=plan.toUpperCase();
-    document.body.appendChild(badge);
-  }catch(e){console.warn('Plan check failed:',e);}
-}
-
-function showExpiredScreen(){
-  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Kitchen display is locked. Please contact HK Digital to renew.</p><a href="https://wa.me/91XXXXXXXXXX?text=Hi, I need to renew my subscription - ${RESTAURANT_ID}" style="display:inline-block;background:#25D366;color:#fff;padding:13px 28px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a></div></div>`;
-}
-
 </script>
 </body>
 </html>
