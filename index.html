@@ -245,6 +245,7 @@ async function getNextOrderNum(){
 
 async function init(){
   const valid=await validateToken();if(!valid)return;
+  checkSubscription();
   try{const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
     if(error)throw error;RDATA=(data?.data?.menu?.length)?data.data:DEFAULT;
   }catch(e){RDATA=DEFAULT;}
@@ -425,6 +426,20 @@ document.getElementById('phoneSendBtn').addEventListener('click',async()=>{
 });
 
 init();
+
+/* ── SUBSCRIPTION EXPIRY CHECK — INDEX ── */
+async function checkSubscription(){
+  try{
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(error||!data||!data.length)return;
+    const row=data[0];
+    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
+    if(expired){
+      document.body.innerHTML=`<div style="position:fixed;inset:0;background:#FDFAF3;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:340px;text-align:center"><div style="font-size:48px;margin-bottom:12px">🍽️</div><h2 style="color:#C0392B;font-size:20px;margin-bottom:8px">Service Temporarily Unavailable</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:16px">Online ordering is temporarily paused. Please order directly with our staff.</p></div></div>`;
+    }
+  }catch(e){console.warn('Subscription check failed',e);}
+}
+
 </script>
 </body>
 </html>

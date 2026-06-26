@@ -180,6 +180,23 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
 .toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:#1A1208;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9998;white-space:nowrap;}
 .toast.show{opacity:1;}
 .toast.err{background:var(--red);}
+
+/* ── THEME TOGGLE BTN ── */
+.theme-btn{background:transparent;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.7);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;vertical-align:middle;}
+.theme-btn:hover{border-color:rgba(255,255,255,.5);color:#fff;}
+
+/* ── LIGHT MODE — WAITER ── */
+body.light-mode{--bg:#F2F2F7;--card:#FFFFFF;--line:#E0E0E0;--text:#111;--muted:#888;}
+body.light-mode header{background:#4A7C59;} /* keep green header */
+body.light-mode .order-card{background:#fff;border-color:#E0E0E0;}
+body.light-mode .menu-cat-btn{background:#fff;border-color:#ddd;color:#333;}
+body.light-mode .menu-cat-btn.active{background:#4A7C59;color:#fff;}
+body.light-mode .menu-item-row{background:#fff;border-color:#eee;}
+body.light-mode .item-name-w{color:#111;}
+body.light-mode .item-price-w{color:#555;}
+body.light-mode .cart-summary{background:#fff;border-color:#E0E0E0;}
+body.light-mode .pin-screen{background:#F2F2F7;}
+
 </style>
 </head>
 <body>
@@ -238,6 +255,7 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
       <div class="hdr-name" id="hdrName">Waiter</div>
       <div class="hdr-sub">Satvik Restaurant · Varanasi</div>
     </div>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.8);">🌙</button>
     <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
   </header>
 
@@ -366,6 +384,7 @@ document.addEventListener('touchstart',primeAudio);
 async function init(){
   if(!TOKEN){showError('No Waiter Token','Open this page using the link sent by your admin.');return;}
   try{
+    checkWaiterSubscription();
     const {data,error}=await sb.from('waiters').select('*').eq('token',TOKEN).eq('restaurant_id',RESTAURANT_ID).single();
     if(error||!data){showError('Invalid Link','This waiter link is not recognised. Ask admin for your correct link.');return;}
     if(!data.active){showError('Link Deactivated','Your waiter link has been deactivated. Contact the restaurant admin.');return;}
@@ -879,6 +898,35 @@ function toast(text,isErr){
 }
 
 init();
+
+/* ── SUBSCRIPTION EXPIRY CHECK — WAITER ── */
+async function checkWaiterSubscription(){
+  try{
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(error||!data||!data.length)return;
+    const row=data[0];
+    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
+    if(expired){
+      document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0F0F0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:360px;text-align:center"><div style="font-size:48px;margin-bottom:12px">🔒</div><h2 style="color:#FF4757;font-size:20px;margin-bottom:8px">Access Suspended</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Restaurant subscription has expired. Please contact HK Digital.</p><a href="https://wa.me/918102806704?text=${encodeURIComponent('Hi HK Digital, waiter app is locked. Restaurant: '+RESTAURANT_ID)}" style="display:inline-block;background:#25D366;color:#fff;padding:12px 24px;border-radius:99px;font-weight:700;text-decoration:none">📱 Contact HK Digital</a></div></div>`;
+    }
+  }catch(e){console.warn('Subscription check failed',e);}
+}
+
+/* ── THEME TOGGLE ── */
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  document.querySelectorAll('.theme-btn').forEach(b=>b.textContent=isLight?'☀️':'🌙');
+  localStorage.setItem('hk_theme',isLight?'light':'dark');
+}
+(function initTheme(){
+  if(localStorage.getItem('hk_theme')==='light'){
+    document.body.classList.add('light-mode');
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.querySelectorAll('.theme-btn').forEach(b=>b.textContent='☀️');
+    });
+  }
+})();
+
 </script>
 </body>
 </html>
