@@ -213,9 +213,52 @@ textarea{resize:vertical;min-height:55px;}
   .os-card{min-width:60px;}
   .panel h2{font-size:15px;}
 }
+
+/* ── PLAN GATE OVERLAY ── */
+.plan-gate{position:relative;}
+.plan-gate-lock{position:absolute;inset:0;background:rgba(10,10,15,.82);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:50;backdrop-filter:blur(3px);}
+.plan-gate-lock .lock-icon{font-size:28px;}
+.plan-gate-lock .lock-title{font-size:13px;font-weight:700;color:#fff;}
+.plan-gate-lock .lock-sub{font-size:11px;color:rgba(255,255,255,.55);text-align:center;padding:0 16px;}
+.plan-gate-lock .lock-btn{margin-top:6px;background:linear-gradient(135deg,#6C63FF,#8B85FF);color:#fff;border:none;padding:8px 18px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;}
+/* Upgrade toast banner */
+#upgradeBanner{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120%);background:linear-gradient(135deg,#6C63FF,#8B85FF);color:#fff;padding:12px 22px;border-radius:99px;font-size:12px;font-weight:700;z-index:999;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 20px rgba(108,99,255,.4);}
+#upgradeBanner.show{transform:translateX(-50%) translateY(0);}
+
+
+/* ── LIGHT / DARK MODE ── */
+body.light-mode{filter:none;} /* admin is already light */
+body:not(.light-mode){
+  --green:#5FA872;--gold:#E6B830;--brown:#A0522D;
+  --cream:#0F0F0F;--steel:#1A1A1A;--paper:#141414;
+  --line:#2A2A2A;--ink:#F0EDE8;--muted:#888;
+  --red:#E55;--surface:#1E1E1E;--shadow:0 2px 12px rgba(0,0,0,.4);
+}
+body:not(.light-mode) header{background:#0F0F0F;border-bottom-color:var(--green);}
+body:not(.light-mode) .panel{background:#1E1E1E;border-color:#2A2A2A;}
+body:not(.light-mode) input,body:not(.light-mode) select,body:not(.light-mode) textarea{background:#252525;border-color:#333;color:#F0EDE8;}
+body:not(.light-mode) .a-card{background:#1E1E1E;border-color:#2A2A2A;}
+body:not(.light-mode) .tab-btn{background:#1E1E1E;color:#888;}
+body:not(.light-mode) .tab-btn.active{background:var(--green);color:#fff;}
+body:not(.light-mode) .item-card{background:#1A1A1A;border-color:#2A2A2A;}
+body:not(.light-mode) .iname{color:#F0EDE8;}
+body:not(.light-mode) .idesc{color:#888;}
+body:not(.light-mode) .gen-btn{background:var(--green);}
+body:not(.light-mode) .report-table th{background:#252525;}
+body:not(.light-mode) .report-table tr:nth-child(even){background:#1A1A1A;}
+body:not(.light-mode) .hdr-btn{background:#252525;color:#F0EDE8;border-color:#333;}
+body:not(.light-mode) main{background:#0F0F0F;}
+body:not(.light-mode) body{background:#0F0F0F;}
+
+/* ── THEME TOGGLE ── */
+.theme-toggle-btn{background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex:0 0 auto;}
+.theme-toggle-btn:hover{border-color:rgba(255,255,255,.4);color:#fff;}
+body.light-mode .theme-toggle-btn{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.6);}
+body.light-mode .theme-toggle-btn:hover{border-color:rgba(0,0,0,.5);color:#000;}
+
 </style>
 </head>
-<body>
+<body class="light-mode">
 <div class="loading hidden" id="loading"><div class="spin"></div></div>
 <div id="loginWrapper">
 <div class="login-box" id="loginBox">
@@ -250,6 +293,7 @@ textarea{resize:vertical;min-height:55px;}
     <div class="h-left"><h1>Satvik Restaurant — Admin</h1><p>Menu Manager & Analytics</p></div>
     <div class="h-right">
       <button class="hdr-btn wa" onclick="openDailyReport()">📊 Daily Report</button>
+      <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
     </div>
   </header>
   <main>
@@ -464,6 +508,7 @@ textarea{resize:vertical;min-height:55px;}
 </div>
 <div class="toast" id="toast"></div>
 <div class="watermark">Powered by <a href="#" target="_blank">HK Digital Solutions</a></div>
+<div id="upgradeBanner"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
@@ -562,6 +607,7 @@ async function loadAll(){
   loadReport('week');
 }
 async function loadMenuData(){
+  fetchPlanAndGate();
   try{
     const {data,error}=await sb.from('restaurant_data').select('data,kitchen_password,counter_password').eq('id',RESTAURANT_ID).single();
     if(error)throw error;
@@ -1416,6 +1462,109 @@ async function removeCounterPassword(){
   document.getElementById('removeCounterPassBtn').style.display='none';
   showToast('Counter password removed.');
 }
+
+
+/* ══════════════════════════════════════════
+   PLAN GATING
+══════════════════════════════════════════ */
+const PLAN_FEATURES={
+  basic:['qr_ordering','kitchen','counter'],
+  growth:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report'],
+  premium:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding']
+};
+
+let CURRENT_PLAN='premium'; // default premium until fetched
+
+async function fetchPlanAndGate(){
+  try{
+    const {data,error}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
+    if(error||!data)return; // if no subscription row, allow all (legacy client)
+    CURRENT_PLAN=data.plan||'premium';
+    // Check subscription status
+    const now=new Date();
+    const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<now);
+    if(expired){showExpiredScreen();return;}
+    applyPlanGating();
+  }catch(e){console.warn('Plan check failed, defaulting to full access',e);}
+}
+
+function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.premium).includes(f);}
+
+function showUpgradeToast(featureName,requiredPlan){
+  const banner=document.getElementById('upgradeBanner');
+  const planLabel=requiredPlan==='growth'?'Growth ₹599':'Premium ₹999';
+  banner.textContent=`🔒 ${featureName} — Upgrade to ${planLabel} to unlock`;
+  banner.classList.add('show');
+  setTimeout(()=>banner.classList.remove('show'),3500);
+}
+
+function lockSection(el,title,sub,requiredPlan){
+  if(!el)return;
+  el.style.position='relative';
+  const lock=document.createElement('div');
+  lock.className='plan-gate-lock';
+  lock.innerHTML=`<span class="lock-icon">🔒</span><span class="lock-title">${title}</span><span class="lock-sub">${sub}</span><button class="lock-btn" onclick="showUpgradeToast('${title}','${requiredPlan}')">Upgrade Plan</button>`;
+  el.appendChild(lock);
+}
+
+function applyPlanGating(){
+  // --- GROWTH features (not in basic) ---
+  if(!hasFeature('menu_images')){
+    document.querySelectorAll('.img-upload-btn').forEach(btn=>{
+      btn.disabled=true;btn.title='Upgrade to Growth to upload images';
+      btn.onclick=(e)=>{e.preventDefault();showUpgradeToast('Menu Images','growth');};
+    });
+    document.querySelectorAll('.iimg').forEach(inp=>inp.disabled=true);
+  }
+  if(!hasFeature('gst')){
+    const gstPanel=document.querySelector('.gst-row')?.closest('.panel');
+    if(gstPanel)lockSection(gstPanel,'GST & Bill Settings','Available on Growth plan','growth');
+  }
+  if(!hasFeature('whatsapp_report')){
+    const waShareBtn=document.querySelector('button[onclick*="shareWA"], button[onclick*="whatsapp"], a[href*="wa.me"]');
+    if(waShareBtn){waShareBtn.disabled=true;waShareBtn.onclick=(e)=>{e.preventDefault();showUpgradeToast('WhatsApp Report','growth');};}
+  }
+  // --- PREMIUM features ---
+  if(!hasFeature('pdf_reports')){
+    const pdfBtn=document.querySelector('button[onclick*="downloadReportPDF"]');
+    if(pdfBtn){pdfBtn.disabled=true;pdfBtn.onclick=(e)=>{e.preventDefault();showUpgradeToast('PDF Reports','premium');};}
+  }
+  if(!hasFeature('custom_branding')){
+    // lock restaurant name/tagline editing
+    const brandPanel=document.querySelector('#rName')?.closest('.panel');
+    if(brandPanel&&CURRENT_PLAN==='basic')lockSection(brandPanel,'Custom Branding','Restaurant name & tagline editing available on Growth+','growth');
+  }
+  // Show plan badge in header
+  const planColors={basic:'#7A7ACF',growth:'#00A86B',premium:'#FFD700'};
+  const planBadge=document.createElement('span');
+  planBadge.style.cssText=`display:inline-block;background:${planColors[CURRENT_PLAN]||'#7A7ACF'}22;color:${planColors[CURRENT_PLAN]||'#7A7ACF'};border:1px solid ${planColors[CURRENT_PLAN]||'#7A7ACF'}55;font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:1px;margin-left:8px;vertical-align:middle;`;
+  planBadge.textContent=CURRENT_PLAN.toUpperCase();
+  const h1=document.querySelector('h1,.admin-title,.brand-name');
+  if(h1)h1.appendChild(planBadge);
+}
+
+function showExpiredScreen(){
+  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.7;margin-bottom:20px">Your subscription has expired or been suspended. Please contact HK Digital to renew your plan and restore access.</p><a href="https://wa.me/918102806704?text=Hi, I need to renew my restaurant subscription - ${RESTAURANT_ID}" style="display:inline-block;background:#25D366;color:#fff;padding:13px 28px;border-radius:99px;font-weight:700;font-size:14px;text-decoration:none">📱 Contact on WhatsApp</a></div></div>`;
+}
+
+
+/* ══════════════════════════════════════════
+   THEME TOGGLE
+══════════════════════════════════════════ */
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  document.querySelectorAll('.theme-toggle-btn').forEach(b=>b.textContent=isLight?'☀️':'🌙');
+  localStorage.setItem('hk_theme',isLight?'light':'dark');
+}
+(function initTheme(){
+  const saved=localStorage.getItem('hk_theme');
+  if(saved==='light'){
+    document.body.classList.add('light-mode');
+    document.addEventListener('DOMContentLoaded',()=>{
+      document.querySelectorAll('.theme-toggle-btn').forEach(b=>b.textContent='☀️');
+    });
+  }
+})();
 
 </script>
 </body>
