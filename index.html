@@ -211,9 +211,22 @@ main{padding:14px 14px 0;}
     </div>
 
     <!-- CALL WAITER BUTTON -->
-    <button id="callWaiterBtn" onclick="callWaiter()" style="width:100%;padding:14px;background:linear-gradient(135deg,#E67E22,#D35400);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s;">
-      🙋 Call Waiter
-    </button>
+    <div id="callWaiterWrap" style="margin-bottom:10px">
+      <button id="callWaiterBtn" onclick="callWaiter()" style="width:100%;padding:14px;background:linear-gradient(135deg,#E67E22,#D35400);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;position:relative;overflow:hidden;">
+        🙋 Call Waiter
+      </button>
+      <!-- Countdown bar shown after calling -->
+      <div id="waiterCountdown" style="display:none;margin-top:8px;background:#1A1208;border-radius:10px;padding:10px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:#D4A017">✅ Waiter called!</span>
+          <span style="font-size:12px;font-weight:700;color:#E67E22" id="waiterTimer">30s</span>
+        </div>
+        <div style="background:#2A2A2A;border-radius:999px;height:5px;overflow:hidden">
+          <div id="waiterProgressBar" style="height:100%;background:linear-gradient(90deg,#E67E22,#D35400);border-radius:999px;width:100%;transition:width 1s linear"></div>
+        </div>
+        <div style="font-size:10px;color:#666;margin-top:5px;text-align:center">Can recall after countdown</div>
+      </div>
+    </div>
     <div class="review-box">
       <div class="review-title">Enjoyed dining with us? Rate us! 🙏</div>
       <div class="review-stars">⭐⭐⭐⭐⭐</div>
@@ -444,8 +457,8 @@ function updateStatusUI(status){
   const paidBox=document.getElementById('paidBox');
   if(paidBox) paidBox.style.display=(status==='paid')?'block':'none';
   // Hide call waiter when paid
-  const callBtn=document.getElementById('callWaiterBtn');
-  if(callBtn) callBtn.style.display=(status==='paid')?'none':'flex';
+  const callWrap=document.getElementById('callWaiterWrap');
+  if(callWrap) callWrap.style.display=(status==='paid')?'none':'block';
   const phoneBox=document.getElementById('phoneBox');
   const alreadySent=localStorage.getItem(STORAGE_KEY+'_phone_sent');
   if(phoneBox&&!alreadySent){
@@ -511,10 +524,12 @@ document.getElementById('phoneSendBtn').addEventListener('click',async()=>{
   }catch(e){console.error(e);toast('Could not send. Try again.',true);}
 });
 
+let waiterCountdownTimer=null;
 async function callWaiter(){
   const btn=document.getElementById('callWaiterBtn');
   if(!btn||!TABLE||!RESTAURANT_ID)return;
-  btn.disabled=true;btn.textContent='Calling...';
+  btn.disabled=true;
+  btn.innerHTML='<span style="opacity:.6">Calling...</span>';
   try{
     await sb.from('orders').insert([{
       restaurant_id:RESTAURANT_ID,
@@ -527,16 +542,41 @@ async function callWaiter(){
       payment_status:'na',
       placed_at:new Date().toISOString()
     }]);
-    btn.textContent='\u2705 Waiter called!';
+    // Show success state on button
+    btn.innerHTML='\u2705 Waiter Called!';
     btn.style.background='linear-gradient(135deg,#27AE60,#1E8449)';
-    setTimeout(()=>{
-      btn.disabled=false;
-      btn.innerHTML='\uD83D\uDE4B Call Waiter';
-      btn.style.background='linear-gradient(135deg,#E67E22,#D35400)';
-    },8000);
+    // Show countdown bar
+    const countdown=document.getElementById('waiterCountdown');
+    const timerEl=document.getElementById('waiterTimer');
+    const bar=document.getElementById('waiterProgressBar');
+    countdown.style.display='block';
+    // Animate 30 second countdown
+    let secs=30;
+    timerEl.textContent=secs+'s';
+    bar.style.width='100%';
+    // Small delay so browser registers the transition
+    setTimeout(()=>{bar.style.width='0%';bar.style.transition='width 30s linear';},50);
+    if(waiterCountdownTimer)clearInterval(waiterCountdownTimer);
+    waiterCountdownTimer=setInterval(()=>{
+      secs--;
+      timerEl.textContent=secs+'s';
+      if(secs<=0){
+        clearInterval(waiterCountdownTimer);
+        waiterCountdownTimer=null;
+        // Reset button
+        btn.disabled=false;
+        btn.innerHTML='\uD83D\uDE4B Call Waiter Again';
+        btn.style.background='linear-gradient(135deg,#E67E22,#D35400)';
+        // Reset bar for next use
+        bar.style.transition='none';
+        bar.style.width='100%';
+        countdown.style.display='none';
+      }
+    },1000);
   }catch(e){
     btn.disabled=false;
     btn.innerHTML='\uD83D\uDE4B Call Waiter';
+    btn.style.background='linear-gradient(135deg,#E67E22,#D35400)';
     toast('Could not call waiter. Try again.',true);
   }
 }
