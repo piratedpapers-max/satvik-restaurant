@@ -493,28 +493,43 @@ async function loadTableOrders(){
   }
   const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
   try{
-    // Active orders — includes bill_pending from kitchen (no served_at) but NOT waiter-served ones
-    const {data:active}=await sb.from('orders').select('*')
-      .eq('restaurant_id',RESTAURANT_ID)
-      .in('table_no',ASSIGNED_TABLES)
-      .in('status',['new','cooking','ready','bill_pending'])
-      .is('served_at',null)
-      .gte('placed_at',todayStart.toISOString())
-      .order('placed_at',{ascending:true});
-    tableOrders={};
-    (active||[]).forEach(o=>{tableOrders[o.id]=o;});
+    // Run all 3 queries in parallel for speed
+    const [activeRes, servedByWaiterRes, servedOnTablesRes] = await Promise.all([
+      // 1. Active orders on assigned tables (not yet served)
+      sb.from('orders').select('*')
+        .eq('restaurant_id',RESTAURANT_ID)
+        .in('table_no',ASSIGNED_TABLES)
+        .in('status',['new','cooking','ready','bill_pending'])
+        .is('served_at',null)
+        .gte('placed_at',todayStart.toISOString())
+        .order('placed_at',{ascending:true}),
 
-    // Served today — fetch BOTH bill_pending (awaiting payment) AND paid (done)
-    // This ensures served history persists correctly on app reopen
-    const {data:served}=await sb.from('orders').select('*')
-      .eq('restaurant_id',RESTAURANT_ID)
-      .eq('waiter_id',WAITER.id)
-      .in('status',['bill_pending','paid'])
-      .not('served_at','is',null)
-      .gte('served_at',todayStart.toISOString())
-      .order('served_at',{ascending:false});
+      // 2. Orders this waiter served (waiter_id = WAITER.id, has served_at)
+      sb.from('orders').select('*')
+        .eq('restaurant_id',RESTAURANT_ID)
+        .eq('waiter_id',WAITER.id)
+        .in('status',['bill_pending','paid'])
+        .not('served_at','is',null)
+        .gte('served_at',todayStart.toISOString()),
+
+      // 3. Orders on assigned tables that have served_at set today
+      // This catches race conditions where waiter_id update hasn't propagated yet
+      sb.from('orders').select('*')
+        .eq('restaurant_id',RESTAURANT_ID)
+        .in('table_no',ASSIGNED_TABLES)
+        .in('status',['bill_pending','paid'])
+        .not('served_at','is',null)
+        .gte('served_at',todayStart.toISOString())
+    ]);
+
+    tableOrders={};
+    (activeRes.data||[]).forEach(o=>{tableOrders[o.id]=o;});
+
+    // Merge served results — union of both queries, deduplicated by id
     servedOrders={};
-    (served||[]).forEach(o=>{servedOrders[o.id]=o;});
+    [...(servedByWaiterRes.data||[]),...(servedOnTablesRes.data||[])].forEach(o=>{
+      servedOrders[o.id]=o; // dedup by id, last write wins (same data)
+    });
 
     renderDashboard();
     updateServedBadge();
@@ -599,14 +614,15 @@ function oCard(o,showServeBtn){
 async function markServed(orderId){
   try{
     const {error}=await sb.from('orders').update({
-      status:'bill_pending',        // stays visible on counter for billing
-      payment_status:'pending',     // payment NOT done — counter handles this
-      served_at:new Date().toISOString()
+      status:'bill_pending',
+      payment_status:'pending',
+      served_at:new Date().toISOString(),
+      waiter_id:WAITER.id,        // CRITICAL — must be set so served history persists on reload
+      waiter_name:WAITER.name
     }).eq('id',orderId);
     if(error)throw error;
-    // Move from active to served map
     if(tableOrders[orderId]){
-      servedOrders[orderId]={...tableOrders[orderId],status:'bill_pending',served_at:new Date().toISOString()};
+      servedOrders[orderId]={...tableOrders[orderId],status:'bill_pending',served_at:new Date().toISOString(),waiter_id:WAITER.id};
       delete tableOrders[orderId];
     }
     renderDashboard();
@@ -678,40 +694,40 @@ function subscribeToOrders(){
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
       const order=p.new;
-      // If order becomes bill_pending WITH served_at = waiter marked it served
-      // If bill_pending WITHOUT served_at = kitchen sent to counter directly, keep in active
-      if(order.status==='bill_pending'&&order.served_at&&tableOrders[order.id]){
+      const isMyTable=ASSIGNED_TABLES.includes(String(order.table_no));
+      const isMyWaiter=order.waiter_id===WAITER.id;
+
+      // Order served (bill_pending + served_at set) — move to Served Today
+      // Catches BOTH: in-memory tableOrders AND fresh loads where tableOrders is empty
+      if(order.status==='bill_pending'&&order.served_at&&(isMyTable||isMyWaiter)){
         servedOrders[order.id]=order;
         delete tableOrders[order.id];
         updateServedBadge();
         renderDashboard();
+        if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
         return;
       }
-      // If order gets paid — update servedOrders to reflect payment (keep in history)
+
+      // Order paid — update served history live
       if(order.payment_status==='paid'||order.status==='paid'){
-        if(servedOrders[order.id]){
-          // Already in served history — just update payment status
+        if(servedOrders[order.id]||(order.served_at&&(isMyTable||isMyWaiter))){
           servedOrders[order.id]=order;
-          updateServedBadge();
-          if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
-        } else if(order.waiter_id===WAITER.id&&order.served_at){
-          // Was served by this waiter but missed the bill_pending event — add now
-          servedOrders[order.id]=order;
+          delete tableOrders[order.id];
           updateServedBadge();
           if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
         }
         return;
       }
-      // Normal active order update
-      if(!tableOrders[order.id])return;
-      const wasReady=tableOrders[order.id]?.status==='ready';
-      const isNowReady=order.status==='ready';
-      if(['served','dismissed','paid'].includes(order.status)){
+
+      // Normal active order update — ready notification
+      const isNowReady=order.status==='ready'||order.status==='bill_pending';
+      const wasReady=tableOrders[order.id]?.status==='ready'||tableOrders[order.id]?.status==='bill_pending';
+      if(['paid','dismissed'].includes(order.status)){
         delete tableOrders[order.id];
-      } else {
+      } else if(isMyTable){
         tableOrders[order.id]=order;
         if(isNowReady&&!wasReady){
-          toast(`🍽️ Table ${order.table_no} — Order #${order.order_num} is READY!`);
+          toast(`\uD83C\uDF7D\uFE0F Table ${order.table_no} \u2014 Order #${order.order_num} is READY!`);
           playChime('ready');
           if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
         }
@@ -720,7 +736,10 @@ function subscribeToOrders(){
       loadStats();
     })
     .subscribe(s=>{
-      if(s==='SUBSCRIBED'){loadTableOrders();}
+      if(s==='SUBSCRIBED'){loadTableOrders();loadStats();}
+      else if(s==='CHANNEL_ERROR'||s==='TIMED_OUT'){
+        setTimeout(()=>{if(WAITER)subscribeToOrders();},3000);
+      }
     });
 }
 
