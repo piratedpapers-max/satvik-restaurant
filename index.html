@@ -9,12 +9,16 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{background:var(--cream);color:var(--ink);font-family:'Poppins',sans-serif;-webkit-font-smoothing:antialiased;}
 body{padding-bottom:80px;}
+
+/* HEADER */
 header{background:var(--steel);padding:16px 18px 20px;border-bottom:3px solid var(--green);position:relative;overflow:hidden;}
 header::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(255,255,255,.02) 0 2px,transparent 2px 12px);}
 .hrow{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
 .brand{font-family:'Yatra One',sans-serif;font-size:24px;color:var(--gold);line-height:1.1;}
 .brand-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--green);font-weight:600;margin-top:2px;}
 .t-chip{background:var(--green);color:#fff;font-weight:700;font-size:13px;padding:7px 14px;border-radius:999px;display:flex;align-items:center;gap:6px;}
+
+/* TRACK BANNER */
 .track-banner{display:none;color:#fff;padding:12px 18px;cursor:pointer;}
 .track-banner.show{display:flex;align-items:center;gap:10px;background:var(--brown);}
 .track-banner.cooking{background:var(--orange);}
@@ -24,21 +28,29 @@ header::before{content:"";position:absolute;inset:0;background:repeating-linear-
 .tb-txt{flex:1;}
 .tb-top{font-weight:700;font-size:13px;}
 .tb-sub{font-size:11px;opacity:.8;margin-top:1px;}
+
+/* TODAY SPECIAL */
 .special{display:none;background:linear-gradient(135deg,var(--brown),#3D1A08);color:#fff;padding:10px 16px;text-align:center;}
 .special.show{display:block;}
 .special .sl{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:700;opacity:.8;margin-bottom:2px;}
 .special .st{font-size:13px;font-weight:700;}
+
+/* CAT NAV */
 .cat-nav{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;scrollbar-width:none;}
 .cat-nav::-webkit-scrollbar{display:none;}
 .cat-btn{flex:0 0 auto;background:transparent;border:1.5px solid var(--line);color:var(--muted);font-family:'Poppins',sans-serif;font-weight:600;font-size:12px;padding:7px 14px;border-radius:999px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .cat-btn.active{background:var(--green);border-color:var(--green);color:#fff;}
+
+/* MENU */
 main{padding:14px 14px 0;}
 .sec-title{font-family:'Yatra One',sans-serif;font-size:20px;color:var(--brown);margin:18px 0 10px;display:flex;align-items:center;gap:8px;}
 .sec-title::after{content:"";flex:1;height:1px;background:repeating-linear-gradient(to right,var(--line) 0 5px,transparent 5px 10px);}
 .item-card{display:flex;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;align-items:center;}
 .item-card.sold-out{opacity:.45;}
+.dish-img-wrap{position:relative;flex:0 0 auto;}
 .dish-img{width:80px;height:80px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--line);}
 .dish-img-placeholder{width:80px;height:80px;border-radius:10px;background:var(--line);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;}
+.sold-out-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;letter-spacing:1px;}
 .iinfo{flex:1;min-width:0;}
 .iname{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:5px;}
 .vdot{width:12px;height:12px;border:1.5px solid var(--green);border-radius:2px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
@@ -51,12 +63,16 @@ main{padding:14px 14px 0;}
 .stepper{display:flex;align-items:center;background:var(--green);border-radius:7px;overflow:hidden;}
 .stepper button{background:none;border:none;color:#fff;font-size:17px;font-weight:700;width:30px;height:30px;cursor:pointer;}
 .stepper .qv{color:#fff;font-weight:700;font-size:13px;min-width:20px;text-align:center;}
+
+/* CART BAR */
 .cart-bar{position:fixed;bottom:0;left:0;right:0;background:var(--steel);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:100;transform:translateY(120%);transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:0 -4px 20px rgba(0,0,0,.3);}
 .cart-bar.show{transform:translateY(0);}
 .cb-left{display:flex;flex-direction:column;}
 .cb-count{font-size:11px;color:var(--gold);font-weight:600;letter-spacing:1px;}
 .cb-total{font-family:'Yatra One',sans-serif;font-size:19px;}
 .cb-btn{background:var(--green);color:#fff;font-weight:700;font-size:13px;border:none;padding:11px 20px;border-radius:9px;cursor:pointer;}
+
+/* DRAWER */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
 .overlay.show{opacity:1;pointer-events:auto;}
 .drawer{position:fixed;bottom:0;left:0;right:0;max-height:88vh;background:var(--cream);border-radius:18px 18px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;}
@@ -74,16 +90,20 @@ main{padding:14px 14px 0;}
 .trow{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px;}
 .trow.grand{font-family:'Yatra One',sans-serif;font-size:19px;color:var(--brown);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);}
 .note-f{width:100%;margin-top:10px;padding:10px 11px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:12px;resize:none;background:#fff;}
-.order-btn{width:100%;margin-top:12px;background:var(--green);color:#fff;border:none;padding:14px;font-weight:700;font-size:14px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Poppins',sans-serif;}
-.order-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+.order-btn{width:100%;margin-top:12px;background:var(--green);color:#fff;border:none;padding:14px;font-weight:700;font-size:14px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Poppins',sans-serif;transition:opacity .2s;}
+.order-btn:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;opacity:1;}
 .waiter-btn{width:100%;margin-top:8px;background:transparent;border:1.5px solid var(--gold);color:var(--gold);padding:11px;font-weight:700;font-size:13px;border-radius:11px;cursor:pointer;font-family:'Poppins',sans-serif;}
 .empty-c{text-align:center;color:var(--muted);padding:36px 10px;font-size:13px;}
+
+/* TRACKING PAGE */
 .track-page{position:fixed;inset:0;background:var(--cream);z-index:300;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow-y:auto;}
 .track-page.show{transform:translateY(0);}
-.track-page-hdr{background:var(--steel);padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--green);}
-.track-back{background:none;border:none;color:var(--gold);font-size:22px;cursor:pointer;}
+.track-page-hdr{background:var(--steel);padding:16px 18px;display:flex;align-items:center;gap:12px;border-bottom:3px solid var(--green);flex:0 0 auto;}
+.track-back{background:none;border:none;color:var(--gold);font-size:22px;cursor:pointer;padding:0 4px;}
 .track-page-hdr h2{font-family:'Yatra One',sans-serif;color:var(--gold);font-size:20px;}
 .track-content{padding:20px 18px;flex:1;}
+
+/* STATUS STEPS */
 .status-steps{display:flex;align-items:flex-start;justify-content:space-between;margin:20px 0;position:relative;}
 .status-steps::before{content:"";position:absolute;top:18px;left:18px;right:18px;height:2px;background:var(--line);z-index:0;}
 .status-steps::after{content:"";position:absolute;top:18px;left:18px;height:2px;background:var(--green);z-index:0;transition:width .5s ease;width:var(--progress,0%);}
@@ -95,6 +115,8 @@ main{padding:14px 14px 0;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,160,23,.4)}50%{box-shadow:0 0 0 8px rgba(212,160,23,0)}}
 .step.done .step-label{color:var(--green);font-weight:700;}
 .step.active .step-label{color:var(--gold);font-weight:700;}
+
+/* BILL BOX */
 .track-status-txt{text-align:center;font-family:'Yatra One',sans-serif;font-size:20px;color:var(--brown);margin-bottom:4px;}
 .track-status-sub{text-align:center;font-size:12px;color:var(--muted);margin-bottom:16px;}
 .bill-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0;}
@@ -108,18 +130,49 @@ main{padding:14px 14px 0;}
 .bill-line-price{font-weight:600;}
 .bill-total{display:flex;justify-content:space-between;font-family:'Yatra One',sans-serif;font-size:19px;color:var(--brown);padding-top:10px;margin-top:8px;border-top:2px solid var(--line);}
 .bill-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:8px;flex-wrap:wrap;gap:4px;}
-.review-box{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;margin-bottom:10px;}
+
+/* ACTION BUTTONS ON TRACK PAGE */
+.track-actions{margin-top:4px;}
+.track-order-more{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.track-order-more:disabled{background:var(--line);color:var(--muted);cursor:not-allowed;}
+
+/* CALL WAITER */
+.call-waiter-btn{width:100%;padding:12px;background:transparent;border:1.5px solid var(--orange);color:var(--orange);border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.waiter-countdown{background:#1A1208;border-radius:10px;padding:10px 14px;margin-bottom:8px;display:none;}
+
+/* PHONE BOX */
 .phone-box{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:10px;display:none;}
 .phone-box.show{display:block;}
-.phone-box.sent{display:none;}
 .phone-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;text-align:center;}
 .phone-row{display:flex;gap:8px;}
 .phone-input{flex:1;padding:11px 12px;border:1.5px solid var(--line);border-radius:9px;font-size:14px;font-family:'Poppins',sans-serif;background:#fff;}
 .phone-send-btn{background:#25D366;color:#fff;border:none;padding:11px 16px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;font-family:'Poppins',sans-serif;}
 .phone-skip{text-align:center;font-size:11px;color:var(--muted);margin-top:8px;cursor:pointer;text-decoration:underline;}
+
+/* REVIEW BOX (always visible) */
+.review-box{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;margin-bottom:10px;}
 .review-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;}
 .review-stars{font-size:28px;letter-spacing:3px;margin-bottom:12px;}
 .review-btn{display:block;width:100%;padding:13px;background:var(--gold);color:var(--steel);border:none;border-radius:11px;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;font-family:'Poppins',sans-serif;}
+
+/* PAID — THANK YOU PAGE (replaces everything when paid) */
+.paid-page{display:none;}
+.paid-page.show{display:block;}
+.paid-hero{background:linear-gradient(135deg,#1E5C32,#27AE60);border-radius:16px 16px 0 0;padding:32px 20px 24px;text-align:center;}
+.paid-emoji{font-size:56px;margin-bottom:12px;display:block;animation:popIn .5s ease;}
+@keyframes popIn{0%{transform:scale(0);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.paid-title{font-family:'Yatra One',sans-serif;font-size:24px;color:#fff;margin-bottom:4px;}
+.paid-subtitle{font-size:13px;color:rgba(255,255,255,.85);}
+.paid-body{background:#fff;border:1px solid #D4EDDA;border-top:none;padding:20px;}
+.paid-msg{text-align:center;margin-bottom:18px;}
+.paid-msg-main{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.paid-msg-sub{font-size:12px;color:var(--muted);}
+.paid-stars{text-align:center;font-size:30px;letter-spacing:4px;margin-bottom:14px;}
+.paid-review-label{font-size:11px;font-weight:700;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;}
+.paid-google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:linear-gradient(135deg,#4285F4,#1a73e8);color:#fff;border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;font-family:'Poppins',sans-serif;margin-bottom:8px;}
+.paid-hint{font-size:10px;color:#aaa;text-align:center;margin-bottom:0;}
+
+/* MISC */
 .invalid-page{position:fixed;inset:0;background:var(--cream);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;z-index:800;}
 .invalid-page.show{display:flex;}
 .watermark{text-align:center;padding:16px 16px 28px;font-size:10.5px;color:var(--muted);letter-spacing:.5px;}
@@ -132,7 +185,6 @@ main{padding:14px 14px 0;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:11px 20px;border-radius:999px;font-size:12px;font-weight:600;z-index:700;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
-@keyframes popIn{0%{transform:scale(0);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
 </style>
 </head>
 <body>
@@ -143,29 +195,37 @@ main{padding:14px 14px 0;}
   <div style="font-size:13px;color:var(--muted);line-height:1.7">This QR code is not valid.<br/>Please scan the QR code on your table.</div>
   <div class="watermark" style="margin-top:30px">Powered by <a href="#">HK Digital Solutions</a></div>
 </div>
+
 <header>
   <div class="hrow">
     <div><div class="brand" id="rName">Satvik</div><div class="brand-sub" id="rSub">Pure Veg · Varanasi</div></div>
     <div class="t-chip">🪑 Table <span id="tNum">—</span></div>
   </div>
 </header>
+
+<!-- Sticky status banner — tapping opens tracking -->
 <div class="track-banner" id="trackBanner" onclick="openTracking()">
   <div class="tb-icon" id="tbIcon">⏳</div>
   <div class="tb-txt"><div class="tb-top" id="tbTop">Your order is being prepared</div><div class="tb-sub">Tap to track →</div></div>
   <div style="font-size:16px;opacity:.7">›</div>
 </div>
+
 <div class="special" id="special"><div class="sl">⭐ Today's Special</div><div class="st" id="specialTxt"></div></div>
 <nav class="cat-nav" id="catNav"></nav>
 <main id="menuMain"></main>
 <div class="watermark">Powered by <a href="#" target="_blank">HK Digital Solutions</a></div>
+
+<!-- Cart bar -->
 <div class="cart-bar" id="cartBar">
   <div class="cb-left"><span class="cb-count" id="cbCount">0 ITEMS</span><span class="cb-total" id="cbTotal">₹0</span></div>
   <button class="cb-btn" id="viewCart">View Order →</button>
 </div>
+
+<!-- Order drawer -->
 <div class="overlay" id="overlay"></div>
 <div class="drawer" id="drawer">
   <div class="dhandle"></div>
-  <div class="dheader"><h2>Your Order</h2><button class="dclose" id="dClose">&times;</button></div>
+  <div class="dheader"><h2>Your Order</h2><button class="dclose" id="dClose">×</button></div>
   <div class="dbody" id="dBody"></div>
   <div class="dfooter">
     <div class="trow"><span>Subtotal</span><span id="subTotal">₹0</span></div>
@@ -175,8 +235,14 @@ main{padding:14px 14px 0;}
     <button class="waiter-btn" id="waiterBtn">🙋 Call Waiter</button>
   </div>
 </div>
+
+<!-- TRACKING PAGE -->
 <div class="track-page" id="trackPage">
-  <div class="track-page-hdr"><button class="track-back" onclick="closeTracking()">‹</button><h2>Order Tracking</h2></div>
+  <!-- Header — back button hidden when paid -->
+  <div class="track-page-hdr">
+    <button class="track-back" id="trackBackBtn" onclick="closeTracking()">‹</button>
+    <h2>Order Tracking</h2>
+  </div>
   <div class="track-content">
     <div class="track-status-txt" id="trackStatus">Waiting...</div>
     <div class="track-status-sub" id="trackSub"></div>
@@ -187,75 +253,80 @@ main{padding:14px 14px 0;}
       <div class="step" id="step-bill_pending"><div class="step-dot">🧾</div><div class="step-label">Bill</div></div>
       <div class="step" id="step-paid"><div class="step-dot">💚</div><div class="step-label">Paid</div></div>
     </div>
+
+    <!-- Bill summary (always visible while tracking) -->
     <div class="bill-box">
-      <div class="bill-rest"><div class="bill-rest-name" id="trackRestName">Satvik Restaurant</div><div class="bill-rest-sub" id="trackRestSub">Pure Veg · Varanasi</div></div>
+      <div class="bill-rest">
+        <div class="bill-rest-name" id="trackRestName">Satvik Restaurant</div>
+        <div class="bill-rest-sub" id="trackRestSub">Pure Veg · Varanasi</div>
+      </div>
       <div id="trackBillLines"></div>
       <div class="bill-total"><span>Total</span><span id="trackBillTotal">₹0</span></div>
       <div class="bill-meta"><span>Table <span id="trackTable">—</span></span><span id="trackTime"></span><span id="trackOrderNum"></span></div>
     </div>
-    <div class="phone-box" id="phoneBox">
-      <div class="phone-title">📱 Get your bill on WhatsApp? (optional)</div>
-      <div class="phone-row">
-        <input type="tel" class="phone-input" id="phoneInput" placeholder="Your WhatsApp number" maxlength="10"/>
-        <button class="phone-send-btn" id="phoneSendBtn">Send</button>
-      </div>
-      <div class="phone-skip" id="phoneSkip">No thanks</div>
-    </div>
-    <button class="order-btn" id="orderMoreBtn" onclick="closeTracking()" style="margin-bottom:10px">➕ Order More Items</button>
 
-    <!-- PAID — THANK YOU + GOOGLE REVIEW PAGE -->
-    <div id="paidBox" style="display:none;margin-bottom:12px">
-      <!-- Celebration header -->
-      <div style="background:linear-gradient(135deg,#1E5C32,#27AE60);border-radius:16px 16px 0 0;padding:28px 20px 22px;text-align:center">
-        <div style="font-size:52px;margin-bottom:10px;animation:popIn .5s ease">🎉</div>
-        <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;font-family:'Yatra One',sans-serif">Thank You!</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.85)">Payment received successfully</div>
+    <!-- ACTIVE STATE ACTIONS (visible while order is active, hidden when paid) -->
+    <div id="activeActions">
+      <!-- Download E-Bill -->
+      <div class="phone-box" id="phoneBox" style="display:none">
+        <div class="phone-title">📄 Download your E-Bill</div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:12px">Get a digital copy of your bill</div>
+        <button onclick="downloadEBill()" style="width:100%;padding:12px;background:var(--ink);color:#fff;border:none;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;">
+          ⬇️ Download E-Bill
+        </button>
+        <div style="font-size:10px;color:var(--muted);text-align:center">Opens a printable bill — save as PDF or screenshot</div>
       </div>
-      <!-- Message -->
-      <div style="background:#fff;padding:18px 20px;border:1px solid #D4EDDA;border-top:none">
-        <div style="text-align:center;margin-bottom:16px">
-          <div style="font-size:14px;font-weight:600;color:#1A1208;margin-bottom:4px">We hope you enjoyed your meal 🙏</div>
-          <div style="font-size:12px;color:#7A6E5F">See you again at Satvik Restaurant!</div>
-        </div>
-        <!-- Stars display -->
-        <div style="text-align:center;font-size:28px;margin-bottom:14px;letter-spacing:4px">⭐⭐⭐⭐⭐</div>
-        <div style="font-size:12px;font-weight:700;color:#7A6E5F;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Loved the food? Rate us on Google</div>
-        <!-- Google Review Button -->
-        <a id="paidReviewBtn" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;background:linear-gradient(135deg,#4285F4,#1a73e8);color:#fff;border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;font-family:'Poppins',sans-serif;margin-bottom:10px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg>
-          Rate us on Google Maps
-        </a>
-        <div style="font-size:10px;color:#aaa;text-align:center">Takes less than 30 seconds · Helps us grow 🙏</div>
-      </div>
-      <div style="background:#F9F5EE;border:1px solid #E5DCC8;border-top:none;border-radius:0 0 16px 16px;padding:12px 20px;text-align:center">
-        <div style="font-size:11px;color:#B8860B;font-weight:700">✨ Powered by HK Digital Solutions</div>
-      </div>
-    </div>
 
-    <!-- CALL WAITER BUTTON -->
-    <div id="callWaiterWrap" style="margin-bottom:10px">
-      <button id="callWaiterBtn" onclick="callWaiter()" style="width:100%;padding:14px;background:linear-gradient(135deg,#E67E22,#D35400);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;">
-        🙋 Call Waiter
-      </button>
-      <div id="waiterCountdown" style="display:none;margin-top:8px;background:#1A1208;border-radius:10px;padding:10px 14px;">
+      <!-- Order More Items — available at all times except paid/bill_pending -->
+      <button class="track-order-more" id="orderMoreBtn" onclick="goOrderMore()">➕ Order More Items</button>
+
+      <!-- Call Waiter -->
+      <button class="call-waiter-btn" id="callWaiterBtn" onclick="callWaiter()">🙋 Call Waiter</button>
+      <div class="waiter-countdown" id="waiterCountdown">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:12px;font-weight:600;color:#D4A017">✅ Waiter called!</span>
-          <span style="font-size:12px;font-weight:700;color:#E67E22" id="waiterTimer">30s</span>
+          <span style="font-size:12px;font-weight:600;color:var(--gold)">✅ Waiter called!</span>
+          <span style="font-size:12px;font-weight:700;color:var(--orange)" id="waiterTimer">30s</span>
         </div>
         <div style="background:#2A2A2A;border-radius:999px;height:5px;overflow:hidden">
           <div id="waiterProgressBar" style="height:100%;background:linear-gradient(90deg,#E67E22,#D35400);border-radius:999px;width:100%;transition:width 1s linear"></div>
         </div>
-        <div style="font-size:10px;color:#666;margin-top:5px;text-align:center">Can recall after countdown</div>
+        <div style="font-size:10px;color:#888;margin-top:5px;text-align:center">Can recall after countdown</div>
+      </div>
+
+      <!-- Always visible Google review (before paid) -->
+      <div class="review-box">
+        <div class="review-title">Enjoyed dining with us? Rate us! 🙏</div>
+        <div class="review-stars">⭐⭐⭐⭐⭐</div>
+        <a class="review-btn" id="reviewBtn" href="#" target="_blank">Rate us on Google</a>
       </div>
     </div>
-    <div class="review-box">
-      <div class="review-title">Enjoyed dining with us? Rate us! 🙏</div>
-      <div class="review-stars">⭐⭐⭐⭐⭐</div>
-      <a class="review-btn" id="reviewBtn" href="#" target="_blank">Rate us on Google</a>
+
+    <!-- PAID STATE (replaces active actions) -->
+    <div class="paid-page" id="paidPage">
+      <div class="paid-hero">
+        <span class="paid-emoji">🎉</span>
+        <div class="paid-title">Thank You!</div>
+        <div class="paid-subtitle">Payment received successfully</div>
+      </div>
+      <div class="paid-body">
+        <div class="paid-msg">
+          <div class="paid-msg-main">We hope you enjoyed your meal 🙏</div>
+          <div class="paid-msg-sub">See you again at Satvik Restaurant!</div>
+        </div>
+        <div class="paid-stars">⭐⭐⭐⭐⭐</div>
+        <div class="paid-review-label">Loved the food? Rate us on Google</div>
+        <a class="paid-google-btn" id="paidReviewBtn" href="#" target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg>
+          Rate us on Google Maps
+        </a>
+        <div class="paid-hint">Takes less than 30 seconds · Helps us grow 🙏</div>
+      </div>
     </div>
+
     <div class="watermark">Powered by <a href="#" target="_blank">HK Digital Solutions</a></div>
   </div>
 </div>
+
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -265,34 +336,17 @@ const RESTAURANT_ID="satvik";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const params=new URLSearchParams(window.location.search);
 const TOKEN=params.get('t');
-let TABLE=null,RDATA=null,activeOrderIds=[],orderChannel=null;
+let TABLE=null,RDATA=null,activeOrderIds=[],orderChannel=null,customerPollTimer=null;
 const STORAGE_KEY=`satvik_v4_${TOKEN}`;
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
+
 const DEFAULT={restaurantName:"Satvik Restaurant",restaurantSub:"Pure Veg · Varanasi",todaySpecial:"",googleReview:"https://search.google.com/local/writereview?placeid=ChIJYW8Zam8v6DkRZ7yzsvX56N0",menu:[{category:"Soups & Starters",items:[{name:"Tomato Soup",desc:"Fresh tomato basil soup",price:80,veg:true,available:true},{name:"Veg Manchurian",desc:"Crispy veggie balls",price:140,veg:true,available:true},{name:"Paneer Tikka",desc:"Tandoor-grilled cottage cheese",price:190,veg:true,available:true},{name:"Veg Spring Rolls",desc:"Crispy stuffed rolls",price:130,veg:true,available:true}]},{category:"Main Course",items:[{name:"Paneer Butter Masala",desc:"Cottage cheese in tomato-cashew gravy",price:220,veg:true,available:true},{name:"Dal Makhani",desc:"Slow-cooked black lentils",price:180,veg:true,available:true},{name:"Dal Tadka",desc:"Lentils with ghee tempering",price:150,veg:true,available:true},{name:"Kadhai Paneer",desc:"Paneer in kadhai gravy",price:230,veg:true,available:true},{name:"Shahi Paneer",desc:"Rich creamy paneer",price:240,veg:true,available:true},{name:"Aloo Gobi",desc:"Potato & cauliflower masala",price:140,veg:true,available:true}]},{category:"Banarasi Specials",items:[{name:"Banarasi Thali",desc:"Dal, sabzi, roti, rice, salad & papad",price:250,veg:true,available:true},{name:"Poori Bhaji",desc:"Soft pooris with potato bhaji",price:100,veg:true,available:true},{name:"Kachori Sabzi",desc:"Crispy kachori with curry",price:90,veg:true,available:true}]},{category:"Biryani & Rice",items:[{name:"Veg Biryani",desc:"Fragrant basmati with vegetables",price:180,veg:true,available:true},{name:"Jeera Rice",desc:"Basmati with cumin & ghee",price:110,veg:true,available:true},{name:"Plain Rice",desc:"Soft steamed basmati",price:90,veg:true,available:true}]},{category:"Breads",items:[{name:"Butter Naan",desc:"Soft leavened bread with butter",price:40,veg:true,available:true},{name:"Tandoori Roti",desc:"Whole wheat clay oven bread",price:20,veg:true,available:true},{name:"Lachha Paratha",desc:"Multi-layered crispy paratha",price:45,veg:true,available:true},{name:"Puri (2 pcs)",desc:"Deep-fried whole wheat bread",price:30,veg:true,available:true}]},{category:"Drinks & Desserts",items:[{name:"Sweet Lassi",desc:"Chilled yogurt drink",price:80,veg:true,available:true},{name:"Cold Drink",desc:"Chilled aerated beverage",price:50,veg:true,available:true},{name:"Masala Chaas",desc:"Spiced buttermilk",price:60,veg:true,available:true},{name:"Gulab Jamun (2 pcs)",desc:"Milk dumplings in syrup",price:80,veg:true,available:true},{name:"Kheer",desc:"Traditional rice pudding",price:90,veg:true,available:true},{name:"Kulfi Falooda",desc:"Indian ice cream with falooda",price:120,veg:true,available:true}]}]};
 
-async function validateToken(){
-  if(!TOKEN){showInvalid();return false;}
-  try{const {data,error}=await sb.from('table_tokens').select('table_no,restaurant_id').eq('token',TOKEN).single();
-    if(error||!data||data.restaurant_id!==RESTAURANT_ID){showInvalid();return false;}
-    TABLE=data.table_no;document.getElementById('tNum').textContent=TABLE;return true;
-  }catch(e){showInvalid();return false;}
-}
-function showInvalid(){document.getElementById('loading').classList.add('hide');document.getElementById('invalidPage').classList.add('show');}
-
-async function getNextOrderNum(){
-  try{
-    const {data,error}=await sb.rpc('get_next_order_num',{p_restaurant_id:RESTAURANT_ID});
-    if(error)throw error;
-    return data;
-  }catch(e){
-    console.error('Order number error:',e);
-    return Math.floor(Math.random()*900)+100;
-  }
-}
-
+/* ── INIT ── */
 async function init(){
   const valid=await validateToken();if(!valid)return;
-  try{const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+  try{
+    const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
     if(error)throw error;RDATA=(data?.data?.menu?.length)?data.data:DEFAULT;
   }catch(e){RDATA=DEFAULT;}
   document.title=RDATA.restaurantName+' — Order';
@@ -300,25 +354,25 @@ async function init(){
   document.getElementById('rSub').textContent=RDATA.restaurantSub||'';
   document.getElementById('trackRestName').textContent=RDATA.restaurantName||'Satvik';
   document.getElementById('trackRestSub').textContent=RDATA.restaurantSub||'';
-  if(RDATA.googleReview)document.getElementById('reviewBtn').href=RDATA.googleReview;
-  // Also wire the paid page review button
-  const paidReviewBtn=document.getElementById('paidReviewBtn');
-  if(paidReviewBtn&&RDATA.googleReview)paidReviewBtn.href=RDATA.googleReview;
+  const reviewUrl=RDATA.googleReview||'#';
+  document.getElementById('reviewBtn').href=reviewUrl;
+  document.getElementById('paidReviewBtn').href=reviewUrl;
   if(RDATA.todaySpecial?.trim()){document.getElementById('specialTxt').textContent=RDATA.todaySpecial;document.getElementById('special').classList.add('show');}
   renderMenu();
+  // Restore active session if any
   try{
     const saved=localStorage.getItem(STORAGE_KEY);
     if(saved){
       const ids=JSON.parse(saved);
       if(ids?.length){
-        // Before restoring tracking, verify these orders are NOT already paid
+        // Check if these orders are still active (not paid)
         const {data:check}=await sb.from('orders').select('id,payment_status,status').in('id',ids);
-        const allPaid=(check||[]).every(o=>o.payment_status==='paid'||o.status==='paid');
+        const allPaid=(check||[]).length>0&&(check||[]).every(o=>o.payment_status==='paid'||o.status==='paid');
         if(allPaid||!(check||[]).length){
-          // Orders are done — clear storage, show fresh menu
+          // Fully paid or orders gone — clear silently, fresh start
           localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem(STORAGE_KEY+'_phone_sent');
-        } else {
+        }else{
           activeOrderIds=ids;
           await loadTableBill();
           subscribeToOrders();
@@ -329,6 +383,23 @@ async function init(){
   document.getElementById('loading').classList.add('hide');
 }
 
+async function validateToken(){
+  if(!TOKEN){showInvalid();return false;}
+  try{
+    const {data,error}=await sb.from('table_tokens').select('table_no,restaurant_id').eq('token',TOKEN).single();
+    if(error||!data||data.restaurant_id!==RESTAURANT_ID){showInvalid();return false;}
+    TABLE=data.table_no;document.getElementById('tNum').textContent=TABLE;return true;
+  }catch(e){showInvalid();return false;}
+}
+function showInvalid(){document.getElementById('loading').classList.add('hide');document.getElementById('invalidPage').classList.add('show');}
+
+/* ── ORDER NUM ── */
+async function getNextOrderNum(){
+  try{const {data,error}=await sb.rpc('get_next_order_num',{p_restaurant_id:RESTAURANT_ID});if(error)throw error;return data;}
+  catch(e){return Math.floor(Math.random()*900)+100;}
+}
+
+/* ── MENU RENDER ── */
 function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-');}
 const cart={};
 function renderMenu(){
@@ -342,7 +413,9 @@ function renderMenu(){
     (cat.items||[]).forEach(item=>{
       const key=cat.category+'::'+item.name,avail=item.available!==false;
       const card=document.createElement('div');card.className='item-card'+(avail?'':' sold-out');
-      const imgHtml=item.image?`<img class="dish-img" src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="dish-img-placeholder" style="display:none">🍽️</div>`:`<div class="dish-img-placeholder">🍽️</div>`;
+      const imgHtml=item.image
+        ?`<div class="dish-img-wrap"><img class="dish-img" src="${item.image}" alt="${item.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="dish-img-placeholder" style="display:none">🍽️</div>${!avail?'<div class="sold-out-overlay">Sold Out</div>':''}</div>`
+        :`<div class="dish-img-wrap"><div class="dish-img-placeholder">🍽️</div>${!avail?'<div class="sold-out-overlay">Sold Out</div>':''}</div>`;
       card.innerHTML=`${imgHtml}<div class="iinfo"><div class="iname"><span class="vdot"></span>${item.name}</div><div class="idesc">${item.desc||''}</div><div class="iprice">₹${item.price}</div>${!avail?'<div class="sold-tag">Sold Out</div>':''}</div><div class="qzone" data-key="${key}"></div>`;
       sec.appendChild(card);if(avail)renderQty(card.querySelector('.qzone'),key,item);
     });menuMain.appendChild(sec);
@@ -367,6 +440,8 @@ function updateBar(){
   document.getElementById('cbTotal').textContent=`₹${total}`;
   document.getElementById('cartBar').classList.toggle('show',count>0);renderDrawer();
 }
+
+/* ── DRAWER ── */
 const overlay=document.getElementById('overlay'),drawer=document.getElementById('drawer');
 function openD(){overlay.classList.add('show');drawer.classList.add('show');}
 function closeD(){overlay.classList.remove('show');drawer.classList.remove('show');}
@@ -379,6 +454,8 @@ function renderDrawer(){
   const t=getTotal();document.getElementById('subTotal').textContent=`₹${t}`;document.getElementById('grandTotal').textContent=`₹${t}`;
   document.getElementById('placeBtn').disabled=items.length===0;
 }
+
+/* ── PLACE ORDER ── */
 let isPlacingOrder=false;
 document.getElementById('placeBtn').addEventListener('click',async()=>{
   if(isPlacingOrder)return;
@@ -390,17 +467,24 @@ document.getElementById('placeBtn').addEventListener('click',async()=>{
     const order={restaurant_id:RESTAURANT_ID,table_no:TABLE,items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),total:getTotal(),note:document.getElementById('orderNote').value.trim(),status:'new',order_num:orderNum,payment_status:'pending',placed_at:new Date().toISOString()};
     const {data,error}=await sb.from('orders').insert([order]).select().single();if(error)throw error;
     activeOrderIds.push(data.id);localStorage.setItem(STORAGE_KEY,JSON.stringify(activeOrderIds));
+    // Clear cart
     Object.keys(cart).forEach(k=>delete cart[k]);
     document.querySelectorAll('.qzone').forEach(z=>{const key=z.dataset.key;if(key){const parts=key.split('::');const cat=RDATA.menu.find(c=>c.category===parts[0]);const item=cat?.items.find(i=>i.name===parts[1]);if(item)renderQty(z,key,item);}});
-    updateBar();closeD();subscribeToOrders();await loadTableBill();openTracking();toast('✅ Order #'+orderNum+' sent to kitchen!');
+    updateBar();closeD();
+    subscribeToOrders();await loadTableBill();openTracking();
+    toast('✅ Order #'+orderNum+' sent to kitchen!');
     btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';
   }catch(e){console.error(e);toast('Could not place order. Please try again.',true);btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';}
   finally{isPlacingOrder=false;}
 });
+
+/* ── CALL WAITER (from drawer) ── */
 document.getElementById('waiterBtn').addEventListener('click',async()=>{
   try{await sb.from('orders').insert([{restaurant_id:RESTAURANT_ID,table_no:TABLE,items:[{name:'🙋 WAITER NEEDED',qty:1,price:0,total:0}],total:0,note:'Customer needs waiter',status:'waiter',order_num:0,payment_status:'na',placed_at:new Date().toISOString()}]);closeD();toast('✅ Waiter has been called!');}
   catch(e){toast('Could not call waiter.',true);}
 });
+
+/* ── LOAD BILL ── */
 async function loadTableBill(){
   if(!activeOrderIds.length)return;
   try{
@@ -408,201 +492,202 @@ async function loadTableBill(){
     if(!data?.length)return;
     const allItems={};let grandTotal=0;
     const sp=['new','cooking','ready','bill_pending','served','paid'];
-    let latestStatus='new';
-    let allPaid=true;
+    let latestStatus='new';let allPaid=true;
     data.forEach(o=>{
       grandTotal+=o.total||0;
-      // Check payment status first
-      if(o.payment_status!=='paid') allPaid=false;
-      if(o.status==='paid'||o.payment_status==='paid'){
-        if(sp.indexOf('paid')>sp.indexOf(latestStatus)) latestStatus='paid';
-      } else if(sp.indexOf(o.status)>sp.indexOf(latestStatus)){
-        latestStatus=o.status;
-      }
+      if(o.payment_status!=='paid')allPaid=false;
+      const effStatus=(o.payment_status==='paid')?'paid':o.status;
+      if(sp.indexOf(effStatus)>sp.indexOf(latestStatus))latestStatus=effStatus;
       (o.items||[]).forEach(i=>{
         if(i.name.includes('WAITER'))return;
         allItems[i.name]=allItems[i.name]||{...i,qty:0,total:0};
-        allItems[i.name].qty+=i.qty;
-        allItems[i.name].total+=i.total;
+        allItems[i.name].qty+=i.qty;allItems[i.name].total+=i.total;
       });
     });
-    // If all paid — show thank you page, stay until customer leaves
-    if(allPaid&&data.length>0){
-      updateStatusUI('paid');
-      updateTrackBanner('paid');
-      // Clear localStorage silently so next customer gets fresh page
-      // but DON'T close tracking — let this customer read the thank you page
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(STORAGE_KEY+'_phone_sent');
-      activeOrderIds=[];
-      return;
-    }
-    const itemsArr=Object.values(allItems);
-    document.getElementById('trackBillLines').innerHTML=itemsArr.map(i=>`<div class="bill-line"><span class="bill-line-name">${i.name}</span><span class="bill-line-qty">×${i.qty}</span><span class="bill-line-price">₹${i.total}</span></div>`).join('');
+    // Update bill lines
+    document.getElementById('trackBillLines').innerHTML=Object.values(allItems).map(i=>`<div class="bill-line"><span class="bill-line-name">${i.name}</span><span class="bill-line-qty">×${i.qty}</span><span class="bill-line-price">₹${i.total}</span></div>`).join('');
     document.getElementById('trackBillTotal').textContent=`₹${grandTotal}`;
     document.getElementById('trackTable').textContent=TABLE;
     document.getElementById('trackTime').textContent=new Date(data[0].placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
     const nums=data.filter(o=>o.order_num>0).map(o=>'#'+o.order_num);
     document.getElementById('trackOrderNum').textContent=nums.length?'Orders: '+nums.join(', '):'';
-    updateStatusUI(latestStatus);updateTrackBanner(latestStatus);
-    if(latestStatus==='served'||latestStatus==='paid'){
+    // If paid — show thank you, clear storage, stop polling
+    if(allPaid&&data.length>0){
+      activeOrderIds=[];
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(STORAGE_KEY+'_phone_sent');
-      activeOrderIds=[];
+      stopSubscription();
+      updateStatusUI('paid');
+      updateTrackBanner('paid');
+      openTracking(); // make sure tracking page is open
+      return;
     }
+    updateStatusUI(latestStatus);
+    updateTrackBanner(latestStatus);
   }catch(e){console.error(e);}
 }
+
+/* ── STATUS UI ── */
 function updateStatusUI(status){
-  const steps=['new','cooking','ready','bill_pending','paid'];const idx=steps.indexOf(status);
+  const steps=['new','cooking','ready','bill_pending','paid'];
+  const idx=steps.indexOf(status);
   const labels={
     new:{txt:'\u23F3 Order received!',sub:'Kitchen is confirming your order...'},
     cooking:{txt:'\uD83D\uDD25 Being prepared!',sub:'Our chef is cooking your food right now'},
     ready:{txt:'\u2705 Food is ready!',sub:'Waiter is bringing your food to the table'},
-    bill_pending:{txt:'\uD83E\uDFBE Bill ready \u2014 please pay at the counter',sub:'Your food has been served. Pay at the counter when ready.'},
-    served:{txt:'\uD83C\uDF7D\uFE0F Enjoy your meal!',sub:'Thank you for dining with us \uD83D\uDE4F'},
-    paid:{txt:'\uD83D\uDC9A Thank you! Payment received',sub:'We hope you enjoyed your meal. See you again soon! \uD83D\uDE4F'}
+    bill_pending:{txt:'\uD83E\uDFBE Bill ready \u2014 pay at counter',sub:'Your food has been served. Pay at counter when ready.'},
+    paid:{txt:'\uD83D\uDC9A Payment received \u2014 Thank You!',sub:'We hope you enjoyed your meal \uD83D\uDE4F'}
   };
   const l=labels[status]||labels.new;
   document.getElementById('trackStatus').textContent=l.txt;
   document.getElementById('trackSub').textContent=l.sub;
-  const displaySteps=['new','cooking','ready','bill_pending','paid'];
-  displaySteps.forEach((s,i)=>{
-    const el=document.getElementById('step-'+s)||document.getElementById('step-served');
-    if(!el)return;
+  // Update step indicators
+  steps.forEach((s,i)=>{
+    const el=document.getElementById('step-'+s);if(!el)return;
     el.className='step';
     if(i<idx)el.classList.add('done');
     else if(i===idx)el.classList.add('active');
   });
   document.getElementById('statusSteps').style.setProperty('--progress',Math.min(idx/(steps.length-1)*100,100)+'%');
   const isPaid=status==='paid';
-  const orderMoreBtn=document.getElementById('orderMoreBtn');
-  if(orderMoreBtn) orderMoreBtn.style.display=(status==='bill_pending'||status==='served'||isPaid)?'none':'flex';
-  // Show paid thank you + review page
-  const paidBox=document.getElementById('paidBox');
-  if(paidBox) paidBox.style.display=isPaid?'block':'none';
-  // Hide call waiter when paid
-  const callWrap=document.getElementById('callWaiterWrap');
-  if(callWrap) callWrap.style.display=isPaid?'none':'block';
+  // PAID: show thank you, hide active actions, hide back button
+  document.getElementById('paidPage').classList.toggle('show',isPaid);
+  document.getElementById('activeActions').style.display=isPaid?'none':'block';
+  document.getElementById('trackBackBtn').style.display=isPaid?'none':'block';
+  // Order More: visible when new/cooking/ready/bill_pending — always until paid
+  const canOrderMore=['new','cooking','ready','bill_pending'].includes(status);
+  document.getElementById('orderMoreBtn').style.display=canOrderMore?'flex':'none';
+  // E-bill box — show when food is ready or bill pending
   const phoneBox=document.getElementById('phoneBox');
-  const alreadySent=localStorage.getItem(STORAGE_KEY+'_phone_sent');
-  if(phoneBox&&!alreadySent){
-    phoneBox.classList.toggle('show',['ready','bill_pending'].includes(status));
-  }
+  if(phoneBox) phoneBox.style.display=['ready','bill_pending'].includes(status)?'block':'none';
 }
+
 function updateTrackBanner(status){
   const banner=document.getElementById('trackBanner'),icon=document.getElementById('tbIcon'),top=document.getElementById('tbTop');
-  if(!status||status==='served'||status==='paid'){banner.className='track-banner';return;}
-  const map={new:{icon:'\u23F3',txt:'Order received \u2014 kitchen confirming',cls:''},cooking:{icon:'\uD83D\uDD25',txt:'Your food is being cooked!',cls:'cooking'},ready:{icon:'\u2705',txt:'Your food is ready!',cls:'ready'},bill_pending:{icon:'\uD83E\uDFBE',txt:'Bill ready \u2014 please pay at counter',cls:'bill_pending'}};
-  const m=map[status]||map.new;banner.className='track-banner show '+m.cls;icon.textContent=m.icon;top.textContent=m.txt;
+  if(!status||status==='paid'){banner.className='track-banner';return;}
+  const map={
+    new:{icon:'\u23F3',txt:'Order received \u2014 kitchen confirming',cls:''},
+    cooking:{icon:'\uD83D\uDD25',txt:'Your food is being cooked!',cls:'cooking'},
+    ready:{icon:'\u2705',txt:'Your food is ready!',cls:'ready'},
+    bill_pending:{icon:'\uD83E\uDFBE',txt:'Bill ready \u2014 please pay at counter',cls:'bill_pending'}
+  };
+  const m=map[status]||map.new;
+  banner.className='track-banner show '+m.cls;icon.textContent=m.icon;top.textContent=m.txt;
 }
-let customerPollTimer=null;
-function subscribeToOrders(){
-  if(orderChannel)sb.removeChannel(orderChannel);
-  if(customerPollTimer){clearInterval(customerPollTimer);customerPollTimer=null;}
-  if(!activeOrderIds.length)return;
-  orderChannel=sb.channel('track-'+TABLE+'-'+Date.now())
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders'},async p=>{if(activeOrderIds.includes(p.new.id))await loadTableBill();})
-    .subscribe();
-  // Safety net: even if realtime push is missed (weak signal, brief disconnect),
-  // quietly re-check status every 10 seconds so the customer never sees stale info for long
-  customerPollTimer=setInterval(()=>{ if(activeOrderIds.length) loadTableBill(); },10000);
-}
+
+/* ── TRACKING OPEN/CLOSE ── */
 function openTracking(){document.getElementById('trackPage').classList.add('show');}
 function closeTracking(){document.getElementById('trackPage').classList.remove('show');}
-const toastEl=document.getElementById('toast');
-function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
-/* ===== PHONE / WHATSAPP BILL ===== */
-document.getElementById('phoneSkip').addEventListener('click',()=>{
-  localStorage.setItem(STORAGE_KEY+'_phone_sent','1');
-  document.getElementById('phoneBox').classList.remove('show');
-});
-document.getElementById('phoneSendBtn').addEventListener('click',async()=>{
-  const phone=document.getElementById('phoneInput').value.trim();
-  if(!/^[6-9]\d{9}$/.test(phone)){
-    toast('Enter a valid 10-digit number',true);
-    return;
-  }
-  try{
-    // Save phone number against the most recent active order
-    if(activeOrderIds.length){
-      await sb.from('orders').update({customer_phone:phone}).eq('id',activeOrderIds[activeOrderIds.length-1]);
-    }
-    // Build WhatsApp message from current bill
-    const billLines=document.querySelectorAll('#trackBillLines .bill-line');
-    let msg=`🙏 *${RDATA.restaurantName||'Satvik Restaurant'}*\n${RDATA.restaurantSub||''}\n\n*Your Bill — Table ${TABLE}*\n`;
-    billLines.forEach(line=>{
-      const name=line.querySelector('.bill-line-name')?.textContent||'';
-      const qty=line.querySelector('.bill-line-qty')?.textContent||'';
-      const price=line.querySelector('.bill-line-price')?.textContent||'';
-      msg+=`${name} ${qty} — ${price}\n`;
-    });
-    const total=document.getElementById('trackBillTotal').textContent;
-    msg+=`\n*Total: ${total}*\n\nThank you for dining with us! 🙏`;
-    if(RDATA.googleReview) msg+=`\n\n⭐ Loved the food? Rate us: ${RDATA.googleReview}`;
-    msg+=`\n\n🎉 See you again soon!`;
-    const waUrl=`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl,'_blank');
-    localStorage.setItem(STORAGE_KEY+'_phone_sent','1');
-    document.getElementById('phoneBox').classList.remove('show');
-    toast('✅ Opening WhatsApp...');
-  }catch(e){console.error(e);toast('Could not send. Try again.',true);}
-});
+// "Order More" closes tracking and goes back to menu
+function goOrderMore(){
+  closeTracking();
+  // Scroll to top of menu
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
+/* ── REALTIME ── */
+function subscribeToOrders(){
+  stopSubscription();
+  if(!activeOrderIds.length)return;
+  orderChannel=sb.channel('track-'+TABLE+'-'+Date.now())
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders'},async p=>{
+      if(activeOrderIds.includes(p.new.id))await loadTableBill();
+    })
+    .subscribe();
+  // Poll every 10s as safety net (weak signal / brief disconnect)
+  customerPollTimer=setInterval(()=>{if(activeOrderIds.length)loadTableBill();},10000);
+}
+function stopSubscription(){
+  if(orderChannel){sb.removeChannel(orderChannel);orderChannel=null;}
+  if(customerPollTimer){clearInterval(customerPollTimer);customerPollTimer=null;}
+}
+
+/* ── CALL WAITER (from tracking page) ── */
 let waiterCountdownTimer=null;
 async function callWaiter(){
   const btn=document.getElementById('callWaiterBtn');
-  if(!btn||!TABLE||!RESTAURANT_ID)return;
-  btn.disabled=true;
-  btn.innerHTML='<span style="opacity:.6">Calling...</span>';
+  if(!btn||!TABLE)return;
+  btn.disabled=true;btn.innerHTML='<span>Calling...</span>';
   try{
-    await sb.from('orders').insert([{
-      restaurant_id:RESTAURANT_ID,
-      table_no:TABLE,
-      items:[{name:'\uD83D\uDE4B WAITER NEEDED',qty:1,price:0,total:0}],
-      total:0,
-      note:'Customer needs waiter',
-      status:'waiter',
-      order_num:0,
-      payment_status:'na',
-      placed_at:new Date().toISOString()
-    }]);
-    // Show success state on button
-    btn.innerHTML='\u2705 Waiter Called!';
-    btn.style.background='linear-gradient(135deg,#27AE60,#1E8449)';
-    // Show countdown bar
+    await sb.from('orders').insert([{restaurant_id:RESTAURANT_ID,table_no:TABLE,items:[{name:'\uD83D\uDE4B WAITER NEEDED',qty:1,price:0,total:0}],total:0,note:'Customer needs waiter',status:'waiter',order_num:0,payment_status:'na',placed_at:new Date().toISOString()}]);
+    btn.innerHTML='\u2705 Waiter Called!';btn.style.borderColor='#27AE60';btn.style.color='#27AE60';
     const countdown=document.getElementById('waiterCountdown');
     const timerEl=document.getElementById('waiterTimer');
     const bar=document.getElementById('waiterProgressBar');
     countdown.style.display='block';
-    // Animate 30 second countdown
-    let secs=30;
-    timerEl.textContent=secs+'s';
-    bar.style.width='100%';
-    // Small delay so browser registers the transition
+    let secs=30;timerEl.textContent=secs+'s';bar.style.width='100%';
     setTimeout(()=>{bar.style.width='0%';bar.style.transition='width 30s linear';},50);
     if(waiterCountdownTimer)clearInterval(waiterCountdownTimer);
     waiterCountdownTimer=setInterval(()=>{
-      secs--;
-      timerEl.textContent=secs+'s';
+      secs--;timerEl.textContent=secs+'s';
       if(secs<=0){
-        clearInterval(waiterCountdownTimer);
-        waiterCountdownTimer=null;
-        // Reset button
-        btn.disabled=false;
-        btn.innerHTML='\uD83D\uDE4B Call Waiter Again';
-        btn.style.background='linear-gradient(135deg,#E67E22,#D35400)';
-        // Reset bar for next use
-        bar.style.transition='none';
-        bar.style.width='100%';
+        clearInterval(waiterCountdownTimer);waiterCountdownTimer=null;
+        btn.disabled=false;btn.innerHTML='\uD83D\uDE4B Call Waiter Again';
+        btn.style.borderColor='var(--orange)';btn.style.color='var(--orange)';
+        bar.style.transition='none';bar.style.width='100%';
         countdown.style.display='none';
       }
     },1000);
   }catch(e){
-    btn.disabled=false;
-    btn.innerHTML='\uD83D\uDE4B Call Waiter';
-    btn.style.background='linear-gradient(135deg,#E67E22,#D35400)';
+    btn.disabled=false;btn.innerHTML='\uD83D\uDE4B Call Waiter';
     toast('Could not call waiter. Try again.',true);
   }
+}
+
+/* ── TOAST ── */
+const toastEl=document.getElementById('toast');
+function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('err',!!isErr);toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3000);}
+
+/* ── DOWNLOAD E-BILL ── */
+function downloadEBill(){
+  const items=[...document.querySelectorAll('#trackBillLines .bill-line')].map(line=>({
+    name:line.querySelector('.bill-line-name')?.textContent||'',
+    qty:line.querySelector('.bill-line-qty')?.textContent||'',
+    price:line.querySelector('.bill-line-price')?.textContent||''
+  }));
+  const total=document.getElementById('trackBillTotal').textContent;
+  const time=document.getElementById('trackTime').textContent;
+  const orderNums=document.getElementById('trackOrderNum').textContent;
+  const rname=RDATA?.restaurantName||'Satvik Restaurant';
+  const rsub=RDATA?.restaurantSub||'Pure Veg · Varanasi';
+  const billHTML=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Bill - ${rname}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Courier New',monospace;background:#fff;color:#000;padding:20px;max-width:340px;margin:0 auto;}
+.center{text-align:center;}
+.rname{font-size:18px;font-weight:700;margin-bottom:2px;}
+.rsub{font-size:11px;color:#555;margin-bottom:14px;}
+.divider{border:none;border-top:1px dashed #000;margin:10px 0;}
+.row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+.row.total{font-weight:700;font-size:15px;border-top:1px solid #000;margin-top:6px;padding-top:8px;}
+.meta{font-size:11px;color:#555;margin-top:10px;}
+.footer{text-align:center;margin-top:20px;font-size:10px;color:#888;}
+@media print{body{padding:0;}}
+</style></head><body>
+<div class="center">
+<div class="rname">${rname}</div>
+<div class="rsub">${rsub}</div>
+</div>
+<hr class="divider"/>
+<div class="row"><span>Table</span><span>${TABLE}</span></div>
+<div class="row"><span>Time</span><span>${time}</span></div>
+${orderNums?`<div class="row"><span>Orders</span><span>${orderNums.replace('Orders: ','')}</span></div>`:''}
+<hr class="divider"/>
+${items.map(i=>`<div class="row"><span>${i.name} ${i.qty}</span><span>${i.price}</span></div>`).join('')}
+<hr class="divider"/>
+<div class="row total"><span>TOTAL</span><span>${total}</span></div>
+<div class="meta center">Thank you for dining with us! 🙏</div>
+<div class="footer">Powered by HK Digital Solutions</div>
+<script>window.onload=()=>{window.print();}<\/script>
+</body></html>`;
+  const blob=new Blob([billHTML],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.target='_blank';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
 
 init();
