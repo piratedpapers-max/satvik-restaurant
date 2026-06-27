@@ -46,8 +46,9 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 .col-ready .col-hdr{background:#0A1A0C;color:#27AE60;border-bottom:2px solid #27AE60;}
 .col-body{padding:8px;display:flex;flex-direction:column;gap:6px;}
 .ccnt{background:rgba(255,255,255,.1);padding:1px 7px;border-radius:999px;font-size:11px;}
-.ocard{background:var(--card2);border-radius:8px;overflow:hidden;animation:fadeIn .25s ease;border-left:3px solid transparent;display:flex;flex-direction:column;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ocard{background:var(--card2);border-radius:8px;overflow:hidden;border-left:3px solid transparent;display:flex;flex-direction:column;transition:border-left-color .3s;}
+.ocard.new-card{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .ocard.new{border-left-color:var(--gold);}
 .ocard.cooking{border-left-color:var(--orange);}
 .ocard.ready{border-left-color:#27AE60;}
@@ -172,8 +173,14 @@ document.addEventListener('click',primeAudio);
 document.addEventListener('touchstart',primeAudio);
 // Re-prime when tab becomes visible again (kitchen tablets often sleep/wake)
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)primeAudio();});
-// Periodically check and resume in case it got suspended silently
-setInterval(primeAudio,15000);
+// Aggressively keep audio context warm — every 30s during idle to prevent first-order silence
+setInterval(()=>{
+  if(audioCtx&&audioCtx.state==='suspended'){
+    audioCtx.resume().catch(()=>{});
+  } else if(!audioCtx && sessionStorage.getItem('k_auth')==='1'){
+    try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  }
+},30000);
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
 function beep(f=660){
   if(!soundOn)return;
@@ -183,17 +190,18 @@ function beep(f=660){
       [0,200,400].forEach(d=>{
         const o=audioCtx.createOscillator(),g=audioCtx.createGain();
         o.connect(g);g.connect(audioCtx.destination);o.frequency.value=f;
-        g.gain.setValueAtTime(0.3,audioCtx.currentTime+d/1000);
-        g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.18);
-        o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.2);
+        g.gain.setValueAtTime(0.35,audioCtx.currentTime+d/1000);
+        g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+d/1000+0.2);
+        o.start(audioCtx.currentTime+d/1000);o.stop(audioCtx.currentTime+d/1000+0.25);
       });
     };
-    if(audioCtx.state==='suspended'){
-      audioCtx.resume().then(playTone).catch(e=>console.error('Resume failed:',e));
-    }else{
-      playTone();
-    }
-  }catch(e){console.error('Beep error:',e);}
+    // Always resume first — even if state appears 'running', a brief resume() is safe
+    // This guarantees audio after long idle periods where context silently suspends
+    audioCtx.resume().then(()=>{
+      // Small delay ensures context is truly running before scheduling oscillators
+      setTimeout(playTone, 30);
+    }).catch(e=>console.warn('Audio resume failed:',e));
+  }catch(e){console.warn('Beep error:',e);}
 }
 function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';b.classList.toggle('on',soundOn);}
 async function loadOrders(){
@@ -277,30 +285,70 @@ function render(){
   document.getElementById('cntNew').textContent=byS.new.length;
   document.getElementById('cntCook').textContent=byS.cooking.length;
   document.getElementById('cntReady').textContent=byS.ready.length;
+
   const renderCol=(status,colId,emptyTxt)=>{
     const list=byS[status]||[];
-    document.getElementById(colId).innerHTML=list.length===0?`<div class="empty-col">${emptyTxt}</div>`:list.map(o=>oCard(o)).join('');
+    const col=document.getElementById(colId);
+    const existingIds=new Set([...col.querySelectorAll('.ocard')].map(el=>el.dataset.id));
+    const newIds=new Set(list.map(o=>o.id));
+
+    // Remove cards that no longer belong in this column
+    col.querySelectorAll('.ocard').forEach(el=>{
+      if(!newIds.has(el.dataset.id)) el.remove();
+    });
+
+    // Add new cards (only ones not already present)
+    list.forEach(o=>{
+      if(!existingIds.has(o.id)){
+        const div=document.createElement('div');
+        div.innerHTML=oCard(o,true); // true = new card, apply animation
+        const card=div.firstElementChild;
+        col.appendChild(card);
+      } else {
+        // Card already exists — only update the action buttons in case status changed
+        const existing=col.querySelector(`.ocard[data-id="${o.id}"]`);
+        if(existing){
+          const newActions=oCardActions(o);
+          const foot=existing.querySelector('.ofoot');
+          if(foot) foot.innerHTML=`<div class="ototal">${o.total>0?'₹'+o.total:''}</div>${newActions}`;
+        }
+      }
+    });
+
+    // Show/hide empty state
+    const emptyEl=col.querySelector('.empty-col');
+    if(list.length===0){
+      if(!emptyEl){const d=document.createElement('div');d.className='empty-col';d.textContent=emptyTxt;col.appendChild(d);}
+    } else {
+      if(emptyEl) emptyEl.remove();
+    }
   };
+
   renderCol('new','colNew','No new orders');
   renderCol('cooking','colCook','Nothing cooking');
   renderCol('ready','colReady','Nothing ready');
 }
-function oCard(o){
+
+function oCardActions(o){
+  const isWaiter=o.status==='waiter';
+  if(isWaiter) return `<button class="abtn abtn-dismiss" onclick="doStatus('${o.id}','dismissed')">✓ Done</button>`;
+  if(o.status==='new') return `<button class="abtn abtn-cook" onclick="doStatus('${o.id}','cooking')">🔥 Start Cooking</button>`;
+  if(o.status==='cooking') return `<button class="abtn abtn-ready" onclick="doStatus('${o.id}','ready')">✅ Mark Ready</button>`;
+  if(o.status==='ready') return `<button class="abtn abtn-dismiss" style="background:#27AE60;color:#fff" onclick="doStatus('${o.id}','bill_pending')">🧾 Send to Counter</button>`;
+  return '';
+}
+function oCard(o,isNew=false){
   const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
   const isWaiter=o.status==='waiter';
   const isParcel=String(o.table_no).startsWith('Parcel');
   const itemCount=(o.items||[]).length;
-  let actions='';
-  if(isWaiter) actions=`<button class="abtn abtn-dismiss" onclick="doStatus('${o.id}','dismissed')">✓ Done</button>`;
-  else if(o.status==='new') actions=`<button class="abtn abtn-cook" onclick="doStatus('${o.id}','cooking')">🔥 Start Cooking</button>`;
-  else if(o.status==='cooking') actions=`<button class="abtn abtn-ready" onclick="doStatus('${o.id}','ready')">✅ Mark Ready</button>`;
-  else if(o.status==='ready') actions=`<button class="abtn abtn-dismiss" style="background:#27AE60;color:#fff" onclick="doStatus('${o.id}','bill_pending')">🧾 Send to Counter</button>`;
+  const actions=oCardActions(o);
   const tableLabel=isParcel
     ? `<span style="color:#E67E22;font-family:'Yatra One',sans-serif;font-size:15px">📦 ${o.table_no}</span>`
     : `Table ${o.table_no}`;
   const parcelNote=isParcel?`<div style="background:#FFF3E0;border-left:3px solid #E67E22;padding:5px 10px;font-size:11px;font-weight:700;color:#E67E22">📦 PACK THIS ORDER — Parcel/Takeaway</div>`:'';
   const waiterBadge=o.waiter_name?`<div style="background:#F5EEF8;border-left:3px solid #8E44AD;padding:4px 10px;font-size:11px;font-weight:700;color:#8E44AD">🧑 Waiter: ${o.waiter_name}</div>`:'';
-  return `<div class="ocard ${o.status}" ${isParcel?'style="border-left-color:#E67E22"':''}><div class="ocard-top"><div class="otable">${tableLabel} ${itemCount>5?`<span class="oitem-count-badge" style="display:inline-block">${itemCount} items</span>`:''}</div><div class="ometa"><div class="otime">${time}</div>${o.order_num>0?`<div class="onum">#${o.order_num}</div>`:''}</div></div>${parcelNote}${waiterBadge}<div class="oitems">${(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>${o.note&&!isParcel?`<div class="onote">📝 "${o.note}"</div>`:''}<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div></div>`;
+  const animClass=isNew?" new-card":"";return `<div class="ocard${animClass} ${o.status}" data-id="${o.id}" ${isParcel?'style="border-left-color:#E67E22"':''}><div class="ocard-top"><div class="otable">${tableLabel} ${itemCount>5?`<span class="oitem-count-badge" style="display:inline-block">${itemCount} items</span>`:''}</div><div class="ometa"><div class="otime">${time}</div>${o.order_num>0?`<div class="onum">#${o.order_num}</div>`:''}</div></div>${parcelNote}${waiterBadge}<div class="oitems">${(o.items||[]).map(i=>`<div class="oitem"><div class="oqty">${i.qty}</div><div class="oname">${i.name}</div></div>`).join('')}</div>${o.note&&!isParcel?`<div class="onote">📝 "${o.note}"</div>`:''}<div class="ofoot"><div class="ototal">${o.total>0?'₹'+o.total:''}</div>${actions}</div></div>`;
 }
 async function doStatus(id,status){
   const {error}=await sb.from('orders').update({status}).eq('id',id);
