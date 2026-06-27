@@ -132,6 +132,7 @@ main{padding:14px 14px 0;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:11px 20px;border-radius:999px;font-size:12px;font-weight:600;z-index:700;transition:transform .3s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
+@keyframes popIn{0%{transform:scale(0);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
 </style>
 </head>
 <body>
@@ -202,20 +203,40 @@ main{padding:14px 14px 0;}
     </div>
     <button class="order-btn" id="orderMoreBtn" onclick="closeTracking()" style="margin-bottom:10px">➕ Order More Items</button>
 
-    <!-- PAID CELEBRATION -->
-    <div id="paidBox" style="display:none;background:linear-gradient(135deg,#EAF6EE,#FDFDF5);border:2px solid #27AE60;border-radius:16px;padding:24px;text-align:center;margin-bottom:12px;">
-      <div style="font-size:48px;margin-bottom:8px">🎉</div>
-      <div style="font-size:20px;font-weight:700;color:#1E8449;margin-bottom:4px">Payment Done!</div>
-      <div style="font-size:13px;color:#555;margin-bottom:16px">Thank you for dining at Satvik Restaurant</div>
-      <div style="font-size:12px;color:#888">We hope you enjoyed your meal 🙏<br/>See you again soon!</div>
+    <!-- PAID — THANK YOU + GOOGLE REVIEW PAGE -->
+    <div id="paidBox" style="display:none;margin-bottom:12px">
+      <!-- Celebration header -->
+      <div style="background:linear-gradient(135deg,#1E5C32,#27AE60);border-radius:16px 16px 0 0;padding:28px 20px 22px;text-align:center">
+        <div style="font-size:52px;margin-bottom:10px;animation:popIn .5s ease">🎉</div>
+        <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;font-family:'Yatra One',sans-serif">Thank You!</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.85)">Payment received successfully</div>
+      </div>
+      <!-- Message -->
+      <div style="background:#fff;padding:18px 20px;border:1px solid #D4EDDA;border-top:none">
+        <div style="text-align:center;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;color:#1A1208;margin-bottom:4px">We hope you enjoyed your meal 🙏</div>
+          <div style="font-size:12px;color:#7A6E5F">See you again at Satvik Restaurant!</div>
+        </div>
+        <!-- Stars display -->
+        <div style="text-align:center;font-size:28px;margin-bottom:14px;letter-spacing:4px">⭐⭐⭐⭐⭐</div>
+        <div style="font-size:12px;font-weight:700;color:#7A6E5F;text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Loved the food? Rate us on Google</div>
+        <!-- Google Review Button -->
+        <a id="paidReviewBtn" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;background:linear-gradient(135deg,#4285F4,#1a73e8);color:#fff;border-radius:12px;font-weight:700;font-size:14px;text-decoration:none;font-family:'Poppins',sans-serif;margin-bottom:10px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972a6.033 6.033 0 110-12.064c1.498 0 2.866.549 3.921 1.453l2.814-2.814A9.969 9.969 0 0012.545 2C7.021 2 2.543 6.477 2.543 12s4.478 10 10.002 10c8.396 0 10.249-7.85 9.426-11.748l-9.426-.013z"/></svg>
+          Rate us on Google Maps
+        </a>
+        <div style="font-size:10px;color:#aaa;text-align:center">Takes less than 30 seconds · Helps us grow 🙏</div>
+      </div>
+      <div style="background:#F9F5EE;border:1px solid #E5DCC8;border-top:none;border-radius:0 0 16px 16px;padding:12px 20px;text-align:center">
+        <div style="font-size:11px;color:#B8860B;font-weight:700">✨ Powered by HK Digital Solutions</div>
+      </div>
     </div>
 
     <!-- CALL WAITER BUTTON -->
     <div id="callWaiterWrap" style="margin-bottom:10px">
-      <button id="callWaiterBtn" onclick="callWaiter()" style="width:100%;padding:14px;background:linear-gradient(135deg,#E67E22,#D35400);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;position:relative;overflow:hidden;">
+      <button id="callWaiterBtn" onclick="callWaiter()" style="width:100%;padding:14px;background:linear-gradient(135deg,#E67E22,#D35400);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .3s;">
         🙋 Call Waiter
       </button>
-      <!-- Countdown bar shown after calling -->
       <div id="waiterCountdown" style="display:none;margin-top:8px;background:#1A1208;border-radius:10px;padding:10px 14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:12px;font-weight:600;color:#D4A017">✅ Waiter called!</span>
@@ -280,6 +301,9 @@ async function init(){
   document.getElementById('trackRestName').textContent=RDATA.restaurantName||'Satvik';
   document.getElementById('trackRestSub').textContent=RDATA.restaurantSub||'';
   if(RDATA.googleReview)document.getElementById('reviewBtn').href=RDATA.googleReview;
+  // Also wire the paid page review button
+  const paidReviewBtn=document.getElementById('paidReviewBtn');
+  if(paidReviewBtn&&RDATA.googleReview)paidReviewBtn.href=RDATA.googleReview;
   if(RDATA.todaySpecial?.trim()){document.getElementById('specialTxt').textContent=RDATA.todaySpecial;document.getElementById('special').classList.add('show');}
   renderMenu();
   try{
@@ -451,14 +475,15 @@ function updateStatusUI(status){
     else if(i===idx)el.classList.add('active');
   });
   document.getElementById('statusSteps').style.setProperty('--progress',Math.min(idx/(steps.length-1)*100,100)+'%');
+  const isPaid=status==='paid';
   const orderMoreBtn=document.getElementById('orderMoreBtn');
-  if(orderMoreBtn) orderMoreBtn.style.display=(status==='bill_pending'||status==='served'||status==='paid')?'none':'flex';
-  // Show paid celebration
+  if(orderMoreBtn) orderMoreBtn.style.display=(status==='bill_pending'||status==='served'||isPaid)?'none':'flex';
+  // Show paid thank you + review page
   const paidBox=document.getElementById('paidBox');
-  if(paidBox) paidBox.style.display=(status==='paid')?'block':'none';
+  if(paidBox) paidBox.style.display=isPaid?'block':'none';
   // Hide call waiter when paid
   const callWrap=document.getElementById('callWaiterWrap');
-  if(callWrap) callWrap.style.display=(status==='paid')?'none':'block';
+  if(callWrap) callWrap.style.display=isPaid?'none':'block';
   const phoneBox=document.getElementById('phoneBox');
   const alreadySent=localStorage.getItem(STORAGE_KEY+'_phone_sent');
   if(phoneBox&&!alreadySent){
