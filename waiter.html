@@ -504,7 +504,8 @@ async function loadTableOrders(){
     tableOrders={};
     (active||[]).forEach(o=>{tableOrders[o.id]=o;});
 
-    // Served today — includes both bill_pending (awaiting payment) AND paid (done)
+    // Served today — fetch BOTH bill_pending (awaiting payment) AND paid (done)
+    // This ensures served history persists correctly on app reopen
     const {data:served}=await sb.from('orders').select('*')
       .eq('restaurant_id',RESTAURANT_ID)
       .eq('waiter_id',WAITER.id)
@@ -668,12 +669,11 @@ function subscribeToOrders(){
       if(p.new.status==='waiter'&&ASSIGNED_TABLES.includes(tbl)){
         showCallAlert(tbl);return;
       }
-      // New order on assigned table OR parcel order placed by this waiter
-      const isMyParcel=tbl.startsWith('Parcel')&&p.new.waiter_id===WAITER.id;
-      if((ASSIGNED_TABLES.includes(tbl)||isMyParcel)&&!['served','dismissed','waiter'].includes(p.new.status)){
+      // New order on one of our assigned tables
+      if(ASSIGNED_TABLES.includes(tbl)&&!['served','dismissed','waiter'].includes(p.new.status)){
         tableOrders[p.new.id]=p.new;
         renderDashboard();
-        toast(`\uD83D\uDD35 New order \u2014 ${isMyParcel?tbl:'Table '+tbl}`);
+        toast(`🆕 New order — Table ${tbl}`);
       }
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'orders',filter:`restaurant_id=eq.${RESTAURANT_ID}`},p=>{
@@ -688,31 +688,30 @@ function subscribeToOrders(){
         return;
       }
       // If order gets paid — update servedOrders to reflect payment (keep in history)
-      if(order.payment_status==='paid'&&servedOrders[order.id]){
-        servedOrders[order.id]=order; // update with paid status
-        updateServedBadge();
-        if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
+      if(order.payment_status==='paid'||order.status==='paid'){
+        if(servedOrders[order.id]){
+          // Already in served history — just update payment status
+          servedOrders[order.id]=order;
+          updateServedBadge();
+          if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
+        } else if(order.waiter_id===WAITER.id&&order.served_at){
+          // Was served by this waiter but missed the bill_pending event — add now
+          servedOrders[order.id]=order;
+          updateServedBadge();
+          if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
+        }
         return;
       }
-      // Also catch paid orders that were served by this waiter but not yet in servedOrders
-      if(order.payment_status==='paid'&&order.waiter_id===WAITER.id&&order.served_at){
-        servedOrders[order.id]=order;
-        updateServedBadge();
-        if(document.getElementById('servedTab').style.display!=='none') renderServedToday();
-        return;
-      }
-      // Normal active order update — check for assigned tables AND this waiter's parcel orders
-      const isMyParcel=String(order.table_no).startsWith('Parcel')&&order.waiter_id===WAITER.id;
-      if(!tableOrders[order.id]&&!isMyParcel)return;
+      // Normal active order update
+      if(!tableOrders[order.id])return;
       const wasReady=tableOrders[order.id]?.status==='ready';
-      const isNowReady=order.status==='ready'||order.status==='bill_pending';
+      const isNowReady=order.status==='ready';
       if(['served','dismissed','paid'].includes(order.status)){
         delete tableOrders[order.id];
       } else {
         tableOrders[order.id]=order;
         if(isNowReady&&!wasReady){
-          const label=isMyParcel?order.table_no:'Table '+order.table_no;
-          toast(`\uD83C\uDF7D\uFE0F ${label} \u2014 Order #${order.order_num} is READY!`);
+          toast(`🍽️ Table ${order.table_no} — Order #${order.order_num} is READY!`);
           playChime('ready');
           if(navigator.vibrate)navigator.vibrate([300,100,300,100,300]);
         }
