@@ -471,6 +471,7 @@ document.getElementById('placeBtn').addEventListener('click',async()=>{
     Object.keys(cart).forEach(k=>delete cart[k]);
     document.querySelectorAll('.qzone').forEach(z=>{const key=z.dataset.key;if(key){const parts=key.split('::');const cat=RDATA.menu.find(c=>c.category===parts[0]);const item=cat?.items.find(i=>i.name===parts[1]);if(item)renderQty(z,key,item);}});
     updateBar();closeD();
+    document.getElementById('orderNote').value='';
     subscribeToOrders();await loadTableBill();openTracking();
     toast('✅ Order #'+orderNum+' sent to kitchen!');
     btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';

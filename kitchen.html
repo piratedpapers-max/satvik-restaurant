@@ -63,7 +63,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 .oitem:last-child{border:none;}
 .oqty{background:var(--gold);color:#111;font-weight:700;font-size:10px;width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
 .oname{flex:1;font-weight:500;}
-.onote{padding:0 10px 6px;font-size:10px;color:var(--muted);font-style:italic;}
+.onote{margin:4px 10px 8px;background:rgba(212,160,23,.15);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:6px 10px;font-size:12px;color:var(--gold);font-weight:700;font-style:normal;}
 .ofoot{padding:6px 10px;border-top:1px solid var(--line);display:flex;gap:5px;align-items:center;flex:0 0 auto;}
 .ototal{font-weight:700;font-size:12px;color:var(--gold);flex:1;}
 .abtn{border:none;border-radius:6px;padding:6px 12px;font-weight:700;font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;}
@@ -79,60 +79,6 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 .watermark{text-align:center;padding:10px;font-size:10px;color:#333;}
 .toast{position:fixed;top:14px;left:50%;transform:translate(-50%,-120%);background:var(--green);color:#fff;padding:10px 20px;border-radius:999px;font-size:11px;font-weight:600;z-index:300;transition:transform .3s;white-space:nowrap;}
 .toast.show{transform:translate(-50%,0);}
-
-/* ── THEME TOGGLE BTN ── */
-.theme-btn{background:transparent;border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.7);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;vertical-align:middle;}
-.theme-btn:hover{border-color:rgba(255,255,255,.5);color:#fff;}
-
-/* ── LIGHT MODE — KITCHEN ── */
-body.light-mode{--bg:#F2F2F7;--card:#FFFFFF;--card2:#F8F8F8;--line:#E0E0E0;--text:#111;--muted:#888;}
-body.light-mode header{background:#fff;border-bottom-color:#4A7C59;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-body.light-mode .order-card{background:#fff;border-color:#E0E0E0;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-body.light-mode .order-card .oc-head{background:#F8F8F8;border-bottom-color:#E0E0E0;}
-body.light-mode .order-card .table-label{color:#333;}
-body.light-mode .order-card .item-row{border-bottom-color:#F0F0F0;}
-body.light-mode .order-card .item-name{color:#111;}
-body.light-mode .stats{background:#fff;border-bottom:1px solid #E0E0E0;}
-body.light-mode .sbtn{background:#F2F2F7;border-color:#ddd;color:#333;}
-body.light-mode .lock-btn{border-color:#ccc;color:#666;}
-body.light-mode .pin-screen{background:#F2F2F7;}
-body.light-mode .pin-card{background:#fff;box-shadow:0 4px 20px rgba(0,0,0,.1);}
-body.light-mode .pin-btn{background:#fff;border-color:#ddd;color:#111;}
-
-/* ── UPGRADE MODAL ── */
-#upgradeModalBg{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);}
-#upgradeModalBg.show{display:flex;}
-.upg-modal{background:#141420;border:1px solid #2A2A45;border-radius:22px;width:100%;max-width:420px;overflow:hidden;transform:scale(.88);opacity:0;transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .25s;}
-#upgradeModalBg.show .upg-modal{transform:scale(1);opacity:1;}
-.upg-top{background:linear-gradient(135deg,#1A1A35,#0F0F25);padding:24px 20px 16px;text-align:center;border-bottom:1px solid #2A2A45;}
-.upg-icon{font-size:36px;margin-bottom:8px;}
-.upg-title{font-size:17px;font-weight:800;color:#fff;margin-bottom:3px;}
-.upg-sub{font-size:11px;color:#6A6A90;}
-.upg-feat-badge{display:inline-block;background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);color:#9B95FF;font-size:10px;font-weight:700;padding:3px 12px;border-radius:99px;margin-top:8px;}
-.upg-plans{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px;}
-.upg-plan{border:1px solid #2A2A45;border-radius:12px;padding:12px 10px;background:#1A1A2E;position:relative;}
-.upg-plan.rec{border-color:#6C63FF;background:#1E1E38;}
-.upg-rec-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#6C63FF,#8B85FF);color:#fff;font-size:8px;font-weight:800;padding:2px 10px;border-radius:99px;white-space:nowrap;}
-.upg-plan-name{font-size:12px;font-weight:800;color:#fff;margin-bottom:2px;}
-.upg-plan-price{font-size:18px;font-weight:800;color:#6C63FF;margin-bottom:8px;}
-.upg-plan-price small{font-size:10px;font-weight:400;color:#5A5A7A;}
-.upg-feats{list-style:none;display:flex;flex-direction:column;gap:3px;}
-.upg-feats li{font-size:9px;color:#8080A0;display:flex;align-items:center;gap:4px;}
-.upg-feats li::before{content:'✓';color:#00D084;font-weight:700;}
-.upg-footer{padding:0 14px 18px;display:flex;flex-direction:column;gap:8px;}
-.upg-wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#25D366;color:#fff;border:none;padding:13px;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;width:100%;text-decoration:none;font-family:inherit;transition:opacity .2s;}
-.upg-wa-btn:hover{opacity:.88;}
-.upg-hint{text-align:center;font-size:9px;color:#4A4A6A;line-height:1.5;}
-.upg-close{text-align:center;font-size:11px;color:#4A4A6A;cursor:pointer;padding-top:2px;}
-.upg-close:hover{color:#8080A0;}
-/* Plan gate lock overlay */
-.plan-gate{position:relative;}
-.plan-lock-overlay{position:absolute;inset:0;background:rgba(10,10,20,.88);border-radius:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;z-index:10;backdrop-filter:blur(3px);}
-.plan-lock-overlay .pl-icon{font-size:24px;}
-.plan-lock-overlay .pl-title{font-size:12px;font-weight:700;color:#fff;}
-.plan-lock-overlay .pl-sub{font-size:10px;color:rgba(255,255,255,.45);text-align:center;padding:0 12px;}
-.plan-lock-overlay .pl-btn{margin-top:4px;background:linear-gradient(135deg,#6C63FF,#8B85FF);color:#fff;border:none;padding:7px 16px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;}
-
 </style>
 </head>
 <body>
@@ -160,7 +106,6 @@ body.light-mode .pin-btn{background:#fff;border-color:#ddd;color:#111;}
     <div class="ldot" id="ldot"></div><span class="ltext">LIVE</span>
     <button class="sbtn on" id="sndBtn" onclick="toggleSound()">🔔</button>
     <span class="clock" id="clock"></span>
-    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
     <button class="lock-btn" onclick="logout()">🔒</button>
   </div>
 </header>
@@ -207,7 +152,7 @@ async function pe(){
     if(!storedPin||pinInput===storedPin){
       sessionStorage.setItem('k_auth','1');
       document.getElementById('pinScreen').classList.add('hide');
-      loadOrders();subscribe();primeAudio();fetchPlanAndGate(applyKitchenGating);
+      loadOrders();subscribe();primeAudio();
     }else{
       document.getElementById('pinErr').textContent='Incorrect PIN. Try again.';
       pinInput='';updateDots();
@@ -221,7 +166,7 @@ async function pe(){
 }
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
 function logout(){sessionStorage.removeItem('k_auth');pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
-if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();fetchPlanAndGate(applyKitchenGating);});}
+if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();});}
 // Re-prime audio on EVERY click/tap (not just once) so it survives context suspension during idle periods
 document.addEventListener('click',primeAudio);
 document.addEventListener('touchstart',primeAudio);
@@ -368,142 +313,6 @@ async function doStatus(id,status){
 }
 const toastEl=document.getElementById('toast');
 function toast(text){toastEl.textContent=text;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),3500);}
-
-/* ══════════════════════════════════════════
-   SUBSCRIPTION & PLAN GATING
-══════════════════════════════════════════ */
-const PLAN_FEATURES={
-  basic:['qr_ordering','kitchen','counter'],
-  growth:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report'],
-  premium:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding']
-};
-let CURRENT_PLAN='basic';
-
-function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.basic).includes(f);}
-
-async function fetchPlanAndGate(gateCallback){
-  try{
-    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(error){console.warn('Plan fetch error:',error.message);return;}
-    if(!data||!data.length){console.warn('No subscription found');return;}
-    const row=data[0];
-    CURRENT_PLAN=row.plan||'basic';
-    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
-    if(expired){showExpiredScreen();return;}
-    if(gateCallback)gateCallback();
-    showPlanBadge();
-  }catch(e){console.warn('Plan check failed:',e);}
-}
-
-function showPlanBadge(){
-  const colors={basic:'#7A7ACF',growth:'#00A86B',premium:'#FFD700'};
-  const c=colors[CURRENT_PLAN]||'#7A7ACF';
-  const b=document.createElement('span');
-  b.className='plan-pill-badge';
-  b.style.cssText=`font-size:8px;font-weight:700;padding:2px 8px;border-radius:99px;background:${c}22;color:${c};border:1px solid ${c}55;letter-spacing:1px;vertical-align:middle;margin-left:8px;`;
-  b.textContent=CURRENT_PLAN.toUpperCase();
-  const h=document.querySelector('header h1,.h-left h1');
-  if(h&&!h.querySelector('.plan-pill-badge'))h.appendChild(b);
-}
-
-function showExpiredScreen(){
-  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Subscription Expired</h2><p style="color:#777;font-size:13px;line-height:1.8;margin-bottom:24px">Your subscription has expired or been suspended.<br>Contact HK Digital to renew and restore access immediately.</p><a href="https://wa.me/918102806704?text=${encodeURIComponent('Hi HK Digital, my restaurant subscription has expired. Restaurant ID: '+RESTAURANT_ID+'. Please help me renew.')}" style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:14px 28px;border-radius:99px;font-weight:800;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a><p style="color:#444;font-size:11px;margin-top:16px">+91 81028 06704 · HK Digital Systems</p></div></div>`;
-}
-
-/* ── UPGRADE MODAL ── */
-function showUpgradeModal(featureName,requiredPlan){
-  document.getElementById('upgFeatBadge').textContent='🔒 '+featureName;
-  document.getElementById('upgPlanGrowth').classList.toggle('rec',requiredPlan==='growth');
-  document.getElementById('upgPlanPremium').classList.toggle('rec',requiredPlan==='premium');
-  const rid=typeof RESTAURANT_ID!=='undefined'?RESTAURANT_ID:'';
-  const pl=requiredPlan==='growth'?'Growth Rs.599/month':'Premium Rs.999/month';
-  const msg=encodeURIComponent('Hi HK Digital, I want to upgrade to '+pl+(rid?' (Restaurant: '+rid+')':'')+'. Please share payment details.');
-  document.getElementById('upgWaBtn').href='https://wa.me/918102806704?text='+msg;
-  const bg=document.getElementById('upgradeModalBg');
-  bg.style.display='flex';
-  requestAnimationFrame(()=>bg.classList.add('show'));
-}
-function closeUpgradeModal(){
-  const bg=document.getElementById('upgradeModalBg');
-  bg.classList.remove('show');
-  setTimeout(()=>bg.style.display='none',300);
-}
-function showUpgradeToast(f,p){showUpgradeModal(f,p);}
-function lockPanel(el,title,sub,plan){
-  if(!el)return;
-  el.style.position='relative';
-  const d=document.createElement('div');
-  d.className='plan-lock-overlay';
-  d.innerHTML=`<span class="pl-icon">🔒</span><span class="pl-title">${title}</span><span class="pl-sub">${sub}</span><button class="pl-btn" onclick="showUpgradeModal('${title}','${plan}')">Upgrade Plan</button>`;
-  el.appendChild(d);
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  const bg=document.getElementById('upgradeModalBg');
-  if(bg)bg.addEventListener('click',e=>{if(e.target===bg)closeUpgradeModal();});
-});
-
-function applyKitchenGating(){
-  // Kitchen display is available on all plans - nothing to gate
-  // Just show plan badge (already done by showPlanBadge in fetchPlanAndGate)
-}
-
-/* ── THEME TOGGLE ── */
-function toggleTheme(){
-  const isLight=document.body.classList.toggle('light-mode');
-  document.querySelectorAll('.theme-btn').forEach(b=>b.textContent=isLight?'☀️':'🌙');
-  localStorage.setItem('hk_theme',isLight?'light':'dark');
-}
-(function initTheme(){
-  if(localStorage.getItem('hk_theme')==='light'){
-    document.body.classList.add('light-mode');
-    document.addEventListener('DOMContentLoaded',()=>{
-      document.querySelectorAll('.theme-btn').forEach(b=>b.textContent='☀️');
-    });
-  }
-})();
-
 </script>
-<!-- UPGRADE PLAN MODAL -->
-<div id="upgradeModalBg">
-  <div class="upg-modal">
-    <div class="upg-top">
-      <div class="upg-icon">🚀</div>
-      <div class="upg-title">Upgrade Your Plan</div>
-      <div class="upg-sub">This feature is not available on your current plan</div>
-      <div class="upg-feat-badge" id="upgFeatBadge">Feature</div>
-    </div>
-    <div class="upg-plans">
-      <div class="upg-plan rec" id="upgPlanGrowth">
-        <div class="upg-rec-badge">POPULAR</div>
-        <div class="upg-plan-name">Growth</div>
-        <div class="upg-plan-price">₹599<small>/mo</small></div>
-        <ul class="upg-feats">
-          <li>Parcel orders</li>
-          <li>Menu images</li>
-          <li>Edit & cancel orders</li>
-          <li>GST on bills</li>
-          <li>Print bill</li>
-          <li>WhatsApp reports</li>
-        </ul>
-      </div>
-      <div class="upg-plan" id="upgPlanPremium">
-        <div class="upg-plan-name">Premium</div>
-        <div class="upg-plan-price">₹999<small>/mo</small></div>
-        <ul class="upg-feats">
-          <li>All Growth features</li>
-          <li>WhatsApp bills</li>
-          <li>PDF reports</li>
-          <li>Custom branding</li>
-          <li>Priority support</li>
-        </ul>
-      </div>
-    </div>
-    <div class="upg-footer">
-      <a class="upg-wa-btn" id="upgWaBtn" href="#" target="_blank">📱 Contact HK Digital to Upgrade</a>
-      <div class="upg-hint">Payment via UPI · Plan activated within minutes</div>
-      <div class="upg-close" onclick="closeUpgradeModal()">Maybe later</div>
-    </div>
-  </div>
-</div>
 </body>
 </html>
