@@ -426,16 +426,15 @@ async function loadTableBill(){
         allItems[i.name].total+=i.total;
       });
     });
-    // If all paid — clear immediately and close tracking
+    // If all paid — show thank you page, stay until customer leaves
     if(allPaid&&data.length>0){
       updateStatusUI('paid');
       updateTrackBanner('paid');
-      setTimeout(()=>{
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(STORAGE_KEY+'_phone_sent');
-        activeOrderIds=[];
-        closeTracking();
-      },3000); // show paid state briefly then close
+      // Clear localStorage silently so next customer gets fresh page
+      // but DON'T close tracking — let this customer read the thank you page
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY+'_phone_sent');
+      activeOrderIds=[];
       return;
     }
     const itemsArr=Object.values(allItems);
