@@ -6,6 +6,51 @@
 <title>Satvik — Counter & Billing</title>
 <style>
 :root{--bg:#0A0A0A;--card:#161616;--card2:#1E1E1E;--line:#282828;--text:#F0EDE8;--muted:#555;--green:#4A7C59;--gold:#D4A017;--orange:#E67E22;--red:#C0392B;--purple:#8E44AD;--blue:#2980B9;}
+/* ── LIGHT THEME ── */
+[data-theme="light"]{--bg:#F7F3EA;--card:#FFFFFF;--card2:#F0EBE0;--line:#E5DCC8;--text:#1A1208;--muted:#7A6E5F;--green:#4A7C59;--gold:#B8860B;--orange:#E67E22;--red:#C0392B;--purple:#6B35A0;--blue:#2471A3;}
+[data-theme="light"] body{background:var(--bg);}
+[data-theme="light"] header{background:#1A1208;}
+[data-theme="light"] .login-screen{background:var(--bg);}
+[data-theme="light"] .login-box{background:#fff;border-color:#E5DCC8;}
+[data-theme="light"] .login-input{background:#FDFAF3;border-color:#E5DCC8;color:#1A1208;}
+[data-theme="light"] .stats{background:#fff;border-color:#E5DCC8;}
+[data-theme="light"] .stat{background:#FDFAF3;border-color:#E5DCC8;}
+[data-theme="light"] .pay-breakdown{background:#F0EBE0;border-color:#E5DCC8;}
+[data-theme="light"] .pay-stat{background:#fff;border-color:#E5DCC8;}
+[data-theme="light"] .panel{background:#F0EBE0;border-color:#D4C4A8;}
+[data-theme="light"] .tcard{background:#fff;border-color:#E5DCC8;}
+[data-theme="light"] .tcard.bill{border-color:#8E44AD;}
+[data-theme="light"] .tcard.active{border-color:#4A7C59;}
+[data-theme="light"] .tcard-item-name{color:#1A1208;}
+[data-theme="light"] .tcard-item-price{color:#7A6E5F;}
+[data-theme="light"] .tcard-time{color:#7A6E5F;}
+[data-theme="light"] .settle-modal{background:#fff;border-color:#E5DCC8;}
+[data-theme="light"] .settle-body{background:#fff;}
+[data-theme="light"] .kot-block{background:#F9F5EE;border-color:#E5DCC8;}
+[data-theme="light"] .kot-hdr-row{background:#F0EBE0;border-color:#E5DCC8;color:#7A6E5F;}
+[data-theme="light"] .kot-item-row{color:#1A1208;}
+[data-theme="light"] .bill-summary{background:#F9F5EE;border-color:#E5DCC8;}
+[data-theme="light"] .bill-line{color:#7A6E5F;}
+[data-theme="light"] .gst-box{background:#F0EBE0;border-color:#E5DCC8;}
+[data-theme="light"] .gst-box-lbl{color:#7A6E5F;}
+[data-theme="light"] .pay-method-btn{background:#F9F5EE;border-color:#E5DCC8;color:#1A1208;}
+[data-theme="light"] .cash-change-box{background:#F9F5EE;border-color:#E5DCC8;}
+[data-theme="light"] .cash-input{background:#fff;border-color:#E5DCC8;color:#1A1208;}
+[data-theme="light"] .no-modal{background:#fff;color:#1A1208;}
+[data-theme="light"] .no-input{background:#FDFAF3;border-color:#E5DCC8;color:#1A1208;}
+[data-theme="light"] .item-name{color:#1A1208;}
+[data-theme="light"] .item-price{color:#7A6E5F;}
+[data-theme="light"] .qty-btn{border-color:#4A7C59;color:#4A7C59;background:#fff;}
+[data-theme="light"] .qty-val{color:#1A1208;}
+[data-theme="light"] .cart-bar{background:#FDFAF3;border-color:#E5DCC8;}
+[data-theme="light"] .cart-total{color:#6B3F1E;}
+[data-theme="light"] .tcard-actions-row{background:#F9F5EE;border-color:#E5DCC8;}
+[data-theme="light"] .edit-modal,.cancel-modal{background:#fff;}
+[data-theme="light"] .empty-panel{color:#7A6E5F;}
+[data-theme="light"] .watermark{color:#999;}
+/* THEME TOGGLE */
+.theme-toggle-btn{background:none;border:1.5px solid rgba(255,255,255,.2);color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:15px;display:inline-flex;align-items:center;justify-content:center;transition:background .2s;}
+.theme-toggle-btn:hover{background:rgba(255,255,255,.1);}
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{background:var(--bg);color:var(--text);font-family:'Poppins',sans-serif;min-height:100vh;}
 
@@ -298,6 +343,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
     <button class="new-order-btn" style="background:#2980B9" onclick="openTableMgmt()">🪑 Tables</button>
     <div class="ldot" id="ldot"></div>
     <span class="clock" id="clock"></span>
+    <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
     <button class="lock-btn" onclick="logout()">🔒 Lock</button>
   </div>
 </header>
@@ -531,6 +577,12 @@ const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
 // Counter password is managed via Admin panel → stored in Supabase restaurant_data.counter_password
+
+/* ── THEME ── */
+(function(){const t=localStorage.getItem('hk_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();
+function initThemeBtn(){const b=document.getElementById('themeToggle');if(b)b.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'🌙':'☀️';}
+function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('hk_theme',next);const b=document.getElementById('themeToggle');if(b)b.textContent=next==='dark'?'🌙':'☀️';}
+document.addEventListener('DOMContentLoaded',initThemeBtn);
 
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 function getISTDayStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const mid=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate()));return new Date(mid.getTime()-off);}
