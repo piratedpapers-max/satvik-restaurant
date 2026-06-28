@@ -305,7 +305,7 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
 </div>
 <div id="adminPanel" class="hidden">
   <header>
-    <div class="h-left"><h1>Satvik Restaurant — Admin</h1><p>Menu Manager & Analytics</p></div>
+    <div class="h-left"><h1 id="adminTitle">Admin Panel</h1><p>Menu Manager & Analytics</p></div>
     <div class="h-right">
       <button class="hdr-btn wa" onclick="openDailyReport()">📊 Daily Report</button>
       <button class="theme-btn" onclick="toggleTheme()" title="Toggle dark/light">🌙</button>
@@ -527,7 +527,13 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
-const RESTAURANT_ID="satvik";
+// ── MULTI-TENANT: reads ?rid=xxx from URL ──
+const _params=new URLSearchParams(window.location.search);
+const RESTAURANT_ID=_params.get('rid')||'satvik';
+// Safety: redirect to login if no rid and not satvik
+if(!_params.get('rid')){
+  console.warn('No rid param — defaulting to satvik');
+}
 function getISTDayStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const mid=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate()));return new Date(mid.getTime()-off);}
 function getISTMonthStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const m=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),1));return new Date(m.getTime()-off);}
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -649,6 +655,7 @@ async function loadAll(){
 }
 async function loadMenuData(){
   fetchPlanAndGate(applyAdminGating);
+  document.getElementById("adminTitle").textContent=(RESTAURANT_ID||"Restaurant")+" — Admin";
   try{
     const {data,error}=await sb.from('restaurant_data').select('data,kitchen_password,counter_password').eq('id',RESTAURANT_ID).single();
     if(error)throw error;

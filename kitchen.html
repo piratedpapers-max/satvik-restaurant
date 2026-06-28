@@ -127,7 +127,9 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
-const RESTAURANT_ID="satvik";
+// ── MULTI-TENANT: reads ?rid=xxx from URL ──
+const _params=new URLSearchParams(window.location.search);
+const RESTAURANT_ID=_params.get('rid')||'satvik';
 // Kitchen PIN is managed via Admin panel → stored in Supabase restaurant_data.kitchen_password
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},soundOn=true,pinInput='';
@@ -151,7 +153,7 @@ async function pe(){
     if(error)throw error;
     const storedPin=data?.kitchen_password;
     if(!storedPin||pinInput===storedPin){
-      sessionStorage.setItem('k_auth','1');
+      sessionStorage.setItem('k_auth_'+RESTAURANT_ID,'1');
       document.getElementById('pinScreen').classList.add('hide');
       loadOrders();subscribe();primeAudio();
     }else{
@@ -166,8 +168,8 @@ async function pe(){
   }
 }
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
-function logout(){sessionStorage.removeItem('k_auth');pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
-if(sessionStorage.getItem('k_auth')==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();});}
+function logout(){sessionStorage.removeItem('k_auth_'+RESTAURANT_ID);pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
+if(sessionStorage.getItem('k_auth_'+RESTAURANT_ID)==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();});}
 // Re-prime audio on EVERY click/tap (not just once) so it survives context suspension during idle periods
 document.addEventListener('click',primeAudio);
 document.addEventListener('touchstart',primeAudio);
@@ -177,7 +179,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)primeAudio
 setInterval(()=>{
   if(audioCtx&&audioCtx.state==='suspended'){
     audioCtx.resume().catch(()=>{});
-  } else if(!audioCtx && sessionStorage.getItem('k_auth')==='1'){
+  } else if(!audioCtx && sessionStorage.getItem('k_auth_'+RESTAURANT_ID)==='1'){
     try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
   }
 },30000);
@@ -205,6 +207,13 @@ function beep(f=660){
 }
 function toggleSound(){soundOn=!soundOn;const b=document.getElementById('sndBtn');b.textContent=soundOn?'🔔':'🔕';b.classList.toggle('on',soundOn);}
 async function loadOrders(){
+  // Set restaurant name in header
+  try{
+    const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    const el=document.getElementById('kitchenRname');
+    if(el&&data?.data?.restaurantName)el.textContent=data.data.restaurantName;
+    else if(el)el.textContent=RESTAURANT_ID;
+  }catch(e){}
   const today=new Date();today.setHours(0,0,0,0);
   const {data}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID)
     .in('status',['new','cooking','ready','waiter']).gte('placed_at',today.toISOString()).order('placed_at',{ascending:true});
@@ -263,7 +272,7 @@ function subscribe(){
 
 // Also re-sync whenever the tab/screen becomes visible again (covers tablet sleep/wake)
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden && sessionStorage.getItem('k_auth')==='1'){
+  if(!document.hidden && sessionStorage.getItem('k_auth_'+RESTAURANT_ID)==='1'){
     loadOrders();
   }
 });

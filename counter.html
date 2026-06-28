@@ -337,7 +337,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 </div>
 
 <header>
-  <div class="hl"><h1>💰 Counter & Billing</h1><p>Satvik Restaurant · Varanasi</p></div>
+  <div class="hl"><h1>💰 Counter & Billing</h1><p id="counterSubtitle">Loading...</p></div>
   <div class="hr">
     <button class="new-order-btn" onclick="openNewOrderModal()">➕ New Order</button>
     <button class="new-order-btn" style="background:#2980B9" onclick="openTableMgmt()">🪑 Tables</button>
@@ -575,7 +575,9 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 <script>
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
-const RESTAURANT_ID="satvik";
+// ── MULTI-TENANT: reads ?rid=xxx from URL ──
+const _params=new URLSearchParams(window.location.search);
+const RESTAURANT_ID=_params.get('rid')||'satvik';
 // Counter password is managed via Admin panel → stored in Supabase restaurant_data.counter_password
 
 /* ── THEME ── */
@@ -633,7 +635,7 @@ async function tryLogin(){
     if(error)throw error;
     const storedPass=data?.counter_password;
     if(!storedPass||val===storedPass){
-      sessionStorage.setItem('counter_auth','1');
+      sessionStorage.setItem('counter_auth_'+RESTAURANT_ID,'1');
       document.getElementById('loginScreen').classList.add('hide');
       loadAll();subscribe();primeAudio();
     }else{
@@ -646,8 +648,8 @@ async function tryLogin(){
   }
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
-function logout(){sessionStorage.removeItem('counter_auth');document.getElementById('loginScreen').classList.remove('hide');document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent='';}
-if(sessionStorage.getItem('counter_auth')==='1'){document.getElementById('loginScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadAll();subscribe();primeAudio();});}
+function logout(){sessionStorage.removeItem('counter_auth_'+RESTAURANT_ID);document.getElementById('loginScreen').classList.remove('hide');document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent='';}
+if(sessionStorage.getItem('counter_auth_'+RESTAURANT_ID)==='1'){document.getElementById('loginScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadAll();subscribe();primeAudio();});}
 
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
 
@@ -662,7 +664,8 @@ async function loadAll(){
   try{
     const {data:rdata}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
     if(rdata?.data?.menu?.length){MENU_DATA=rdata.data.menu;}
-    if(rdata?.data){RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||'',gstPercent:rdata.data.gstPercent||0,gstNumber:rdata.data.gstNumber||'',billAddress:rdata.data.billAddress||'',billFooter:rdata.data.billFooter||'Thank you for dining with us! \uD83D\uDE4F'};}
+    if(rdata?.data){document.getElementById('counterSubtitle').textContent=(rdata.data.restaurantName||RESTAURANT_ID)+' · '+( rdata.data.restaurantSub||'');
+    RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||'',gstPercent:rdata.data.gstPercent||0,gstNumber:rdata.data.gstNumber||'',billAddress:rdata.data.billAddress||'',billFooter:rdata.data.billFooter||'Thank you for dining with us! \uD83D\uDE4F'};}
   }catch(e){console.error('loadAll error:',e);}
   render();updateStats();
 }
@@ -723,7 +726,7 @@ function subscribe(){
 }
 
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden && sessionStorage.getItem('counter_auth')==='1'){
+  if(!document.hidden && sessionStorage.getItem('counter_auth_'+RESTAURANT_ID)==='1'){
     loadAll();
   }
 });
@@ -896,7 +899,8 @@ async function openNewOrderModal(){
       if(error){console.error('Supabase error:',error);throw error;}
       if(rdata?.data?.menu?.length){
         MENU_DATA=rdata.data.menu;
-        RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
+        document.getElementById('counterSubtitle').textContent=(rdata.data.restaurantName||RESTAURANT_ID)+' · '+( rdata.data.restaurantSub||'');
+    RESTAURANT_INFO={name:rdata.data.restaurantName||'Satvik Restaurant',sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||''};
       }else{
         console.warn('Menu data structure was:',rdata);
         toast('No menu found. Please add menu items in Admin panel first.',true);
