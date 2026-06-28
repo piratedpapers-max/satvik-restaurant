@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Waiter App — Satvik Restaurant</title>
+<title>Waiter App</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap" rel="stylesheet"/>
 <style>
@@ -236,7 +236,7 @@ header{background:var(--green);color:#fff;padding:12px 16px;display:flex;align-i
   <header>
     <div>
       <div class="hdr-name" id="hdrName">Waiter</div>
-      <div class="hdr-sub">Satvik Restaurant · Varanasi</div>
+      <div class="hdr-sub" id="waiterHdrSub">Loading...</div>
     </div>
     <button class="lock-btn" onclick="lockApp()">🔒 Lock</button>
   </header>
@@ -320,6 +320,21 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
 const RESTAURANT_ID=_params.get('rid')||'satvik';
+
+// ── Load restaurant name for header display ──
+(async function setWaiterRestaurantName(){
+  try{
+    const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    const name=data?.data?.restaurantName||RESTAURANT_ID;
+    const sub=data?.data?.restaurantSub||'';
+    document.title='Waiter App — '+name;
+    const el=document.getElementById('waiterHdrSub');
+    if(el)el.textContent=name+(sub?' · '+sub:'');
+  }catch(e){
+    const el=document.getElementById('waiterHdrSub');
+    if(el)el.textContent=RESTAURANT_ID;
+  }
+})();
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 /* ── STATE ── */

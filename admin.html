@@ -313,8 +313,8 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
   </header>
   <main>
     <div class="quick-links">
-      <a class="kitchen-link" href="kitchen.html" target="_blank">🍳 Kitchen Screen →</a>
-      <a class="kitchen-link" style="background:#4A0E6B;" href="counter.html" target="_blank">💰 Counter & Billing →</a>
+      <a class="kitchen-link" id="kitchenLink" href="kitchen.html" target="_blank">🍳 Kitchen Screen →</a>
+      <a class="kitchen-link" style="background:#4A0E6B;" id="counterLink" href="counter.html" target="_blank">💰 Counter & Billing →</a>
     </div>
     <div class="panel">
       <h2>📋 Today's Orders</h2>
@@ -877,7 +877,15 @@ document.getElementById('saveBtn').addEventListener('click',async()=>{
   catch(e){showToast('Save failed: '+e.message,true);}
   finally{saveBtn.disabled=false;saveBtn.textContent='Save Changes';}
 });
-document.getElementById('previewBtn').addEventListener('click',()=>window.open('index.html?t=preview','_blank'));
+document.getElementById('previewBtn').addEventListener('click',()=>window.open('index.html?rid='+RESTAURANT_ID+'&t=preview','_blank'));
+// ── Set rid param on kitchen/counter/waiter links ──
+(function(){
+  const rid=RESTAURANT_ID;
+  const kl=document.getElementById('kitchenLink');
+  const cl=document.getElementById('counterLink');
+  if(kl)kl.href='kitchen.html?rid='+rid;
+  if(cl)cl.href='counter.html?rid='+rid;
+})();
 const toastEl=document.getElementById('toast');
 /* ===== WAITER MANAGEMENT ===== */
 const SITE_URL='https://satvik-restaurant-gamma.vercel.app';

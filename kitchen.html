@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Satvik — Kitchen</title>
+<title>Kitchen</title>
 <style>
 :root{--bg:#0F0F0F;--card:#1A1A1A;--card2:#222;--line:#2A2A2A;--text:#F0EDE8;--muted:#555;--green:#4A7C59;--gold:#D4A017;--orange:#E67E22;--red:#C0392B;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -85,7 +85,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 <body>
 <div class="pin-screen" id="pinScreen">
   <div class="pin-logo">Kitchen Screen</div>
-  <div class="pin-role">Satvik Restaurant · Varanasi</div>
+  <div class="pin-role" id="kitchenPinRole">Loading...</div>
   <div class="pin-display">
     <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
     <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
@@ -102,7 +102,7 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--gr
 <div class="conn-alert hide" id="connAlert">⚠️ CONNECTION LOST — Reconnecting... Orders may not be showing live.</div>
 <div class="waiter-alert hide" id="waiterAlert">🙋 WAITER NEEDED — <span id="waiterTable"></span> — Tap to dismiss</div>
 <header>
-  <div class="hl"><h1>🍳 Kitchen</h1><p>Satvik Restaurant · Varanasi</p></div>
+  <div class="hl"><h1>🍳 Kitchen</h1><p id="kitchenSubtitle">Loading...</p></div>
   <div class="hr">
     <div class="ldot" id="ldot"></div><span class="ltext">LIVE</span>
     <button class="sbtn on" id="sndBtn" onclick="toggleSound()">🔔</button>
@@ -131,6 +131,24 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const _params=new URLSearchParams(window.location.search);
 const RESTAURANT_ID=_params.get('rid')||'satvik';
 // Kitchen PIN is managed via Admin panel → stored in Supabase restaurant_data.kitchen_password
+
+// ── Load restaurant name for login/header display ──
+(async function setRestaurantName(){
+  try{
+    const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    const name=data?.data?.restaurantName||RESTAURANT_ID;
+    const sub=data?.data?.restaurantSub||'';
+    const label=name+(sub?' · '+sub:'');
+    document.title=name+' — Kitchen';
+    const roleEl=document.getElementById('kitchenPinRole');
+    const subEl=document.getElementById('kitchenSubtitle');
+    if(roleEl)roleEl.textContent=label;
+    if(subEl)subEl.textContent=label;
+  }catch(e){
+    const roleEl=document.getElementById('kitchenPinRole');
+    if(roleEl)roleEl.textContent=RESTAURANT_ID;
+  }
+})();
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let orders={},soundOn=true,pinInput='';
 let audioCtx=null;
