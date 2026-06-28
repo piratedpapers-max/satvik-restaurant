@@ -966,7 +966,7 @@ async function createWaiter(){
 }
 
 function copyWaiterLink(token,id){
-  const link=`${SITE_URL}/waiter.html?w=${token}`;
+  const link=`${SITE_URL}/waiter.html?w=${token}&rid=${RESTAURANT_ID}`;
   navigator.clipboard.writeText(link).then(()=>{
     const el=document.getElementById('copied-'+id);
     if(el){el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);}

@@ -320,7 +320,7 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const RESTAURANT_ID=_params.get('rid')||'satvik';
+let RESTAURANT_ID=_params.get('rid')||'satvik';
 
 // ── Load restaurant name for header display ──
 (async function setWaiterRestaurantName(){
@@ -384,8 +384,12 @@ document.addEventListener('touchstart',primeAudio);
 async function init(){
   if(!TOKEN){showError('No Waiter Token','Open this page using the link sent by your admin.');return;}
   try{
-    const {data,error}=await sb.from('waiters').select('*').eq('token',TOKEN).eq('restaurant_id',RESTAURANT_ID).single();
+    // Look up waiter by token only — restaurant_id is derived from the DB record
+    // This means the link works even without ?rid= in the URL
+    const {data,error}=await sb.from('waiters').select('*').eq('token',TOKEN).single();
     if(error||!data){showError('Invalid Link','This waiter link is not recognised. Ask admin for your correct link.');return;}
+    // Use restaurant_id from DB — works even without ?rid= in URL
+    RESTAURANT_ID=data.restaurant_id||RESTAURANT_ID;
     if(!data.active){showError('Link Deactivated','Your waiter link has been deactivated. Contact the restaurant admin.');return;}
     WAITER=data;
     ASSIGNED_TABLES=(data.assigned_tables||[]).map(t=>String(t).trim()).filter(Boolean);

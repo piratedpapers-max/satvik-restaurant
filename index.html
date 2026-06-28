@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no"/>
-<title>Satvik Restaurant — Order</title>
+<title>Restaurant — Order</title>
 <style>
 :root{--green:#4A7C59;--gold:#D4A017;--brown:#6B3F1E;--cream:#FDFAF3;--paper:#FFFEF9;--steel:#1E1E1E;--line:#E5DCC8;--ink:#1A1208;--muted:#7A6E5F;--red:#C0392B;--orange:#E67E22;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -198,7 +198,7 @@ main{padding:14px 14px 0;}
 
 <header>
   <div class="hrow">
-    <div><div class="brand" id="rName">Satvik</div><div class="brand-sub" id="rSub">Pure Veg · Varanasi</div></div>
+    <div><div class="brand" id="rName">Loading...</div><div class="brand-sub" id="rSub"></div></div>
     <div class="t-chip">🪑 Table <span id="tNum">—</span></div>
   </div>
 </header>
@@ -257,7 +257,7 @@ main{padding:14px 14px 0;}
     <!-- Bill summary (always visible while tracking) -->
     <div class="bill-box">
       <div class="bill-rest">
-        <div class="bill-rest-name" id="trackRestName">Satvik Restaurant</div>
+        <div class="bill-rest-name" id="trackRestName"></div>
         <div class="bill-rest-sub" id="trackRestSub">Pure Veg · Varanasi</div>
       </div>
       <div id="trackBillLines"></div>
@@ -311,7 +311,7 @@ main{padding:14px 14px 0;}
       <div class="paid-body">
         <div class="paid-msg">
           <div class="paid-msg-main">We hope you enjoyed your meal 🙏</div>
-          <div class="paid-msg-sub">See you again at Satvik Restaurant!</div>
+          <div class="paid-msg-sub" id="paidMsg">Thank you for dining with us!</div>
         </div>
         <div class="paid-stars">⭐⭐⭐⭐⭐</div>
         <div class="paid-review-label">Loved the food? Rate us on Google</div>
@@ -341,19 +341,21 @@ let TABLE=null,RDATA=null,activeOrderIds=[],orderChannel=null,customerPollTimer=
 const STORAGE_KEY=`${RESTAURANT_ID}_v4_${TOKEN}`;
 const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Yatra+One&display=swap';document.head.appendChild(lnk);
 
-const DEFAULT={restaurantName:"Satvik Restaurant",restaurantSub:"Pure Veg · Varanasi",todaySpecial:"",googleReview:"https://search.google.com/local/writereview?placeid=ChIJYW8Zam8v6DkRZ7yzsvX56N0",menu:[{category:"Soups & Starters",items:[{name:"Tomato Soup",desc:"Fresh tomato basil soup",price:80,veg:true,available:true},{name:"Veg Manchurian",desc:"Crispy veggie balls",price:140,veg:true,available:true},{name:"Paneer Tikka",desc:"Tandoor-grilled cottage cheese",price:190,veg:true,available:true},{name:"Veg Spring Rolls",desc:"Crispy stuffed rolls",price:130,veg:true,available:true}]},{category:"Main Course",items:[{name:"Paneer Butter Masala",desc:"Cottage cheese in tomato-cashew gravy",price:220,veg:true,available:true},{name:"Dal Makhani",desc:"Slow-cooked black lentils",price:180,veg:true,available:true},{name:"Dal Tadka",desc:"Lentils with ghee tempering",price:150,veg:true,available:true},{name:"Kadhai Paneer",desc:"Paneer in kadhai gravy",price:230,veg:true,available:true},{name:"Shahi Paneer",desc:"Rich creamy paneer",price:240,veg:true,available:true},{name:"Aloo Gobi",desc:"Potato & cauliflower masala",price:140,veg:true,available:true}]},{category:"Banarasi Specials",items:[{name:"Banarasi Thali",desc:"Dal, sabzi, roti, rice, salad & papad",price:250,veg:true,available:true},{name:"Poori Bhaji",desc:"Soft pooris with potato bhaji",price:100,veg:true,available:true},{name:"Kachori Sabzi",desc:"Crispy kachori with curry",price:90,veg:true,available:true}]},{category:"Biryani & Rice",items:[{name:"Veg Biryani",desc:"Fragrant basmati with vegetables",price:180,veg:true,available:true},{name:"Jeera Rice",desc:"Basmati with cumin & ghee",price:110,veg:true,available:true},{name:"Plain Rice",desc:"Soft steamed basmati",price:90,veg:true,available:true}]},{category:"Breads",items:[{name:"Butter Naan",desc:"Soft leavened bread with butter",price:40,veg:true,available:true},{name:"Tandoori Roti",desc:"Whole wheat clay oven bread",price:20,veg:true,available:true},{name:"Lachha Paratha",desc:"Multi-layered crispy paratha",price:45,veg:true,available:true},{name:"Puri (2 pcs)",desc:"Deep-fried whole wheat bread",price:30,veg:true,available:true}]},{category:"Drinks & Desserts",items:[{name:"Sweet Lassi",desc:"Chilled yogurt drink",price:80,veg:true,available:true},{name:"Cold Drink",desc:"Chilled aerated beverage",price:50,veg:true,available:true},{name:"Masala Chaas",desc:"Spiced buttermilk",price:60,veg:true,available:true},{name:"Gulab Jamun (2 pcs)",desc:"Milk dumplings in syrup",price:80,veg:true,available:true},{name:"Kheer",desc:"Traditional rice pudding",price:90,veg:true,available:true},{name:"Kulfi Falooda",desc:"Indian ice cream with falooda",price:120,veg:true,available:true}]}]};
+const DEFAULT={restaurantName:"",restaurantSub:"",todaySpecial:"",googleReview:"",menu:[]};
 
 /* ── INIT ── */
 async function init(){
   const valid=await validateToken();if(!valid)return;
   try{
     const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-    if(error)throw error;RDATA=(data?.data?.menu?.length)?data.data:DEFAULT;
+    if(error)throw error;RDATA=data?.data||DEFAULT;
   }catch(e){RDATA=DEFAULT;}
-  document.title=RDATA.restaurantName+' — Order';
-  document.getElementById('rName').textContent=RDATA.restaurantName||'Satvik';
+  document.title=(RDATA.restaurantName||RESTAURANT_ID)+' — Order';
+  const pm=document.getElementById('paidMsg');
+  if(pm)pm.textContent='See you again at '+(RDATA.restaurantName||'us')+'!';
+  document.getElementById('rName').textContent=RDATA.restaurantName||RESTAURANT_ID;
   document.getElementById('rSub').textContent=RDATA.restaurantSub||'';
-  document.getElementById('trackRestName').textContent=RDATA.restaurantName||'Satvik';
+  document.getElementById('trackRestName').textContent=RDATA.restaurantName||RESTAURANT_ID;
   document.getElementById('trackRestSub').textContent=RDATA.restaurantSub||'';
   const reviewUrl=RDATA.googleReview||'#';
   document.getElementById('reviewBtn').href=reviewUrl;
@@ -650,7 +652,7 @@ function downloadEBill(){
   const total=document.getElementById('trackBillTotal').textContent;
   const time=document.getElementById('trackTime').textContent;
   const orderNums=document.getElementById('trackOrderNum').textContent;
-  const rname=RDATA?.restaurantName||'Satvik Restaurant';
+  const rname=RDATA?.restaurantName||RESTAURANT_ID;
   const rsub=RDATA?.restaurantSub||'Pure Veg · Varanasi';
   const billHTML=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>Bill - ${rname}</title>
