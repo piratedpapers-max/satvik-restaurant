@@ -319,6 +319,7 @@ const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const RESTAURANT_ID=_params.get('rid')||'satvik';
 
 // ── Load restaurant name for header display ──
@@ -335,7 +336,7 @@ const RESTAURANT_ID=_params.get('rid')||'satvik';
     if(el)el.textContent=RESTAURANT_ID;
   }
 })();
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 
 /* ── STATE ── */
 let WAITER=null;

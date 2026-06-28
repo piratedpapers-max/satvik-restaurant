@@ -577,6 +577,7 @@ const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const RESTAURANT_ID=_params.get('rid')||'satvik';
 
 // ── Load restaurant name for login screen display ──
@@ -601,7 +602,7 @@ function initThemeBtn(){const b=document.getElementById('themeToggle');if(b)b.te
 function toggleTheme(){const cur=document.documentElement.getAttribute('data-theme')||'dark';const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);localStorage.setItem('hk_theme',next);const b=document.getElementById('themeToggle');if(b)b.textContent=next==='dark'?'🌙':'☀️';}
 document.addEventListener('DOMContentLoaded',initThemeBtn);
 
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 function getISTDayStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const mid=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate()));return new Date(mid.getTime()-off);}
 let orders={},paidToday=[],payBreakdown={cash:0,upi:0,card:0};
 let MENU_DATA=null,RESTAURANT_INFO={name:RESTAURANT_ID,sub:'',review:'',gstPercent:0,gstNumber:'',billAddress:'',billFooter:'Thank you for dining with us! 🙏'};

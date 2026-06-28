@@ -277,7 +277,7 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
 <div class="loading hidden" id="loading"><div class="spin"></div></div>
 <div id="loginWrapper">
 <div class="login-box" id="loginBox">
-  <h2>Admin Login</h2><p>Menu Manager</p>
+  <h2>Admin Login</h2><p id="loginRestName">Loading...</p>
   <input type="password" id="loginPass" placeholder="Enter admin password"/>
   <button id="loginBtn">Login</button>
   <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
@@ -656,6 +656,15 @@ async function loadAll(){
 async function loadMenuData(){
   fetchPlanAndGate(applyAdminGating);
   document.getElementById("adminTitle").textContent=(RESTAURANT_ID||"Restaurant")+" — Admin";
+  // Update login screen restaurant name
+  const lrn=document.getElementById('loginRestName');
+  if(lrn){
+    // Try to get real restaurant name from DB
+    sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single().then(({data:rd})=>{
+      const rname=rd?.data?.restaurantName||RESTAURANT_ID;
+      lrn.textContent=rname;
+    }).catch(()=>{ lrn.textContent=RESTAURANT_ID; });
+  }
   try{
     const {data,error}=await sb.from('restaurant_data').select('data,kitchen_password,counter_password').eq('id',RESTAURANT_ID).single();
     if(error)throw error;
@@ -736,7 +745,7 @@ async function loadTodayOrders(){
 function generateToken(){return Math.random().toString(36).substring(2,10)+Math.random().toString(36).substring(2,10);}
 async function generateTokens(){
   const count=parseInt(document.getElementById('tableCount').value)||12;
-  const siteUrl="https://satvik-restaurant-gamma.vercel.app";
+  const siteUrl=window.location.origin;
   const btn=document.getElementById('genBtn');btn.disabled=true;btn.textContent='Generating...';
   try{
     const tokens=[];
@@ -749,7 +758,7 @@ async function generateTokens(){
     if(error)throw error;
     const grid=document.getElementById('tokenGrid');
     grid.innerHTML=tokens.map((t,i)=>{
-      const url=`${siteUrl}/?t=${t.token}`;
+      const url=`${siteUrl}/index.html?rid=${RESTAURANT_ID}&t=${t.token}`;
       return `<div class="token-card"><div class="token-table-num">Table ${i+1}</div><div class="token-url">${url}</div><button class="copy-btn" onclick="copyUrl('${url}',this)">📋 Copy Link</button></div>`;
     }).join('');
     showToast('✅ Secure links generated! Copy each link to create QR codes.');
@@ -757,7 +766,7 @@ async function generateTokens(){
   finally{btn.disabled=false;btn.textContent='🔑 Generate Secure QR Links';}
 }
 function copyUrl(url,btn){navigator.clipboard.writeText(url).then(()=>{btn.textContent='✓ Copied!';setTimeout(()=>btn.textContent='📋 Copy Link',2000);});}
-function getDefault(){return{restaurantName:"Satvik Restaurant",restaurantSub:"Pure Veg · Varanasi",whatsapp:"918102806404",googleReview:"https://search.google.com/local/writereview?placeid=ChIJYW8Zam8v6DkRZ7yzsvX56N0",todaySpecial:"",menu:[{category:"Starters",items:[{name:"Veg Manchurian",desc:"Crispy veggie balls",price:140,veg:true,available:true}]},{category:"Main Course",items:[{name:"Dal Tadka",desc:"Lentils with ghee tempering",price:150,veg:true,available:true}]}]};}
+function getDefault(){return{restaurantName:"",restaurantSub:"",whatsapp:"",googleReview:"",todaySpecial:"",menu:[{category:"Starters",items:[{name:"Veg Manchurian",desc:"Crispy veggie balls",price:140,veg:true,available:true}]},{category:"Main Course",items:[{name:"Dal Tadka",desc:"Lentils with ghee tempering",price:150,veg:true,available:true}]}]};}
 function renderForm(){
   document.getElementById('rName').value=DATA.restaurantName||'';document.getElementById('rSub').value=DATA.restaurantSub||'';
   document.getElementById('rWA').value=DATA.whatsapp||'';document.getElementById('rGR').value=DATA.googleReview||'';
@@ -888,7 +897,7 @@ document.getElementById('previewBtn').addEventListener('click',()=>window.open('
 })();
 const toastEl=document.getElementById('toast');
 /* ===== WAITER MANAGEMENT ===== */
-const SITE_URL='https://satvik-restaurant-gamma.vercel.app';
+const SITE_URL=window.location.origin;
 
 function generateWaiterToken(){
   const arr=new Uint8Array(18);
