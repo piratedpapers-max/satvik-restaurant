@@ -346,7 +346,7 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
         <button class="report-tab active" id="tabWeek" onclick="switchReportTab('week')">📅 This Week</button>
         <button class="report-tab" id="tabMonth" onclick="switchReportTab('month')">📆 This Month</button>
-        <button class="download-btn" onclick="downloadReport()">⬇️ Download CSV</button>
+        <button class="download-btn" onclick="downloadReport()">⬇️ Download Report</button>
       </div>
       <div id="reportDateRange" style="font-size:11px;color:var(--muted);margin-bottom:14px;font-style:italic"></div>
 
@@ -528,10 +528,11 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
 const SUPABASE_URL="https://enykbfcjyzjugwcbrolv.supabase.co";
 const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 const RESTAURANT_ID="satvik";
+function getISTDayStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const mid=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate()));return new Date(mid.getTime()-off);}
+function getISTMonthStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const m=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),1));return new Date(m.getTime()-off);}
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-// ── IMAGE COMPRESSION ── runs in browser before upload, no server needed
-// Reduces a 4-5MB camera photo to ~150-200KB before sending to Cloudinary
-function compressImage(file, maxW=800, maxH=800, quality=0.75){
+// ── IMAGE COMPRESSION — runs in browser before upload, reduces 4-5MB photo to ~150-200KB
+function compressImage(file,maxW=600,maxH=600,quality=0.60){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
     reader.onerror=()=>reject(new Error('Could not read file'));
@@ -539,21 +540,13 @@ function compressImage(file, maxW=800, maxH=800, quality=0.75){
       const img=new Image();
       img.onerror=()=>reject(new Error('Could not load image'));
       img.onload=()=>{
-        // Calculate new dimensions maintaining aspect ratio
         let w=img.width,h=img.height;
-        if(w>maxW||h>maxH){
-          const ratio=Math.min(maxW/w,maxH/h);
-          w=Math.round(w*ratio);h=Math.round(h*ratio);
-        }
-        const canvas=document.createElement('canvas');
-        canvas.width=w;canvas.height=h;
+        if(w>maxW||h>maxH){const r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);}
+        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
         const ctx=canvas.getContext('2d');
-        // White background (handles PNG with transparency)
-        ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
-        ctx.drawImage(img,0,0,w,h);
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
         canvas.toBlob(blob=>{
           if(!blob){reject(new Error('Compression failed'));return;}
-          // If compressed is bigger than original (rare), use original
           resolve(blob.size<file.size?blob:file);
         },'image/jpeg',quality);
       };
@@ -676,8 +669,8 @@ async function loadMenuData(){
   renderForm();
 }
 async function loadAnalytics(){
-  const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
-  const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  const now=new Date();const todayStart=getISTDayStart();
+  const monthStart=getISTMonthStart();
   try{
     const {data:td}=await sb.from('orders').select('total,items,table_no').eq('restaurant_id',RESTAURANT_ID).eq('payment_status','paid').gte('placed_at',todayStart.toISOString());
     const {data:md}=await sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('payment_status','paid').gte('placed_at',monthStart.toISOString());
@@ -702,7 +695,7 @@ async function loadTodayOrders(){
   const wrap=document.getElementById('ordersTableWrap');
   try{
     const today=new Date();
-    const dayStart=new Date(today);dayStart.setHours(0,0,0,0);
+    const dayStart=getISTDayStart();
     const {data,error}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID).gte('placed_at',dayStart.toISOString()).order('placed_at',{ascending:false});
     if(error)throw error;
     const orders=(data||[]).filter(o=>o.payment_status!=='na');
@@ -827,8 +820,7 @@ function renderItem(item){
       const file=fileInput.files[0];if(!file)return;
       uploadBtn.disabled=true;uploadBtn.textContent='Compressing...';
       try{
-        // Compress image before upload — reduces 4-5MB camera photo to ~150-200KB
-        const compressed=await compressImage(file,800,800,0.75);
+        const compressed=await compressImage(file,600,600,0.60);
         uploadBtn.textContent='Uploading...';
         const fd=new FormData();fd.append('file',compressed);fd.append('upload_preset',CLOUDINARY_UPLOAD_PRESET);
         const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,{method:'POST',body:fd});
@@ -837,7 +829,7 @@ function renderItem(item){
           imgInp.value=json.secure_url;imgPrev.src=json.secure_url;
           imgPrev.classList.add('show');removeBtn.classList.add('show');
           const savedKB=Math.round((file.size-compressed.size)/1024);
-          showToast(`✅ Uploaded! Saved ${savedKB}KB by compressing`);
+          showToast(`✅ Uploaded! ${savedKB>0?'Saved '+savedKB+'KB by compressing':''}`);
         } else {showToast('Upload failed: '+(json.error?.message||'Unknown error'),true);}
       }catch(e){showToast('Upload error: '+e.message,true);}
       finally{uploadBtn.disabled=false;uploadBtn.textContent='📷 Upload';}
@@ -984,8 +976,8 @@ async function loadWaiterAnalytics(waiterId,waiterName){
   });
   try{
     const now=new Date();
-    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
-    const monthStart=new Date(now.getFullYear(),now.getMonth(),1);
+    const todayStart=getISTDayStart();
+    const monthStart=getISTMonthStart();
     const [{data:td},{data:md}]=await Promise.all([
       sb.from('orders').select('total,table_no').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',waiterId).eq('payment_status','paid').gte('placed_at',todayStart.toISOString()),
       sb.from('orders').select('total').eq('restaurant_id',RESTAURANT_ID).eq('waiter_id',waiterId).eq('payment_status','paid').gte('placed_at',monthStart.toISOString())
@@ -1046,7 +1038,7 @@ async function openDailyReport(){
 
   try{
     const now=new Date();
-    const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+    const todayStart=getISTDayStart();
     const {data,error}=await sb.from('orders')
       .select('total,items,table_no,payment_method,payment_status,status,waiter_id,note,placed_at,order_num')
       .eq('restaurant_id',RESTAURANT_ID)
@@ -1288,11 +1280,15 @@ function getReportRange(tab){
   const now=new Date();
   let start,end;
   if(tab==='week'){
-    const day=now.getDay(); // 0=Sun,1=Mon...6=Sat
+    const day=now.getDay();
     const diffToMon=day===0?-6:1-day;
     start=new Date(now);
     start.setDate(now.getDate()+diffToMon);
-    start.setHours(0,0,0,0);
+    // Use IST midnight for correct day boundary
+    const istOff=5.5*60*60*1000;
+    const istStart=new Date(start.getTime()+istOff);
+    const midUTC=new Date(Date.UTC(istStart.getUTCFullYear(),istStart.getUTCMonth(),istStart.getUTCDate()));
+    start=new Date(midUTC.getTime()-istOff);
     end=new Date(start);
     end.setDate(start.getDate()+6);
     end.setHours(23,59,59,999);
@@ -1421,40 +1417,223 @@ function renderReport(data,start,end,tab){
 }
 
 function downloadReport(){
-  if(!currentReportData.length){
-    showToast('No data to download for this period.',true);
-    return;
-  }
+  if(!currentReportData.length){showToast('No data to download for this period.',true);return;}
   const {start,end}=getReportRange(currentReportTab);
-  const header=['Date','Order #','Table/Parcel','Revenue','Type','Source','Note'];
-  const rows=currentReportData.map(o=>{
-    const {isParcel,isCounter,isQR}=classifyOrder(o);
-    const type=isParcel?'Parcel':'Dine-in';
-    const source=isQR?'QR Self-Order':isParcel?'Parcel (Counter)':'Counter/Staff';
-    const date=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-    return [date,o.order_num||'',o.table_no||'',o.total||0,type,source,(o.note||'').replace(/,/g,' ')];
+  const orders=currentReportData;
+  const totalRev=orders.reduce((s,o)=>s+(o.total||0),0);
+  const totalOrders=orders.length;
+  const avgOrder=totalOrders?Math.round(totalRev/totalOrders):0;
+  const qrOrders=orders.filter(o=>classifyOrder(o).isQR);
+  const parcelOrders=orders.filter(o=>classifyOrder(o).isParcel);
+  const counterOrders=orders.filter(o=>classifyOrder(o).isCounter);
+  const qrRev=qrOrders.reduce((s,o)=>s+(o.total||0),0);
+  const parcelRev=parcelOrders.reduce((s,o)=>s+(o.total||0),0);
+  const counterRev=counterOrders.reduce((s,o)=>s+(o.total||0),0);
+  const rname=DATA?.restaurantName||'Satvik Restaurant';
+  const rsub=DATA?.restaurantSub||'Pure Veg · Varanasi';
+  const periodLabel=formatDateLabel(start)+' to '+formatDateLabel(end);
+  const tab=currentReportTab==='week'?'Weekly':'Monthly';
+  const dateStr=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Group by date for daily breakdown
+  const byDate={};
+  orders.forEach(o=>{
+    const d=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    if(!byDate[d])byDate[d]={orders:[],rev:0};
+    byDate[d].orders.push(o);byDate[d].rev+=o.total||0;
   });
 
-  // Add summary rows at bottom
-  const blank=['','','','','','',''];
-  const summary=[
-    blank,
-    ['SUMMARY','','','','','',''],
-    ['Period',formatDateLabel(start)+' to '+formatDateLabel(end),'','','','',''],
-    ['Total Orders',currentReportData.length,'','','','',''],
-    ['Total Revenue','Rs '+currentReportData.reduce((s,o)=>s+(o.total||0),0),'','','','',''],
-  ];
+  // Table rows
+  const tableRows=orders.map((o,i)=>{
+    const {isParcel,isCounter,isQR}=classifyOrder(o);
+    const type=isParcel?'<span style="background:#FFF3E0;color:#E67E22;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">📦 Parcel</span>':'<span style="background:#EAF6EE;color:#27AE60;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">🍽️ Dine-in</span>';
+    const src=isQR?'<span style="color:#2980B9">📱 QR</span>':isParcel?'<span style="color:#E67E22">🏪 Counter</span>':'<span style="color:#8E44AD">👨‍💼 Staff</span>';
+    const date=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const note=o.note&&!o.note.includes('📦')&&!o.note.includes('counter')?`<br/><span style="font-size:10px;color:#999;font-style:italic">${o.note}</span>`:'';
+    const bg=i%2===0?'#FFFFFF':'#FDFAF3';
+    return `<tr style="background:${bg}">
+      <td style="color:#999;font-size:11px">${date}<br/><span style="font-size:10px">${time}</span></td>
+      <td style="font-weight:700;color:#4A7C59">${o.order_num||'—'}</td>
+      <td>${String(o.table_no).startsWith('Parcel')?o.table_no:'T'+o.table_no}</td>
+      <td>${type}</td>
+      <td>${src}</td>
+      <td style="font-weight:700;color:#1A1208;text-align:right">₹${(o.total||0).toLocaleString('en-IN')}${note}</td>
+    </tr>`;
+  }).join('');
 
-  const csv=[header,...rows,...summary].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  // Daily summary rows
+  const dailyRows=Object.entries(byDate).map(([date,d])=>`
+    <tr style="background:#F5F0E8">
+      <td colspan="5" style="font-weight:700;color:#6B3F1E;padding:6px 12px;font-size:12px">📅 ${date} &nbsp;·&nbsp; ${d.orders.length} orders</td>
+      <td style="font-weight:700;color:#6B3F1E;text-align:right;padding:6px 12px;font-size:12px">₹${d.rev.toLocaleString('en-IN')}</td>
+    </tr>
+  `).join('');
+
+  const html=`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>${rname} — ${tab} Report</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F7F3EA;color:#1A1208;}
+.page{max-width:900px;margin:0 auto;padding:24px;}
+/* HEADER */
+.header{background:linear-gradient(135deg,#1A1208 0%,#2D4A35 100%);border-radius:16px;padding:32px;margin-bottom:20px;color:#fff;position:relative;overflow:hidden;}
+.header::after{content:"";position:absolute;top:-30px;right:-30px;width:160px;height:160px;background:rgba(212,160,23,.1);border-radius:50%;}
+.header::before{content:"";position:absolute;bottom:-40px;left:60px;width:100px;height:100px;background:rgba(74,124,89,.1);border-radius:50%;}
+.h-badge{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#D4A017;margin-bottom:6px;}
+.h-title{font-size:26px;font-weight:800;margin-bottom:2px;}
+.h-sub{font-size:13px;opacity:.7;margin-bottom:16px;}
+.h-period{font-size:12px;color:rgba(255,255,255,.6);}
+.h-generated{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;}
+/* SUMMARY CARDS */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:600px){.cards{grid-template-columns:1fr 1fr;}}
+.card{background:#fff;border-radius:12px;padding:16px;border-left:4px solid #4A7C59;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.card.gold{border-left-color:#D4A017;}
+.card.blue{border-left-color:#2980B9;}
+.card.orange{border-left-color:#E67E22;}
+.card.purple{border-left-color:#8E44AD;}
+.card.red{border-left-color:#C0392B;}
+.card-label{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;}
+.card-val{font-size:22px;font-weight:800;color:#1A1208;}
+.card-sub{font-size:11px;color:#999;margin-top:3px;}
+/* SOURCE BREAKDOWN */
+.breakdown{background:#fff;border-radius:12px;padding:18px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.breakdown-title{font-size:13px;font-weight:700;color:#1A1208;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #F0E8D0;}
+.breakdown-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.b-label{font-size:12px;font-weight:600;color:#555;width:120px;flex:0 0 auto;}
+.b-bar-wrap{flex:1;background:#F0E8D0;border-radius:999px;height:8px;overflow:hidden;}
+.b-bar{height:100%;border-radius:999px;}
+.b-val{font-size:12px;font-weight:700;color:#1A1208;width:80px;text-align:right;flex:0 0 auto;}
+/* TABLE */
+.table-wrap{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:20px;}
+.table-header{padding:16px 18px;border-bottom:2px solid #E5DCC8;display:flex;align-items:center;justify-content:space-between;}
+.table-header h3{font-size:14px;font-weight:700;color:#1A1208;}
+.table-header span{font-size:11px;color:#999;}
+table{width:100%;border-collapse:collapse;}
+th{background:#F5F0E8;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#7A6E5F;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #E5DCC8;}
+th:last-child,td:last-child{text-align:right;}
+td{padding:9px 12px;font-size:12px;border-bottom:1px solid #F0E8D0;vertical-align:middle;}
+/* FOOTER */
+.footer{text-align:center;padding:20px;font-size:11px;color:#999;}
+.footer strong{color:#4A7C59;}
+@media print{
+  body{background:#fff;}
+  .page{padding:0;}
+  .no-print{display:none;}
+  .header{border-radius:0;}
+  @page{margin:15mm;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Print button -->
+  <div class="no-print" style="text-align:right;margin-bottom:16px">
+    <button onclick="window.print()" style="background:#4A7C59;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">🖨️ Save as PDF / Print</button>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="h-badge">${tab} Sales Report</div>
+    <div class="h-title">${rname}</div>
+    <div class="h-sub">${rsub}</div>
+    <div class="h-period">📅 ${periodLabel}</div>
+    <div class="h-generated">Generated on ${dateStr}</div>
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="cards">
+    <div class="card gold">
+      <div class="card-label">Total Revenue</div>
+      <div class="card-val">₹${totalRev.toLocaleString('en-IN')}</div>
+      <div class="card-sub">${tab.toLowerCase()} earnings</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Orders</div>
+      <div class="card-val">${totalOrders}</div>
+      <div class="card-sub">completed orders</div>
+    </div>
+    <div class="card blue">
+      <div class="card-label">Avg Order Value</div>
+      <div class="card-val">₹${avgOrder.toLocaleString('en-IN')}</div>
+      <div class="card-sub">per order</div>
+    </div>
+    <div class="card">
+      <div class="card-label">QR Self-Orders</div>
+      <div class="card-val">${qrOrders.length}</div>
+      <div class="card-sub">₹${qrRev.toLocaleString('en-IN')}</div>
+    </div>
+    <div class="card orange">
+      <div class="card-label">Parcel Orders</div>
+      <div class="card-val">${parcelOrders.length}</div>
+      <div class="card-sub">₹${parcelRev.toLocaleString('en-IN')}</div>
+    </div>
+    <div class="card purple">
+      <div class="card-label">Counter Orders</div>
+      <div class="card-val">${counterOrders.length}</div>
+      <div class="card-sub">₹${counterRev.toLocaleString('en-IN')}</div>
+    </div>
+  </div>
+
+  <!-- SOURCE BREAKDOWN BAR -->
+  <div class="breakdown">
+    <div class="breakdown-title">Revenue by Source</div>
+    <div class="breakdown-row">
+      <span class="b-label">📱 QR Orders</span>
+      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(qrRev/totalRev*100):0}%;background:linear-gradient(90deg,#2980B9,#3498DB)"></div></div>
+      <span class="b-val">₹${qrRev.toLocaleString('en-IN')}</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="b-label">👨‍💼 Counter/Staff</span>
+      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterRev/totalRev*100):0}%;background:linear-gradient(90deg,#8E44AD,#9B59B6)"></div></div>
+      <span class="b-val">₹${counterRev.toLocaleString('en-IN')}</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="b-label">📦 Parcel</span>
+      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(parcelRev/totalRev*100):0}%;background:linear-gradient(90deg,#E67E22,#F39C12)"></div></div>
+      <span class="b-val">₹${parcelRev.toLocaleString('en-IN')}</span>
+    </div>
+  </div>
+
+  <!-- DAILY BREAKDOWN -->
+  <div class="table-wrap" style="margin-bottom:20px">
+    <div class="table-header"><h3>📅 Daily Breakdown</h3><span>${Object.keys(byDate).length} days</span></div>
+    <table>
+      <thead><tr><th colspan="5">Date & Orders</th><th>Revenue</th></tr></thead>
+      <tbody>${dailyRows}</tbody>
+    </table>
+  </div>
+
+  <!-- ORDER DETAILS TABLE -->
+  <div class="table-wrap">
+    <div class="table-header"><h3>🧾 All Orders</h3><span>${totalOrders} orders</span></div>
+    <table>
+      <thead><tr><th>Date & Time</th><th>Order #</th><th>Table</th><th>Type</th><th>Source</th><th>Amount</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+      <tfoot>
+        <tr style="background:#F5F0E8">
+          <td colspan="5" style="font-weight:800;font-size:13px;color:#6B3F1E;padding:12px">TOTAL</td>
+          <td style="font-weight:800;font-size:15px;color:#6B3F1E;text-align:right;padding:12px">₹${totalRev.toLocaleString('en-IN')}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="footer">Powered by <strong>HK Digital Solutions</strong> · Report generated for ${rname}</div>
+</div>
+</body>
+</html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  const dateStr=new Date().toISOString().slice(0,10);
-  a.href=url;
-  a.download=`Satvik_${currentReportTab==='week'?'Weekly':'Monthly'}_Report_${dateStr}.csv`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('✅ Report downloaded!');
+  window.open(url,'_blank');
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+  showToast('✅ Report opened in new tab!');
 }
 
 /* ════════════════════════════════════════════════════
