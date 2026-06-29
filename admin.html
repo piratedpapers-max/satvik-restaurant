@@ -1388,32 +1388,45 @@ async function loadReport(tab){
 }
 
 function classifyOrder(o){
+  // Mutually exclusive — each order belongs to exactly ONE category
   const isParcel=String(o.table_no||'').startsWith('Parcel');
-  const isCounter=(o.note||'').includes('Order taken at counter')||(o.note||'').includes('Parcel / Takeaway');
+  const isCounter=!isParcel&&((o.note||'').includes('Order taken at counter')||(o.note||'').includes('Parcel / Takeaway'));
   const isWaiterOrder=!isParcel&&!isCounter&&!!(o.waiter_id||o.waiter_name);
-  // QR = has customer_phone OR (not parcel, not counter, not waiter)
-  const isQR=!isParcel&&!isCounter&&(!!o.customer_phone||!isWaiterOrder);
+  const isQR=!isParcel&&!isCounter&&!isWaiterOrder;
   return {isParcel,isWaiterOrder,isCounter,isQR};
 }
 
 function renderReport(data,start,end,tab){
-  // Summary totals
-  let totalRev=0,totalOrders=0,dineRev=0,parcelRev=0,qrOrders=0,counterOrders=0,parcelOrders=0,waiterOrders=0;
+  // Summary totals — each order counted in exactly one category
+  let totalRev=0,totalOrders=0,dineRev=0,parcelRev=0;
+  let qrOrders=0,qrRev=0,counterOrders=0,counterRev=0,parcelOrders=0,waiterOrders=0,waiterRev=0;
+  let counterDineOrders=0,counterParcelOrders=0,counterDineRev=0,counterParcelRev=0;
   data.forEach(o=>{
     const {isParcel,isWaiterOrder,isCounter,isQR}=classifyOrder(o);
-    totalRev+=o.total||0;
+    const amt=o.total||0;
+    totalRev+=amt;
     totalOrders++;
-    if(isParcel){parcelRev+=o.total||0;parcelOrders++;}
-    else{dineRev+=o.total||0;}
-    if(isQR)qrOrders++;
-    else if(isWaiterOrder)waiterOrders++;
-    else if(isCounter)counterOrders++;
+    if(isParcel){
+      parcelRev+=amt;parcelOrders++;
+      // Check if it came via counter or QR
+      if(isCounter||(!isQR&&!isWaiterOrder)){counterParcelOrders++;counterParcelRev+=amt;}
+    } else {
+      dineRev+=amt;
+    }
+    if(isQR){qrOrders++;qrRev+=amt;}
+    else if(isWaiterOrder){waiterOrders++;waiterRev+=amt;}
+    else if(isCounter){counterOrders++;counterRev+=amt;
+      if(!isParcel){counterDineOrders++;counterDineRev+=amt;}
+    }
   });
+  // parcelOrders = all parcel (QR parcel + counter parcel)
+  // For display: parcel ordered via QR = parcelOrders - counterParcelOrders
+  const totalCheck=qrOrders+waiterOrders+counterOrders+parcelOrders;
   const avg=totalOrders>0?Math.round(totalRev/totalOrders):0;
-  document.getElementById('rTotalRev').textContent='₹'+totalRev;
+  document.getElementById('rTotalRev').textContent='₹'+totalRev.toLocaleString('en-IN');
   document.getElementById('rTotalOrders').textContent=totalOrders+' orders';
-  document.getElementById('rDineRev').textContent='₹'+dineRev;
-  document.getElementById('rParcelRev').textContent='₹'+parcelRev;
+  document.getElementById('rDineRev').textContent='₹'+dineRev.toLocaleString('en-IN');
+  document.getElementById('rParcelRev').textContent='₹'+parcelRev.toLocaleString('en-IN');
   document.getElementById('rAvgOrder').textContent='₹'+avg;
   document.getElementById('rQROrders').textContent=qrOrders+' orders';
   document.getElementById('rWaiterOrders').textContent=waiterOrders+' orders';
@@ -1465,19 +1478,23 @@ function downloadReport(){
   if(!currentReportData.length){showToast('No data to download for this period.',true);return;}
   const {start,end}=getReportRange(currentReportTab);
   const orders=currentReportData;
-  const totalRev=orders.reduce((s,o)=>s+(o.total||0),0);
+  // Use classifyOrder for mutually exclusive categorisation
+  const qrOrders=[],staffOrders=[],counterOrders=[],parcelOrders=[];
+  let totalRev=0;
+  orders.forEach(o=>{
+    const {isParcel,isWaiterOrder,isCounter,isQR}=classifyOrder(o);
+    totalRev+=o.total||0;
+    if(isParcel)parcelOrders.push(o);
+    else if(isQR)qrOrders.push(o);
+    else if(isWaiterOrder)staffOrders.push(o);
+    else if(isCounter)counterOrders.push(o);
+  });
   const totalOrders=orders.length;
   const avgOrder=totalOrders?Math.round(totalRev/totalOrders):0;
-  const qrOrders=orders.filter(o=>classifyOrder(o).isQR);
-  const staffOrders=orders.filter(o=>classifyOrder(o).isWaiterOrder);
-  const parcelOrders=orders.filter(o=>classifyOrder(o).isParcel);
-  const counterOrders=orders.filter(o=>classifyOrder(o).isCounter);
   const qrRev=qrOrders.reduce((s,o)=>s+(o.total||0),0);
   const parcelRev=parcelOrders.reduce((s,o)=>s+(o.total||0),0);
   const waiterRev=staffOrders.reduce((s,o)=>s+(o.total||0),0);
-  // counterRev = counter orders only (not waiter)
   const counterRev=counterOrders.reduce((s,o)=>s+(o.total||0),0);
-  // counterDineRev = counter dine-in (not parcel)
   const counterDineOrders=counterOrders.filter(o=>!String(o.table_no||'').startsWith('Parcel'));
   const counterParcelOrders=counterOrders.filter(o=>String(o.table_no||'').startsWith('Parcel'));
   const counterDineRev=counterDineOrders.reduce((s,o)=>s+(o.total||0),0);
