@@ -1389,10 +1389,10 @@ async function loadReport(tab){
 
 function classifyOrder(o){
   const isParcel=String(o.table_no||'').startsWith('Parcel');
-  const isWaiterOrder=!!(o.waiter_id||o.waiter_name); // placed via waiter.html
+  const isWaiterOrder=!!(o.waiter_id||o.waiter_name);
   const isCounter=(o.note||'').includes('Order taken at counter')||(o.note||'').includes('Parcel / Takeaway');
-  // QR order: has customer_phone (set by index.html) OR not placed by staff/counter
-  const isQR=!!(o.customer_phone)||(!isWaiterOrder&&!isCounter&&!isParcel);
+  // isParcel always wins — even if customer_phone is set on a parcel order
+  const isQR=!isParcel&&(!isWaiterOrder&&!isCounter||(!!o.customer_phone&&!isWaiterOrder&&!isCounter));
   return {isParcel,isWaiterOrder,isCounter,isQR};
 }
 
