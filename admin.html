@@ -1123,8 +1123,8 @@ async function openDailyReport(){
 }
 
 function buildReportCard(d){
-  const rname=DATA?.restaurantName||'Satvik Restaurant';
-  const rsub=DATA?.restaurantSub||'Pure Veg · Varanasi';
+  const rname=DATA?.restaurantName||RESTAURANT_ID;
+  const rsub=DATA?.restaurantSub||'';
   const cashPct=d.totalRev>0?Math.round(d.cash/d.totalRev*100):0;
   const upiPct=d.totalRev>0?Math.round(d.upi/d.totalRev*100):0;
   const cardPct=d.totalRev>0?Math.round(d.card/d.totalRev*100):0;
@@ -1264,7 +1264,7 @@ async function downloadReportPDF(){
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'portrait',unit:'px',format:[canvas.width/2,canvas.height/2]});
     pdf.addImage(imgData,'PNG',0,0,canvas.width/2,canvas.height/2);
-    const rname=(DATA?.restaurantName||'Satvik').replace(/\s+/g,'-');
+    const rname=(DATA?.restaurantName||RESTAURANT_ID).replace(/\s+/g,'-');
     const d=new Date();
     pdf.save(`${rname}-Report-${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}.pdf`);
     showToast('✅ PDF downloaded!');
@@ -1274,7 +1274,7 @@ async function downloadReportPDF(){
 function shareReportWhatsApp(){
   if(!REPORT_DATA)return;
   const d=REPORT_DATA;
-  const rname=DATA?.restaurantName||'Satvik Restaurant';
+  const rname=DATA?.restaurantName||RESTAURANT_ID;
   const msg=[
     `📊 *${rname} — Daily Report*`,
     `📅 ${d.dateStr}`,
@@ -1370,7 +1370,7 @@ async function loadReport(tab){
 
   try{
     const {data,error}=await sb.from('orders')
-      .select('id,table_no,total,note,placed_at,payment_status,items,waiter_id,waiter_name')
+      .select('id,table_no,total,note,placed_at,payment_status,items,waiter_id,waiter_name,customer_phone,customer_name,order_num')
       .eq('restaurant_id',RESTAURANT_ID)
       .eq('payment_status','paid')
       .gte('placed_at',start.toISOString())
@@ -1391,7 +1391,8 @@ function classifyOrder(o){
   const isParcel=String(o.table_no||'').startsWith('Parcel');
   const isWaiterOrder=!!(o.waiter_id||o.waiter_name); // placed via waiter.html
   const isCounter=(o.note||'').includes('Order taken at counter')||(o.note||'').includes('Parcel / Takeaway');
-  const isQR=!isWaiterOrder&&!isCounter&&!isParcel;
+  // QR order: has customer_phone (set by index.html) OR not placed by staff/counter
+  const isQR=!!(o.customer_phone)||(!isWaiterOrder&&!isCounter&&!isParcel);
   return {isParcel,isWaiterOrder,isCounter,isQR};
 }
 
@@ -1468,13 +1469,15 @@ function downloadReport(){
   const totalOrders=orders.length;
   const avgOrder=totalOrders?Math.round(totalRev/totalOrders):0;
   const qrOrders=orders.filter(o=>classifyOrder(o).isQR);
+  const staffOrders=orders.filter(o=>classifyOrder(o).isWaiterOrder);
   const parcelOrders=orders.filter(o=>classifyOrder(o).isParcel);
   const counterOrders=orders.filter(o=>classifyOrder(o).isCounter);
   const qrRev=qrOrders.reduce((s,o)=>s+(o.total||0),0);
   const parcelRev=parcelOrders.reduce((s,o)=>s+(o.total||0),0);
-  const counterRev=counterOrders.reduce((s,o)=>s+(o.total||0),0);
-  const rname=DATA?.restaurantName||'Satvik Restaurant';
-  const rsub=DATA?.restaurantSub||'Pure Veg · Varanasi';
+  // counterRev includes both counter orders AND waiter/staff orders
+  const counterRev=[...counterOrders,...staffOrders].reduce((s,o)=>s+(o.total||0),0);
+  const rname=DATA?.restaurantName||RESTAURANT_ID;
+  const rsub=DATA?.restaurantSub||'';
   const periodLabel=formatDateLabel(start)+' to '+formatDateLabel(end);
   const tab=currentReportTab==='week'?'Weekly':'Monthly';
   const dateStr=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
@@ -1491,7 +1494,8 @@ function downloadReport(){
   const tableRows=orders.map((o,i)=>{
     const {isParcel,isCounter,isQR}=classifyOrder(o);
     const type=isParcel?'<span style="background:#FFF3E0;color:#E67E22;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">📦 Parcel</span>':'<span style="background:#EAF6EE;color:#27AE60;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">🍽️ Dine-in</span>';
-    const src=isQR?'<span style="color:#2980B9">📱 QR</span>':isParcel?'<span style="color:#E67E22">🏪 Counter</span>':'<span style="color:#8E44AD">👨‍💼 Staff</span>';
+    const {isParcel:_p,isCounter:_c,isQR:_q,isWaiterOrder:_w}=classifyOrder(o);
+    const src=_q?'<span style="color:#2980B9">📱 QR</span>':_w?'<span style="color:#8E44AD">👨‍💼 Staff</span>':_p||_c?'<span style="color:#E67E22">🏪 Counter</span>':'<span style="color:#27AE60">🍽️ Dine-in</span>';
     const date=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
     const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
     const note=o.note&&!o.note.includes('📦')&&!o.note.includes('counter')?`<br/><span style="font-size:10px;color:#999;font-style:italic">${o.note}</span>`:'';
