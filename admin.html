@@ -508,21 +508,6 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
       <label>Bill Footer Message</label>
       <input type="text" id="billFooter" placeholder="e.g. Thank you for dining! Visit again 🙏"/>
       <p class="hint">This appears at the bottom of every printed and WhatsApp bill.</p>
-
-      <div style="border-top:1px solid var(--line);margin:20px 0;"></div>
-      <label>📱 OTP Verification</label>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
-          <input type="checkbox" id="otpEnabled" style="opacity:0;width:0;height:0;position:absolute;">
-          <span id="otpToggleSlider" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s;"></span>
-        </label>
-        <span style="font-size:13px;color:var(--muted);">Require phone OTP before customer can order</span>
-      </div>
-      <div id="otpApiKeyWrap" style="display:none;">
-        <label style="font-size:11px;font-weight:600;">2Factor SMS API Key <a href="https://2factor.in" target="_blank" style="color:var(--green);font-size:10px;">(get free key)</a></label>
-        <input type="text" id="otpApiKey" placeholder="Paste your 2Factor API key here"/>
-        <p class="hint">Without API key, OTP works in dev mode only (shown in browser console).</p>
-      </div>
     </div>
 
     <div class="panel">
@@ -807,22 +792,6 @@ function renderForm(){
   document.getElementById('rWA').value=DATA.whatsapp||'';document.getElementById('rGR').value=DATA.googleReview||'';
   document.getElementById('rSpecial').value=DATA.todaySpecial||'';
   // Bill settings
-  // OTP settings
-  const otpCb=document.getElementById('otpEnabled');
-  const otpKeyEl=document.getElementById('otpApiKey');
-  const otpWrap=document.getElementById('otpApiKeyWrap');
-  if(otpCb){
-    otpCb.checked=DATA.otpEnabled||false;
-    if(otpWrap)otpWrap.style.display=DATA.otpEnabled?'block':'none';
-    otpCb.addEventListener('change',()=>{if(otpWrap)otpWrap.style.display=otpCb.checked?'block':'none';});
-    // Toggle slider color
-    const slider=document.getElementById('otpToggleSlider');
-    if(slider){
-      const updateSlider=()=>{slider.style.background=otpCb.checked?'var(--green)':'#ccc';if(slider.style.background!=='')slider.setAttribute('data-after',otpCb.checked?'24px':'2px');}
-      otpCb.addEventListener('change',updateSlider);updateSlider();
-    }
-  }
-  if(otpKeyEl)otpKeyEl.value=DATA.otpApiKey||'';
   const gstVal=String(DATA.gstPercent||0);
   const gstEl=document.querySelector(`input[name="gst"][value="${gstVal}"]`);
   if(gstEl)gstEl.checked=true;
@@ -927,8 +896,6 @@ function collectData(){
     billAddress:document.getElementById('billAddress').value.trim(),
     billFooter:document.getElementById('billFooter').value.trim(),
     totalTables:DATA.totalTables||12,
-    otpEnabled:document.getElementById('otpEnabled')?.checked||false,
-    otpApiKey:document.getElementById('otpApiKey')?.value.trim()||'',
     menu
   };
 }

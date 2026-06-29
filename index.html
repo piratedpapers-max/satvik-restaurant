@@ -186,55 +186,41 @@ main{padding:14px 14px 0;}
 .toast.show{transform:translate(-50%,0);}
 .toast.err{background:var(--red);}
 
-/* ── OTP SCREEN ── */
-#otpScreen{position:fixed;inset:0;background:var(--cream);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
-.otp-card{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.1);text-align:center;}
-.otp-logo{font-size:40px;margin-bottom:12px;}
-.otp-title{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:22px;margin-bottom:4px;}
-.otp-sub{font-size:12px;color:var(--muted);margin-bottom:24px;}
-.otp-step{display:none;}.otp-step.active{display:block;}
-.otp-input{width:100%;padding:13px 16px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;font-family:'Poppins',sans-serif;background:var(--cream);color:var(--ink);text-align:center;letter-spacing:2px;margin-bottom:14px;box-sizing:border-box;}
-.otp-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(74,124,89,.1);}
-.otp-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--green),#2d5e3e);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:10px;}
-.otp-btn:disabled{opacity:.6;cursor:not-allowed;}
-.otp-resend{font-size:12px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:'Poppins',sans-serif;padding:4px;}
-.otp-resend span{color:var(--green);font-weight:600;}
-.otp-err{color:#c0392b;font-size:12px;margin-top:6px;min-height:18px;}
-.otp-digits{display:flex;gap:10px;justify-content:center;margin-bottom:14px;}
-.otp-digit{width:52px;height:56px;border:1.5px solid var(--line);border-radius:12px;font-size:22px;font-weight:700;text-align:center;background:var(--cream);color:var(--ink);font-family:'Poppins',sans-serif;}
-.otp-digit:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(74,124,89,.1);}
-.otp-timer{font-size:12px;color:var(--muted);margin-bottom:10px;}
+/* ── CUSTOMER INFO POPUP ── */
+#custPopup{position:fixed;inset:0;z-index:400;display:none;align-items:flex-end;justify-content:center;}
+#custPopup.show{display:flex;}
+.cust-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);}
+.cust-sheet{position:relative;background:var(--cream);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:28px 24px 32px;z-index:1;}
+.cust-handle{width:36px;height:4px;background:var(--line);border-radius:4px;margin:0 auto 20px;}
+.cust-title{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:18px;margin-bottom:4px;text-align:center;}
+.cust-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;}
+.cust-field{margin-bottom:14px;}
+.cust-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.cust-field input{width:100%;padding:13px 16px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;font-family:'Poppins',sans-serif;background:#fff;color:var(--ink);box-sizing:border-box;transition:border-color .2s;}
+.cust-field input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(74,124,89,.1);}
+.cust-confirm-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--green),#2d5e3e);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Poppins',sans-serif;margin-top:4px;transition:opacity .2s;}
+.cust-confirm-btn:disabled{opacity:.6;cursor:not-allowed;}
+.cust-err{color:#c0392b;font-size:12px;margin-top:8px;text-align:center;min-height:16px;}
 </style>
 </head>
 <body>
-<!-- OTP VERIFICATION SCREEN -->
-<div id="otpScreen" style="display:none;">
-  <div class="otp-card">
-    <div class="otp-logo">🍽️</div>
-    <div class="otp-title" id="otpRestName">Restaurant</div>
-    <div class="otp-sub">Verify your phone to place orders</div>
-
-    <!-- Step 1: Phone input -->
-    <div class="otp-step active" id="otpStep1">
-      <input class="otp-input" id="otpPhone" type="tel" maxlength="10" placeholder="Enter mobile number" inputmode="numeric"/>
-      <button class="otp-btn" id="otpSendBtn" onclick="sendOTP()">Send OTP →</button>
-      <div class="otp-err" id="otpPhoneErr"></div>
+<!-- CUSTOMER INFO POPUP -->
+<div id="custPopup">
+  <div class="cust-backdrop" id="custBackdrop"></div>
+  <div class="cust-sheet">
+    <div class="cust-handle"></div>
+    <div class="cust-title">Almost there! 🍽️</div>
+    <div class="cust-sub">Tell us who you are so we can serve you better</div>
+    <div class="cust-field">
+      <label>Your Name</label>
+      <input type="text" id="custName" placeholder="e.g. Rahul" autocomplete="name"/>
     </div>
-
-    <!-- Step 2: OTP input -->
-    <div class="otp-step" id="otpStep2">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">OTP sent to <strong id="otpPhoneDisplay"></strong></div>
-      <div class="otp-digits">
-        <input class="otp-digit" maxlength="1" inputmode="numeric" id="d1"/>
-        <input class="otp-digit" maxlength="1" inputmode="numeric" id="d2"/>
-        <input class="otp-digit" maxlength="1" inputmode="numeric" id="d3"/>
-        <input class="otp-digit" maxlength="1" inputmode="numeric" id="d4"/>
-      </div>
-      <div class="otp-timer" id="otpTimer">Resend in 30s</div>
-      <button class="otp-btn" id="otpVerifyBtn" onclick="verifyOTP()">Verify & Continue →</button>
-      <button class="otp-resend" id="otpResendBtn" onclick="resendOTP()" style="display:none;">Didn't get OTP? <span>Resend</span></button>
-      <div class="otp-err" id="otpCodeErr"></div>
+    <div class="cust-field">
+      <label>Mobile Number</label>
+      <input type="tel" id="custPhone" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric"/>
     </div>
+    <div class="cust-err" id="custErr"></div>
+    <button class="cust-confirm-btn" id="custConfirmBtn" onclick="confirmCustomerInfo()">Place Order →</button>
   </div>
 </div>
 
@@ -403,7 +389,6 @@ async function init(){
   document.title=(RDATA.restaurantName||RESTAURANT_ID)+' — Order';
   const pm=document.getElementById('paidMsg');
   if(pm)pm.textContent='See you again at '+(RDATA.restaurantName||'us')+'!';
-  // OTP triggered on Send to Kitchen tap, not on page load
   document.getElementById('rName').textContent=RDATA.restaurantName||RESTAURANT_ID;
   document.getElementById('rSub').textContent=RDATA.restaurantSub||'';
   document.getElementById('trackRestName').textContent=RDATA.restaurantName||RESTAURANT_ID;
@@ -511,19 +496,26 @@ function renderDrawer(){
 
 /* ── PLACE ORDER ── */
 let isPlacingOrder=false;
+
 document.getElementById('placeBtn').addEventListener('click',async()=>{
   if(isPlacingOrder)return;
   const items=getItems();if(!items.length)return;
-  // OTP check — if not verified, show OTP screen
-  if(!CUSTOMER_VERIFIED){
-    // OTP triggered on Send to Kitchen tap, not on page load
+  // If we don't have customer info yet — show popup first
+  if(!CUST_NAME || !CUST_PHONE){
+    showCustPopup();
     return;
   }
+  await doPlaceOrder();
+});
+
+async function doPlaceOrder(){
+  if(isPlacingOrder)return;
+  const items=getItems();if(!items.length)return;
   isPlacingOrder=true;
   const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order...';
   try{
     const orderNum=await getNextOrderNum();
-    const order={restaurant_id:RESTAURANT_ID,table_no:TABLE,items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),total:getTotal(),note:document.getElementById('orderNote').value.trim(),status:'new',order_num:orderNum,payment_status:'pending',placed_at:new Date().toISOString(),customer_phone:CUSTOMER_PHONE||null};
+    const order={restaurant_id:RESTAURANT_ID,table_no:TABLE,items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),total:getTotal(),note:document.getElementById('orderNote').value.trim(),status:'new',order_num:orderNum,payment_status:'pending',placed_at:new Date().toISOString(),customer_name:CUST_NAME||null,customer_phone:CUST_PHONE||null};
     const {data,error}=await sb.from('orders').insert([order]).select().single();if(error)throw error;
     activeOrderIds.push(data.id);localStorage.setItem(STORAGE_KEY,JSON.stringify(activeOrderIds));
     // Clear cart
@@ -536,7 +528,7 @@ document.getElementById('placeBtn').addEventListener('click',async()=>{
     btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';
   }catch(e){console.error(e);toast('Could not place order. Please try again.',true);btn.disabled=false;btn.textContent='🍽️ Send Order to Kitchen';}
   finally{isPlacingOrder=false;}
-});
+}
 
 /* ── CALL WAITER (from drawer) ── */
 document.getElementById('waiterBtn').addEventListener('click',async()=>{
@@ -752,176 +744,54 @@ ${items.map(i=>`<div class="row"><span>${i.name} ${i.qty}</span><span>${i.price}
 
 init();
 
+/* ══════════════════════════════
+   CUSTOMER INFO COLLECTION
+   ══════════════════════════════ */
+let CUST_NAME = '';
+let CUST_PHONE = '';
+let _pendingOrder = false;
 
-/* ══════════════════════════════════════
-   OTP VERIFICATION SYSTEM
-   ══════════════════════════════════════ */
-let CUSTOMER_PHONE = '';
-let CUSTOMER_VERIFIED = false;
-let OTP_CODE = '';
-let otpTimerInterval = null;
-
-// Called after init() — check if OTP is required
-async function checkOTPRequired() {
-  // Skip OTP for preview mode
-  if (TOKEN === 'preview') { CUSTOMER_VERIFIED = true; return; }
-
-  const otpEnabled = RDATA?.otpEnabled;
-  if (!otpEnabled) { CUSTOMER_VERIFIED = true; return; }
-
-  // Check if already verified this session
-  const saved = sessionStorage.getItem('otp_verified_' + RESTAURANT_ID);
+function showCustPopup() {
+  const popup = document.getElementById('custPopup');
+  popup.classList.add('show');
+  // Pre-fill from session if returning customer
+  const saved = sessionStorage.getItem('cust_' + RESTAURANT_ID);
   if (saved) {
-    CUSTOMER_PHONE = saved;
-    CUSTOMER_VERIFIED = true;
-    return;
+    try {
+      const s = JSON.parse(saved);
+      if (s.name) document.getElementById('custName').value = s.name;
+      if (s.phone) document.getElementById('custPhone').value = s.phone;
+    } catch(e) {}
   }
-
-  // Show OTP screen
-  document.getElementById('otpRestName').textContent = RDATA.restaurantName || RESTAURANT_ID;
-  document.getElementById('otpScreen').style.display = 'flex';
+  setTimeout(() => document.getElementById('custName').focus(), 300);
 }
 
-// Send OTP via 2Factor or store generated OTP in Supabase
-async function sendOTP() {
-  const phone = document.getElementById('otpPhone').value.trim();
-  const errEl = document.getElementById('otpPhoneErr');
+function hideCustPopup() {
+  document.getElementById('custPopup').classList.remove('show');
+  document.getElementById('custErr').textContent = '';
+}
+
+document.getElementById('custBackdrop').addEventListener('click', hideCustPopup);
+
+async function confirmCustomerInfo() {
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  const errEl = document.getElementById('custErr');
   errEl.textContent = '';
 
-  if (!/^[6-9]\d{9}$/.test(phone)) {
-    errEl.textContent = 'Enter a valid 10-digit Indian mobile number.';
-    return;
-  }
+  if (!name) { errEl.textContent = 'Please enter your name.'; return; }
+  if (!/^[6-9]\d{9}$/.test(phone)) { errEl.textContent = 'Enter a valid 10-digit mobile number.'; return; }
 
-  const btn = document.getElementById('otpSendBtn');
-  btn.disabled = true; btn.textContent = 'Sending...';
+  CUST_NAME = name;
+  CUST_PHONE = phone;
 
-  // Generate 4-digit OTP
-  OTP_CODE = String(Math.floor(1000 + Math.random() * 9000));
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min expiry
+  // Save to session so they don't re-enter on next order
+  sessionStorage.setItem('cust_' + RESTAURANT_ID, JSON.stringify({ name, phone }));
 
-  try {
-    // Store OTP in Supabase
-    await sb.from('otp_verifications').upsert([{
-      phone: phone,
-      restaurant_id: RESTAURANT_ID,
-      otp: OTP_CODE,
-      expires_at: expiresAt,
-      verified: false
-    }], { onConflict: 'phone,restaurant_id' });
-
-    // Send SMS via 2Factor API (stored in restaurant settings)
-    const apiKey = RDATA?.otpApiKey || '';
-    if (apiKey) {
-      await fetch(`https://2factor.in/API/V1/${apiKey}/SMS/91${phone}/${OTP_CODE}/OTP1`);
-    } else {
-      // Dev mode - show OTP in console
-      console.log('DEV MODE OTP:', OTP_CODE);
-      // Show alert for testing if no API key configured
-      alert('DEV MODE - OTP: ' + OTP_CODE + '\n(Add 2Factor API key in admin settings to send real SMS)');
-    }
-
-    CUSTOMER_PHONE = phone;
-    document.getElementById('otpPhoneDisplay').textContent = '+91 ' + phone;
-
-    // Switch to step 2
-    document.getElementById('otpStep1').classList.remove('active');
-    document.getElementById('otpStep2').classList.add('active');
-
-    startOTPTimer();
-    document.getElementById('d1').focus();
-
-  } catch(e) {
-    errEl.textContent = 'Failed to send OTP. Please try again.';
-    console.error(e);
-  } finally {
-    btn.disabled = false; btn.textContent = 'Send OTP →';
-  }
+  hideCustPopup();
+  // Now actually place the order
+  await doPlaceOrder();
 }
-
-function startOTPTimer() {
-  let secs = 30;
-  const timerEl = document.getElementById('otpTimer');
-  const resendBtn = document.getElementById('otpResendBtn');
-  resendBtn.style.display = 'none';
-  timerEl.style.display = 'block';
-
-  if (otpTimerInterval) clearInterval(otpTimerInterval);
-  otpTimerInterval = setInterval(() => {
-    secs--;
-    timerEl.textContent = 'Resend in ' + secs + 's';
-    if (secs <= 0) {
-      clearInterval(otpTimerInterval);
-      timerEl.style.display = 'none';
-      resendBtn.style.display = 'block';
-    }
-  }, 1000);
-}
-
-function resendOTP() {
-  // Go back to step 1
-  document.getElementById('otpStep2').classList.remove('active');
-  document.getElementById('otpStep1').classList.add('active');
-  document.getElementById('otpPhone').value = CUSTOMER_PHONE;
-  ['d1','d2','d3','d4'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('otpCodeErr').textContent = '';
-}
-
-async function verifyOTP() {
-  const entered = ['d1','d2','d3','d4'].map(id => document.getElementById(id).value).join('');
-  const errEl = document.getElementById('otpCodeErr');
-  errEl.textContent = '';
-
-  if (entered.length !== 4) { errEl.textContent = 'Enter the 4-digit OTP.'; return; }
-
-  const btn = document.getElementById('otpVerifyBtn');
-  btn.disabled = true; btn.textContent = 'Verifying...';
-
-  try {
-    // Check OTP from Supabase
-    const { data, error } = await sb.from('otp_verifications')
-      .select('otp,expires_at,verified')
-      .eq('phone', CUSTOMER_PHONE)
-      .eq('restaurant_id', RESTAURANT_ID)
-      .single();
-
-    if (error || !data) { errEl.textContent = 'Invalid OTP. Try again.'; btn.disabled = false; btn.textContent = 'Verify & Continue →'; return; }
-
-    if (new Date(data.expires_at) < new Date()) { errEl.textContent = 'OTP expired. Resend and try again.'; btn.disabled = false; btn.textContent = 'Verify & Continue →'; return; }
-
-    if (data.otp !== entered) { errEl.textContent = 'Incorrect OTP. Try again.'; btn.disabled = false; btn.textContent = 'Verify & Continue →'; return; }
-
-    // Mark verified
-    await sb.from('otp_verifications').update({ verified: true }).eq('phone', CUSTOMER_PHONE).eq('restaurant_id', RESTAURANT_ID);
-
-    CUSTOMER_VERIFIED = true;
-    sessionStorage.setItem('otp_verified_' + RESTAURANT_ID, CUSTOMER_PHONE);
-
-    // Hide OTP screen
-    document.getElementById('otpScreen').style.display = 'none';
-
-    // Auto-place the order that triggered OTP
-    document.getElementById('placeBtn').click();
-
-  } catch(e) {
-    errEl.textContent = 'Verification failed. Try again.';
-    console.error(e);
-    btn.disabled = false; btn.textContent = 'Verify & Continue →';
-  }
-}
-
-// OTP digit auto-advance
-['d1','d2','d3','d4'].forEach((id, idx, arr) => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('input', () => {
-    el.value = el.value.replace(/[^0-9]/g, '').slice(-1);
-    if (el.value && idx < arr.length - 1) document.getElementById(arr[idx+1]).focus();
-  });
-  el.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && !el.value && idx > 0) document.getElementById(arr[idx-1]).focus();
-  });
-});
 
 </script>
 </body>
