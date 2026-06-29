@@ -1474,8 +1474,14 @@ function downloadReport(){
   const counterOrders=orders.filter(o=>classifyOrder(o).isCounter);
   const qrRev=qrOrders.reduce((s,o)=>s+(o.total||0),0);
   const parcelRev=parcelOrders.reduce((s,o)=>s+(o.total||0),0);
-  // counterRev includes both counter orders AND waiter/staff orders
-  const counterRev=[...counterOrders,...staffOrders].reduce((s,o)=>s+(o.total||0),0);
+  const waiterRev=staffOrders.reduce((s,o)=>s+(o.total||0),0);
+  // counterRev = counter orders only (not waiter)
+  const counterRev=counterOrders.reduce((s,o)=>s+(o.total||0),0);
+  // counterDineRev = counter dine-in (not parcel)
+  const counterDineOrders=counterOrders.filter(o=>!String(o.table_no||'').startsWith('Parcel'));
+  const counterParcelOrders=counterOrders.filter(o=>String(o.table_no||'').startsWith('Parcel'));
+  const counterDineRev=counterDineOrders.reduce((s,o)=>s+(o.total||0),0);
+  const counterParcelRev=counterParcelOrders.reduce((s,o)=>s+(o.total||0),0);
   const rname=DATA?.restaurantName||RESTAURANT_ID;
   const rsub=DATA?.restaurantSub||'';
   const periodLabel=formatDateLabel(start)+' to '+formatDateLabel(end);
@@ -1611,7 +1617,7 @@ td{padding:9px 12px;font-size:12px;border-bottom:1px solid #F0E8D0;vertical-alig
       <div class="card-val">₹${avgOrder.toLocaleString('en-IN')}</div>
       <div class="card-sub">per order</div>
     </div>
-    <div class="card">
+    <div class="card blue">
       <div class="card-label">QR Self-Orders</div>
       <div class="card-val">${qrOrders.length}</div>
       <div class="card-sub">₹${qrRev.toLocaleString('en-IN')}</div>
@@ -1624,7 +1630,12 @@ td{padding:9px 12px;font-size:12px;border-bottom:1px solid #F0E8D0;vertical-alig
     <div class="card purple">
       <div class="card-label">Counter Orders</div>
       <div class="card-val">${counterOrders.length}</div>
-      <div class="card-sub">₹${counterRev.toLocaleString('en-IN')}</div>
+      <div class="card-sub">Dine-in: ${counterDineOrders.length} · Parcel: ${counterParcelOrders.length}</div>
+    </div>
+    <div class="card green">
+      <div class="card-label">Staff / Waiter</div>
+      <div class="card-val">${staffOrders.length}</div>
+      <div class="card-sub">₹${waiterRev.toLocaleString('en-IN')}</div>
     </div>
   </div>
 
@@ -1637,12 +1648,22 @@ td{padding:9px 12px;font-size:12px;border-bottom:1px solid #F0E8D0;vertical-alig
       <span class="b-val">₹${qrRev.toLocaleString('en-IN')}</span>
     </div>
     <div class="breakdown-row">
-      <span class="b-label">👨‍💼 Counter/Staff</span>
-      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterRev/totalRev*100):0}%;background:linear-gradient(90deg,#8E44AD,#9B59B6)"></div></div>
-      <span class="b-val">₹${counterRev.toLocaleString('en-IN')}</span>
+      <span class="b-label">🏪 Counter — Dine-in</span>
+      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterDineRev/totalRev*100):0}%;background:linear-gradient(90deg,#8E44AD,#9B59B6)"></div></div>
+      <span class="b-val">₹${counterDineRev.toLocaleString('en-IN')}</span>
     </div>
     <div class="breakdown-row">
-      <span class="b-label">📦 Parcel</span>
+      <span class="b-label">🏪 Counter — Parcel</span>
+      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterParcelRev/totalRev*100):0}%;background:linear-gradient(90deg,#D35400,#E67E22)"></div></div>
+      <span class="b-val">₹${counterParcelRev.toLocaleString('en-IN')}</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="b-label">👨‍💼 Staff / Waiter</span>
+      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(waiterRev/totalRev*100):0}%;background:linear-gradient(90deg,#27AE60,#2ECC71)"></div></div>
+      <span class="b-val">₹${waiterRev.toLocaleString('en-IN')}</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="b-label">📦 Parcel (all)</span>
       <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(parcelRev/totalRev*100):0}%;background:linear-gradient(90deg,#E67E22,#F39C12)"></div></div>
       <span class="b-val">₹${parcelRev.toLocaleString('en-IN')}</span>
     </div>
