@@ -91,6 +91,37 @@ textarea{resize:vertical;min-height:55px;}
 /* Report tabs and download */
 .report-tab{background:#F5F0E8;border:1.5px solid #E5DCC8;color:#7A6E5F;padding:8px 18px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .2s;}
 .report-tab.active{background:var(--green);color:#fff;border-color:var(--green);}
+/* CRM / Customers */
+.crm-search{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:'Poppins',sans-serif;background:var(--cream);margin-bottom:14px;}
+.crm-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.crm-filter-btn{background:#F5F0E8;border:1.5px solid #E5DCC8;color:#7A6E5F;padding:6px 14px;border-radius:8px;font-weight:700;font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .2s;}
+.crm-filter-btn.active{background:var(--green);color:#fff;border-color:var(--green);}
+.crm-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+.crm-stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;}
+.crm-stat-val{font-size:20px;font-weight:800;color:var(--ink);}
+.crm-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.crm-list{display:flex;flex-direction:column;gap:8px;max-height:600px;overflow-y:auto;}
+.crm-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:all .15s;}
+.crm-card:hover{border-color:var(--green);box-shadow:0 2px 8px rgba(74,124,89,.1);}
+.crm-card-left{flex:1;min-width:0;}
+.crm-card-name{font-weight:700;font-size:14px;color:var(--ink);}
+.crm-card-phone{font-size:11px;color:var(--muted);margin-top:2px;}
+.crm-card-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px;text-transform:uppercase;letter-spacing:.3px;}
+.crm-badge-vip{background:#FFF3CD;color:#B8860B;}
+.crm-badge-regular{background:#D4EDDA;color:#27AE60;}
+.crm-badge-new{background:#D6EAF8;color:#2980B9;}
+.crm-badge-risk{background:#FADBD8;color:#C0392B;}
+.crm-card-right{text-align:right;flex-shrink:0;}
+.crm-card-spent{font-weight:800;color:var(--green);font-size:14px;}
+.crm-card-orders{font-size:11px;color:var(--muted);}
+.crm-card-last{font-size:10px;color:#aaa;margin-top:2px;}
+.crm-wa-btn{background:#25D366;color:#fff;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;margin-left:10px;font-family:'Poppins',sans-serif;}
+.crm-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
+.crm-detail-overlay.show{display:flex;}
+.crm-detail{background:#fff;border-radius:18px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;}
+.crm-detail-close{float:right;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);}
+.crm-order-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px;}
+.crm-order-row:last-child{border-bottom:none;}
 .download-btn{background:#34495E;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:'Poppins',sans-serif;margin-left:auto;}
 /* Report summary cards */
 .report-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
@@ -388,6 +419,34 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
       </div>
     </div>
 
+    <!-- CRM / CUSTOMERS -->
+    <div class="panel">
+      <h2>👥 Customers</h2>
+      <div class="crm-stats" id="crmStats">
+        <div class="crm-stat"><div class="crm-stat-val" id="crmTotalCust">—</div><div class="crm-stat-lbl">Total Customers</div></div>
+        <div class="crm-stat"><div class="crm-stat-val" id="crmRegulars">—</div><div class="crm-stat-lbl">Regulars (5+)</div></div>
+        <div class="crm-stat"><div class="crm-stat-val" id="crmNew">—</div><div class="crm-stat-lbl">New (1 order)</div></div>
+        <div class="crm-stat"><div class="crm-stat-val" id="crmAtRisk">—</div><div class="crm-stat-lbl">At Risk (30d+)</div></div>
+      </div>
+      <input class="crm-search" id="crmSearch" placeholder="🔍 Search by name or phone..." oninput="renderCRMList()"/>
+      <div class="crm-filters">
+        <button class="crm-filter-btn active" data-filter="all" onclick="setCRMFilter('all')">All</button>
+        <button class="crm-filter-btn" data-filter="regular" onclick="setCRMFilter('regular')">⭐ Regulars</button>
+        <button class="crm-filter-btn" data-filter="new" onclick="setCRMFilter('new')">🆕 New</button>
+        <button class="crm-filter-btn" data-filter="risk" onclick="setCRMFilter('risk')">⚠️ At Risk</button>
+        <button class="crm-filter-btn" data-filter="vip" onclick="setCRMFilter('vip')">💎 Top Spenders</button>
+      </div>
+      <div class="crm-list" id="crmList"><div style="text-align:center;color:var(--muted);font-size:12px;padding:20px">Loading customers...</div></div>
+    </div>
+
+    <!-- Customer Detail Modal -->
+    <div class="crm-detail-overlay" id="crmDetailOverlay" onclick="if(event.target===this)closeCRMDetail()">
+      <div class="crm-detail">
+        <button class="crm-detail-close" onclick="closeCRMDetail()">×</button>
+        <div id="crmDetailContent"></div>
+      </div>
+    </div>
+
     <div class="panel">
       <h2>🔐 Secure QR Codes</h2>
       <p class="hint">Each table gets a unique secure link. Customers cannot change their table number. Generating new tokens replaces old ones — reprint QR codes after regenerating.</p>
@@ -675,7 +734,7 @@ async function confirmReset(){
   showLogin();
 }
 async function loadAll(){
-  await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders(),loadWaiters()]);
+  await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders(),loadWaiters(),loadCRM()]);
   document.getElementById('loading').classList.add('hidden');
   setInterval(loadTodayOrders,30000);
   loadReport('week');
@@ -1973,6 +2032,147 @@ function toggleTheme(){
     });
   }
 })();
+
+
+
+/* ════════════════════════════════════════════════════
+   CRM / CUSTOMERS
+   ════════════════════════════════════════════════════ */
+let CRM_CUSTOMERS=[];
+let CRM_FILTER='all';
+
+async function loadCRM(){
+  try{
+    const {data,error}=await sb.from('orders')
+      .select('customer_name,customer_phone,total,placed_at,items,payment_status')
+      .eq('restaurant_id',RESTAURANT_ID)
+      .eq('payment_status','paid')
+      .not('customer_phone','is',null);
+    if(error)throw error;
+
+    // Group by phone number
+    const map={};
+    (data||[]).forEach(o=>{
+      const phone=o.customer_phone;
+      if(!phone)return;
+      if(!map[phone]){
+        map[phone]={phone,name:o.customer_name||'Guest',orders:[],totalSpent:0,lastVisit:null,itemCounts:{}};
+      }
+      map[phone].orders.push(o);
+      map[phone].totalSpent+=o.total||0;
+      const od=new Date(o.placed_at);
+      if(!map[phone].lastVisit||od>map[phone].lastVisit)map[phone].lastVisit=od;
+      if(o.customer_name)map[phone].name=o.customer_name; // use most recent name
+      (o.items||[]).forEach(it=>{
+        map[phone].itemCounts[it.name]=(map[phone].itemCounts[it.name]||0)+(it.qty||1);
+      });
+    });
+
+    CRM_CUSTOMERS=Object.values(map).map(c=>{
+      const orderCount=c.orders.length;
+      const avgOrder=Math.round(c.totalSpent/orderCount);
+      const daysSinceVisit=Math.floor((Date.now()-c.lastVisit)/(1000*60*60*24));
+      const favItem=Object.entries(c.itemCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—';
+      let tag='new';
+      if(orderCount>=5)tag='regular';
+      if(daysSinceVisit>30&&orderCount>=2)tag='risk';
+      return {...c,orderCount,avgOrder,daysSinceVisit,favItem,tag};
+    }).sort((a,b)=>b.totalSpent-a.totalSpent);
+
+    updateCRMStats();
+    renderCRMList();
+  }catch(e){
+    console.error('CRM load error:',e);
+    document.getElementById('crmList').innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px">Could not load customer data.</div>';
+  }
+}
+
+function updateCRMStats(){
+  document.getElementById('crmTotalCust').textContent=CRM_CUSTOMERS.length;
+  document.getElementById('crmRegulars').textContent=CRM_CUSTOMERS.filter(c=>c.tag==='regular').length;
+  document.getElementById('crmNew').textContent=CRM_CUSTOMERS.filter(c=>c.orderCount===1).length;
+  document.getElementById('crmAtRisk').textContent=CRM_CUSTOMERS.filter(c=>c.tag==='risk').length;
+}
+
+function setCRMFilter(f){
+  CRM_FILTER=f;
+  document.querySelectorAll('.crm-filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===f));
+  renderCRMList();
+}
+
+function renderCRMList(){
+  const search=(document.getElementById('crmSearch')?.value||'').toLowerCase().trim();
+  let list=CRM_CUSTOMERS;
+
+  if(CRM_FILTER==='regular')list=list.filter(c=>c.tag==='regular');
+  else if(CRM_FILTER==='new')list=list.filter(c=>c.orderCount===1);
+  else if(CRM_FILTER==='risk')list=list.filter(c=>c.tag==='risk');
+  else if(CRM_FILTER==='vip')list=list.slice(0,Math.max(3,Math.ceil(CRM_CUSTOMERS.length*0.1)));
+
+  if(search){
+    list=list.filter(c=>c.name.toLowerCase().includes(search)||c.phone.includes(search));
+  }
+
+  const listEl=document.getElementById('crmList');
+  if(!list.length){
+    listEl.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px">No customers found.</div>';
+    return;
+  }
+
+  listEl.innerHTML=list.map(c=>{
+    let badge='';
+    if(c.tag==='regular')badge='<span class="crm-card-badge crm-badge-regular">Regular</span>';
+    else if(c.tag==='risk')badge='<span class="crm-card-badge crm-badge-risk">At Risk</span>';
+    else if(c.orderCount===1)badge='<span class="crm-card-badge crm-badge-new">New</span>';
+    const lastVisitTxt=c.daysSinceVisit===0?'Today':c.daysSinceVisit===1?'Yesterday':c.daysSinceVisit+' days ago';
+    return `<div class="crm-card" onclick="openCRMDetail('${c.phone}')">
+      <div class="crm-card-left">
+        <div class="crm-card-name">${c.name}${badge}</div>
+        <div class="crm-card-phone">📱 ${c.phone}</div>
+      </div>
+      <div class="crm-card-right">
+        <div class="crm-card-spent">₹${c.totalSpent.toLocaleString('en-IN')}</div>
+        <div class="crm-card-orders">${c.orderCount} order${c.orderCount>1?'s':''}</div>
+        <div class="crm-card-last">Last: ${lastVisitTxt}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCRMDetail(phone){
+  const c=CRM_CUSTOMERS.find(x=>x.phone===phone);
+  if(!c)return;
+  const rname=DATA?.restaurantName||RESTAURANT_ID;
+  const waMsg=encodeURIComponent(`Hi ${c.name}! We miss you at ${rname} 🍽️ Come visit us again soon!`);
+  const ordersHtml=c.orders.slice().reverse().slice(0,10).map(o=>{
+    const d=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    return `<div class="crm-order-row"><span>${d}</span><span style="font-weight:700">₹${(o.total||0).toLocaleString('en-IN')}</span></div>`;
+  }).join('');
+
+  document.getElementById('crmDetailContent').innerHTML=`
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--green),#2d5e3e);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:800;margin:0 auto 10px">${c.name.charAt(0).toUpperCase()}</div>
+      <div style="font-size:18px;font-weight:800;color:var(--ink)">${c.name}</div>
+      <div style="font-size:12px;color:var(--muted)">📱 ${c.phone}</div>
+    </div>
+    <div class="crm-stats" style="margin-bottom:16px">
+      <div class="crm-stat"><div class="crm-stat-val">₹${c.totalSpent.toLocaleString('en-IN')}</div><div class="crm-stat-lbl">Total Spent</div></div>
+      <div class="crm-stat"><div class="crm-stat-val">${c.orderCount}</div><div class="crm-stat-lbl">Orders</div></div>
+      <div class="crm-stat"><div class="crm-stat-val">₹${c.avgOrder}</div><div class="crm-stat-lbl">Avg Order</div></div>
+    </div>
+    <div style="background:var(--cream);border-radius:10px;padding:12px;margin-bottom:16px;font-size:12px">
+      <strong>🍽️ Favourite Item:</strong> ${c.favItem}
+    </div>
+    <button class="crm-wa-btn" style="width:100%;padding:12px;font-size:13px;margin-left:0;margin-bottom:16px" onclick="window.open('https://wa.me/91${c.phone}?text=${waMsg}','_blank')">💬 Send WhatsApp Message</button>
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--ink)">Recent Orders</div>
+    <div>${ordersHtml}</div>
+  `;
+  document.getElementById('crmDetailOverlay').classList.add('show');
+}
+
+function closeCRMDetail(){
+  document.getElementById('crmDetailOverlay').classList.remove('show');
+}
 
 </script>
 <!-- UPGRADE PLAN MODAL -->
