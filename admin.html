@@ -482,7 +482,7 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
       </div>
       <div id="reportActions" style="display:none;margin-top:12px;display:none;gap:8px;flex-direction:column">
         <button onclick="downloadReportPDF()" style="width:100%;padding:13px;background:#1A1A1A;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
-          ⬇️ Download PDF
+          📄 Download PDF
         </button>
         <button onclick="shareReportWhatsApp()" style="width:100%;padding:13px;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
           📲 Share via WhatsApp
@@ -1370,7 +1370,7 @@ async function loadReport(tab){
 
   try{
     const {data,error}=await sb.from('orders')
-      .select('id,table_no,total,note,placed_at,payment_status,items,waiter_id,waiter_name,customer_phone,customer_name,order_num')
+      .select('id,table_no,total,note,placed_at,payment_status,items,waiter_id,waiter_name,customer_phone,customer_name,order_num,order_source')
       .eq('restaurant_id',RESTAURANT_ID)
       .eq('payment_status','paid')
       .gte('placed_at',start.toISOString())
@@ -1388,11 +1388,19 @@ async function loadReport(tab){
 }
 
 function classifyOrder(o){
-  // Mutually exclusive — each order belongs to exactly ONE category
+  // Use order_source field if available (set at order placement time — most reliable)
+  if(o.order_source){
+    const isParcel=String(o.table_no||'').startsWith('Parcel');
+    const isQR=o.order_source==='qr'&&!isParcel;
+    const isWaiterOrder=o.order_source==='waiter'&&!isParcel;
+    const isCounter=o.order_source==='counter'||isParcel;
+    return {isParcel,isWaiterOrder,isCounter:isCounter&&!isQR&&!isWaiterOrder,isQR};
+  }
+  // Fallback for old orders without order_source
   const isParcel=String(o.table_no||'').startsWith('Parcel');
   const isCounter=!isParcel&&((o.note||'').includes('Order taken at counter')||(o.note||'').includes('Parcel / Takeaway'));
-  const isWaiterOrder=!isParcel&&!isCounter&&!!(o.waiter_id||o.waiter_name);
-  const isQR=!isParcel&&!isCounter&&!isWaiterOrder;
+  const isQR=!isParcel&&!isCounter&&!!(o.customer_phone)&&!(o.waiter_id&&!o.customer_phone);
+  const isWaiterOrder=!isParcel&&!isCounter&&!isQR&&!!(o.waiter_id||o.waiter_name);
   return {isParcel,isWaiterOrder,isCounter,isQR};
 }
 
@@ -1474,11 +1482,12 @@ function renderReport(data,start,end,tab){
   }).join('');
 }
 
-function downloadReport(){
+function downloadReport(format='pdf'){
   if(!currentReportData.length){showToast('No data to download for this period.',true);return;}
   const {start,end}=getReportRange(currentReportTab);
   const orders=currentReportData;
-  // Use classifyOrder for mutually exclusive categorisation
+
+  // Classify orders
   const qrOrders=[],staffOrders=[],counterOrders=[],parcelOrders=[];
   let totalRev=0;
   orders.forEach(o=>{
@@ -1505,7 +1514,7 @@ function downloadReport(){
   const tab=currentReportTab==='week'?'Weekly':'Monthly';
   const dateStr=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
 
-  // Group by date for daily breakdown
+  // Group by date
   const byDate={};
   orders.forEach(o=>{
     const d=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
@@ -1513,33 +1522,101 @@ function downloadReport(){
     byDate[d].orders.push(o);byDate[d].rev+=o.total||0;
   });
 
-  // Table rows
+  // ── XLS DOWNLOAD ──
+  if(format==='xls'){
+    // Build CSV-based XLS
+    const esc=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+    let csv='sep=,
+';
+    csv+=`${rname} - ${tab} Sales Report
+`;
+    csv+=`Period: ${periodLabel}
+Generated: ${dateStr}
+
+`;
+    csv+='SUMMARY
+';
+    csv+=`Total Revenue,₹${totalRev.toLocaleString('en-IN')}
+`;
+    csv+=`Total Orders,${totalOrders}
+`;
+    csv+=`Avg Order Value,₹${avgOrder}
+`;
+    csv+=`QR Self-Orders,${qrOrders.length},₹${qrRev.toLocaleString('en-IN')}
+`;
+    csv+=`Staff / Waiter Orders,${staffOrders.length},₹${waiterRev.toLocaleString('en-IN')}
+`;
+    csv+=`Counter Orders,${counterOrders.length},₹${counterRev.toLocaleString('en-IN')}
+`;
+    csv+=`Parcel Orders,${parcelOrders.length},₹${parcelRev.toLocaleString('en-IN')}
+
+`;
+    csv+='DAILY BREAKDOWN
+';
+    csv+='Date,Orders,Revenue
+';
+    Object.entries(byDate).forEach(([d,v])=>{
+      csv+=`${esc(d)},${v.orders.length},${v.rev}
+`;
+    });
+    csv+='
+ALL ORDERS
+';
+    csv+='Date,Time,Order #,Table,Type,Source,Amount,Customer Name,Customer Phone,Note
+';
+    orders.forEach(o=>{
+      const {isParcel,isQR,isWaiterOrder,isCounter}=classifyOrder(o);
+      const type=isParcel?'Parcel':'Dine-in';
+      const src=isQR?'QR':isWaiterOrder?'Staff/Waiter':isCounter?'Counter':'Other';
+      const dt=new Date(o.placed_at);
+      const date=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+      const time=dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      const tbl=String(o.table_no||'').startsWith('Parcel')?o.table_no:'T'+o.table_no;
+      csv+=`${esc(date)},${esc(time)},${o.order_num||''},${esc(tbl)},${type},${src},${o.total||0},${esc(o.customer_name||'')},${esc(o.customer_phone||'')},${esc((o.note||'').replace(/[📦🙋]/g,''))}
+`;
+    });
+    const bom='﻿';
+    const blob=new Blob([bom+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`${rname.replace(/\s+/g,'-')}-${tab}-Report-${dateStr}.xls`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    showToast('✅ Excel file downloaded!');
+    return;
+  }
+
+  // ── PDF/HTML DOWNLOAD ──
   const tableRows=orders.map((o,i)=>{
-    const {isParcel,isCounter,isQR}=classifyOrder(o);
+    const {isParcel,isCounter,isQR,isWaiterOrder}=classifyOrder(o);
     const type=isParcel?'<span style="background:#FFF3E0;color:#E67E22;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">📦 Parcel</span>':'<span style="background:#EAF6EE;color:#27AE60;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">🍽️ Dine-in</span>';
-    const {isParcel:_p,isCounter:_c,isQR:_q,isWaiterOrder:_w}=classifyOrder(o);
-    const src=_q?'<span style="color:#2980B9">📱 QR</span>':_w?'<span style="color:#8E44AD">👨‍💼 Staff</span>':_p||_c?'<span style="color:#E67E22">🏪 Counter</span>':'<span style="color:#27AE60">🍽️ Dine-in</span>';
+    const src=isQR?'<span style="background:#EBF5FB;color:#2980B9;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">📱 QR</span>':isWaiterOrder?'<span style="background:#F4ECF7;color:#8E44AD;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">👨‍💼 Staff</span>':isParcel||isCounter?'<span style="background:#FDF2F8;color:#E67E22;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">🏪 Counter</span>':'<span style="background:#EAF6EE;color:#27AE60;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">🍽️ Dine-in</span>';
     const date=new Date(o.placed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
     const time=new Date(o.placed_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
     const note=o.note&&!o.note.includes('📦')&&!o.note.includes('counter')?`<br/><span style="font-size:10px;color:#999;font-style:italic">${o.note}</span>`:'';
+    const cust=o.customer_name?`<br/><span style="font-size:10px;color:#4A7C59">👤 ${o.customer_name}</span>`:'';
     const bg=i%2===0?'#FFFFFF':'#FDFAF3';
     return `<tr style="background:${bg}">
       <td style="color:#999;font-size:11px">${date}<br/><span style="font-size:10px">${time}</span></td>
       <td style="font-weight:700;color:#4A7C59">${o.order_num||'—'}</td>
-      <td>${String(o.table_no).startsWith('Parcel')?o.table_no:'T'+o.table_no}</td>
+      <td>${String(o.table_no).startsWith('Parcel')?o.table_no:'T'+o.table_no}${cust}</td>
       <td>${type}</td>
       <td>${src}</td>
       <td style="font-weight:700;color:#1A1208;text-align:right">₹${(o.total||0).toLocaleString('en-IN')}${note}</td>
     </tr>`;
   }).join('');
 
-  // Daily summary rows
   const dailyRows=Object.entries(byDate).map(([date,d])=>`
     <tr style="background:#F5F0E8">
-      <td colspan="5" style="font-weight:700;color:#6B3F1E;padding:6px 12px;font-size:12px">📅 ${date} &nbsp;·&nbsp; ${d.orders.length} orders</td>
-      <td style="font-weight:700;color:#6B3F1E;text-align:right;padding:6px 12px;font-size:12px">₹${d.rev.toLocaleString('en-IN')}</td>
+      <td colspan="5" style="font-weight:700;color:#6B3F1E;padding:8px 12px;font-size:12px">📅 ${date} &nbsp;·&nbsp; ${d.orders.length} orders</td>
+      <td style="font-weight:700;color:#6B3F1E;text-align:right;padding:8px 12px;font-size:12px">₹${d.rev.toLocaleString('en-IN')}</td>
     </tr>
   `).join('');
+
+  const qrPct=totalRev?Math.round(qrRev/totalRev*100):0;
+  const waiterPct=totalRev?Math.round(waiterRev/totalRev*100):0;
+  const counterPct=totalRev?Math.round(counterRev/totalRev*100):0;
+  const parcelPct=totalRev?Math.round(parcelRev/totalRev*100):0;
 
   const html=`<!DOCTYPE html>
 <html lang="en">
@@ -1549,168 +1626,189 @@ function downloadReport(){
 <title>${rname} — ${tab} Report</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#F7F3EA;color:#1A1208;}
-.page{max-width:900px;margin:0 auto;padding:24px;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0EBE0;color:#1A1208;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+.page{max-width:960px;margin:0 auto;padding:24px;}
 /* HEADER */
-.header{background:linear-gradient(135deg,#1A1208 0%,#2D4A35 100%);border-radius:16px;padding:32px;margin-bottom:20px;color:#fff;position:relative;overflow:hidden;}
-.header::after{content:"";position:absolute;top:-30px;right:-30px;width:160px;height:160px;background:rgba(212,160,23,.1);border-radius:50%;}
-.header::before{content:"";position:absolute;bottom:-40px;left:60px;width:100px;height:100px;background:rgba(74,124,89,.1);border-radius:50%;}
-.h-badge{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#D4A017;margin-bottom:6px;}
-.h-title{font-size:26px;font-weight:800;margin-bottom:2px;}
-.h-sub{font-size:13px;opacity:.7;margin-bottom:16px;}
-.h-period{font-size:12px;color:rgba(255,255,255,.6);}
-.h-generated{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;}
-/* SUMMARY CARDS */
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
-@media(max-width:600px){.cards{grid-template-columns:1fr 1fr;}}
-.card{background:#fff;border-radius:12px;padding:16px;border-left:4px solid #4A7C59;box-shadow:0 2px 10px rgba(0,0,0,.06);}
-.card.gold{border-left-color:#D4A017;}
-.card.blue{border-left-color:#2980B9;}
-.card.orange{border-left-color:#E67E22;}
-.card.purple{border-left-color:#8E44AD;}
-.card.red{border-left-color:#C0392B;}
-.card-label{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;}
-.card-val{font-size:22px;font-weight:800;color:#1A1208;}
-.card-sub{font-size:11px;color:#999;margin-top:3px;}
-/* SOURCE BREAKDOWN */
-.breakdown{background:#fff;border-radius:12px;padding:18px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
-.breakdown-title{font-size:13px;font-weight:700;color:#1A1208;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #F0E8D0;}
-.breakdown-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-.b-label{font-size:12px;font-weight:600;color:#555;width:120px;flex:0 0 auto;}
-.b-bar-wrap{flex:1;background:#F0E8D0;border-radius:999px;height:8px;overflow:hidden;}
-.b-bar{height:100%;border-radius:999px;}
-.b-val{font-size:12px;font-weight:700;color:#1A1208;width:80px;text-align:right;flex:0 0 auto;}
-/* TABLE */
-.table-wrap{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06);margin-bottom:20px;}
-.table-header{padding:16px 18px;border-bottom:2px solid #E5DCC8;display:flex;align-items:center;justify-content:space-between;}
-.table-header h3{font-size:14px;font-weight:700;color:#1A1208;}
-.table-header span{font-size:11px;color:#999;}
+.header{background:linear-gradient(135deg,#1A2F1E 0%,#2D5A38 60%,#4A7C59 100%);border-radius:20px;padding:40px;margin-bottom:24px;color:#fff;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:rgba(255,255,255,.05);border-radius:50%;}
+.header::after{content:'';position:absolute;bottom:-60px;left:40px;width:150px;height:150px;background:rgba(255,255,255,.04);border-radius:50%;}
+.header-tag{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:8px;}
+.header-name{font-size:36px;font-weight:800;margin-bottom:4px;letter-spacing:-1px;}
+.header-sub{font-size:14px;color:rgba(255,255,255,.7);margin-bottom:16px;}
+.header-meta{display:flex;gap:24px;flex-wrap:wrap;}
+.header-meta-item{font-size:12px;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:6px;}
+.header-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:4px 12px;font-size:11px;font-weight:700;backdrop-filter:blur(4px);}
+/* PRINT BTN */
+.print-bar{display:flex;gap:10px;margin-bottom:20px;justify-content:flex-end;}
+.print-btn{background:#1A2F1E;color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.print-btn:hover{background:#2D5A38;}
+@media print{.print-bar{display:none;}.page{padding:12px;}}
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.kpi{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.kpi-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#999;margin-bottom:8px;}
+.kpi-val{font-size:28px;font-weight:800;color:#1A1208;letter-spacing:-1px;margin-bottom:2px;}
+.kpi-sub{font-size:12px;color:#999;}
+.kpi.green{border-top:3px solid #27AE60;}
+.kpi.blue{border-top:3px solid #2980B9;}
+.kpi.orange{border-top:3px solid #E67E22;}
+.kpi.purple{border-top:3px solid #8E44AD;}
+.kpi.teal{border-top:3px solid #16A085;}
+/* SOURCE CARDS */
+.source-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.src-card{background:#fff;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.src-icon{font-size:22px;margin-bottom:8px;}
+.src-label{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#999;margin-bottom:4px;}
+.src-val{font-size:22px;font-weight:800;color:#1A1208;}
+.src-rev{font-size:12px;color:#4A7C59;font-weight:600;margin-top:2px;}
+.src-pct{font-size:11px;color:#999;margin-top:2px;}
+/* REVENUE BARS */
+.breakdown{background:#fff;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.breakdown-title{font-size:13px;font-weight:700;color:#1A1208;margin-bottom:16px;letter-spacing:.5px;text-transform:uppercase;}
+.b-row{display:grid;grid-template-columns:140px 1fr 80px;align-items:center;gap:12px;margin-bottom:10px;}
+.b-label{font-size:12px;font-weight:600;color:#555;}
+.b-bar-wrap{background:#F0EBE0;border-radius:99px;height:10px;overflow:hidden;}
+.b-bar{height:100%;border-radius:99px;transition:width .5s;}
+.b-val{font-size:13px;font-weight:700;color:#1A1208;text-align:right;}
+/* TABLES */
+.section{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.section-hdr{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F0EBE0;}
+.section-hdr h3{font-size:14px;font-weight:700;color:#1A1208;}
+.section-hdr span{font-size:12px;color:#999;background:#F0EBE0;padding:3px 10px;border-radius:99px;}
 table{width:100%;border-collapse:collapse;}
-th{background:#F5F0E8;padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:#7A6E5F;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #E5DCC8;}
-th:last-child,td:last-child{text-align:right;}
-td{padding:9px 12px;font-size:12px;border-bottom:1px solid #F0E8D0;vertical-align:middle;}
+th{background:#F8F5EF;padding:10px 12px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#999;text-align:left;}
+td{padding:10px 12px;font-size:12px;border-bottom:1px solid #F8F5EF;}
+tr:last-child td{border-bottom:none;}
+tfoot td{background:#F8F5EF;font-weight:800;font-size:13px;}
 /* FOOTER */
-.footer{text-align:center;padding:20px;font-size:11px;color:#999;}
-.footer strong{color:#4A7C59;}
-@media print{
-  body{background:#fff;}
-  .page{padding:0;}
-  .no-print{display:none;}
-  .header{border-radius:0;}
-  @page{margin:15mm;}
-}
+.footer{text-align:center;padding:20px;font-size:11px;color:#bbb;}
 </style>
 </head>
 <body>
 <div class="page">
-  <!-- Print button -->
-  <div class="no-print" style="text-align:right;margin-bottom:16px">
-    <button onclick="window.print()" style="background:#4A7C59;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">🖨️ Save as PDF / Print</button>
-  </div>
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="h-badge">${tab} Sales Report</div>
-    <div class="h-title">${rname}</div>
-    <div class="h-sub">${rsub}</div>
-    <div class="h-period">📅 ${periodLabel}</div>
-    <div class="h-generated">Generated on ${dateStr}</div>
-  </div>
+<div class="print-bar">
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
 
-  <!-- SUMMARY CARDS -->
-  <div class="cards">
-    <div class="card gold">
-      <div class="card-label">Total Revenue</div>
-      <div class="card-val">₹${totalRev.toLocaleString('en-IN')}</div>
-      <div class="card-sub">${tab.toLowerCase()} earnings</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Total Orders</div>
-      <div class="card-val">${totalOrders}</div>
-      <div class="card-sub">completed orders</div>
-    </div>
-    <div class="card blue">
-      <div class="card-label">Avg Order Value</div>
-      <div class="card-val">₹${avgOrder.toLocaleString('en-IN')}</div>
-      <div class="card-sub">per order</div>
-    </div>
-    <div class="card blue">
-      <div class="card-label">QR Self-Orders</div>
-      <div class="card-val">${qrOrders.length}</div>
-      <div class="card-sub">₹${qrRev.toLocaleString('en-IN')}</div>
-    </div>
-    <div class="card orange">
-      <div class="card-label">Parcel Orders</div>
-      <div class="card-val">${parcelOrders.length}</div>
-      <div class="card-sub">₹${parcelRev.toLocaleString('en-IN')}</div>
-    </div>
-    <div class="card purple">
-      <div class="card-label">Counter Orders</div>
-      <div class="card-val">${counterOrders.length}</div>
-      <div class="card-sub">Dine-in: ${counterDineOrders.length} · Parcel: ${counterParcelOrders.length}</div>
-    </div>
-    <div class="card green">
-      <div class="card-label">Staff / Waiter</div>
-      <div class="card-val">${staffOrders.length}</div>
-      <div class="card-sub">₹${waiterRev.toLocaleString('en-IN')}</div>
-    </div>
+<!-- HEADER -->
+<div class="header">
+  <div class="header-tag">${tab} Sales Report</div>
+  <div class="header-name">${rname}</div>
+  ${rsub?`<div class="header-sub">${rsub}</div>`:''}
+  <div class="header-meta">
+    <div class="header-meta-item">📅 ${periodLabel}</div>
+    <div class="header-meta-item">🕐 Generated ${dateStr}</div>
+    <div class="header-badge">HK Digital Solutions</div>
   </div>
+</div>
 
-  <!-- SOURCE BREAKDOWN BAR -->
-  <div class="breakdown">
-    <div class="breakdown-title">Revenue by Source</div>
-    <div class="breakdown-row">
-      <span class="b-label">📱 QR Orders</span>
-      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(qrRev/totalRev*100):0}%;background:linear-gradient(90deg,#2980B9,#3498DB)"></div></div>
-      <span class="b-val">₹${qrRev.toLocaleString('en-IN')}</span>
-    </div>
-    <div class="breakdown-row">
-      <span class="b-label">🏪 Counter — Dine-in</span>
-      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterDineRev/totalRev*100):0}%;background:linear-gradient(90deg,#8E44AD,#9B59B6)"></div></div>
-      <span class="b-val">₹${counterDineRev.toLocaleString('en-IN')}</span>
-    </div>
-    <div class="breakdown-row">
-      <span class="b-label">🏪 Counter — Parcel</span>
-      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterParcelRev/totalRev*100):0}%;background:linear-gradient(90deg,#D35400,#E67E22)"></div></div>
-      <span class="b-val">₹${counterParcelRev.toLocaleString('en-IN')}</span>
-    </div>
-    <div class="breakdown-row">
-      <span class="b-label">👨‍💼 Staff / Waiter</span>
-      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(waiterRev/totalRev*100):0}%;background:linear-gradient(90deg,#27AE60,#2ECC71)"></div></div>
-      <span class="b-val">₹${waiterRev.toLocaleString('en-IN')}</span>
-    </div>
-    <div class="breakdown-row">
-      <span class="b-label">📦 Parcel (all)</span>
-      <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(parcelRev/totalRev*100):0}%;background:linear-gradient(90deg,#E67E22,#F39C12)"></div></div>
-      <span class="b-val">₹${parcelRev.toLocaleString('en-IN')}</span>
-    </div>
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi green">
+    <div class="kpi-label">Total Revenue</div>
+    <div class="kpi-val">₹${totalRev.toLocaleString('en-IN')}</div>
+    <div class="kpi-sub">${tab.toLowerCase()} earnings</div>
   </div>
-
-  <!-- DAILY BREAKDOWN -->
-  <div class="table-wrap" style="margin-bottom:20px">
-    <div class="table-header"><h3>📅 Daily Breakdown</h3><span>${Object.keys(byDate).length} days</span></div>
-    <table>
-      <thead><tr><th colspan="5">Date & Orders</th><th>Revenue</th></tr></thead>
-      <tbody>${dailyRows}</tbody>
-    </table>
+  <div class="kpi blue">
+    <div class="kpi-label">Total Orders</div>
+    <div class="kpi-val">${totalOrders}</div>
+    <div class="kpi-sub">completed orders</div>
   </div>
-
-  <!-- ORDER DETAILS TABLE -->
-  <div class="table-wrap">
-    <div class="table-header"><h3>🧾 All Orders</h3><span>${totalOrders} orders</span></div>
-    <table>
-      <thead><tr><th>Date & Time</th><th>Order #</th><th>Table</th><th>Type</th><th>Source</th><th>Amount</th></tr></thead>
-      <tbody>${tableRows}</tbody>
-      <tfoot>
-        <tr style="background:#F5F0E8">
-          <td colspan="5" style="font-weight:800;font-size:13px;color:#6B3F1E;padding:12px">TOTAL</td>
-          <td style="font-weight:800;font-size:15px;color:#6B3F1E;text-align:right;padding:12px">₹${totalRev.toLocaleString('en-IN')}</td>
-        </tr>
-      </tfoot>
-    </table>
+  <div class="kpi orange">
+    <div class="kpi-label">Avg Order Value</div>
+    <div class="kpi-val">₹${avgOrder.toLocaleString('en-IN')}</div>
+    <div class="kpi-sub">per order</div>
   </div>
+</div>
 
-  <div class="footer">Powered by <strong>HK Digital Solutions</strong> · Report generated for ${rname}</div>
+<!-- SOURCE CARDS -->
+<div class="source-grid">
+  <div class="src-card">
+    <div class="src-icon">📱</div>
+    <div class="src-label">QR Self-Orders</div>
+    <div class="src-val">${qrOrders.length}</div>
+    <div class="src-rev">₹${qrRev.toLocaleString('en-IN')}</div>
+    <div class="src-pct">${qrPct}% of revenue</div>
+  </div>
+  <div class="src-card">
+    <div class="src-icon">👨‍💼</div>
+    <div class="src-label">Staff / Waiter</div>
+    <div class="src-val">${staffOrders.length}</div>
+    <div class="src-rev">₹${waiterRev.toLocaleString('en-IN')}</div>
+    <div class="src-pct">${waiterPct}% of revenue</div>
+  </div>
+  <div class="src-card">
+    <div class="src-icon">🏪</div>
+    <div class="src-label">Counter Orders</div>
+    <div class="src-val">${counterOrders.length}</div>
+    <div class="src-rev">₹${counterRev.toLocaleString('en-IN')}</div>
+    <div class="src-pct">Dine: ${counterDineOrders.length} · Parcel: ${counterParcelOrders.length}</div>
+  </div>
+  <div class="src-card">
+    <div class="src-icon">📦</div>
+    <div class="src-label">Parcel Orders</div>
+    <div class="src-val">${parcelOrders.length}</div>
+    <div class="src-rev">₹${parcelRev.toLocaleString('en-IN')}</div>
+    <div class="src-pct">${parcelPct}% of revenue</div>
+  </div>
+</div>
+
+<!-- REVENUE BY SOURCE -->
+<div class="breakdown">
+  <div class="breakdown-title">Revenue by Source</div>
+  <div class="b-row">
+    <span class="b-label">📱 QR Orders</span>
+    <div class="b-bar-wrap"><div class="b-bar" style="width:${qrPct}%;background:linear-gradient(90deg,#2980B9,#3498DB)"></div></div>
+    <span class="b-val">₹${qrRev.toLocaleString('en-IN')}</span>
+  </div>
+  <div class="b-row">
+    <span class="b-label">👨‍💼 Staff/Waiter</span>
+    <div class="b-bar-wrap"><div class="b-bar" style="width:${waiterPct}%;background:linear-gradient(90deg,#8E44AD,#9B59B6)"></div></div>
+    <span class="b-val">₹${waiterRev.toLocaleString('en-IN')}</span>
+  </div>
+  <div class="b-row">
+    <span class="b-label">🏪 Counter Dine-in</span>
+    <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterDineRev/totalRev*100):0}%;background:linear-gradient(90deg,#16A085,#1ABC9C)"></div></div>
+    <span class="b-val">₹${counterDineRev.toLocaleString('en-IN')}</span>
+  </div>
+  <div class="b-row">
+    <span class="b-label">🏪 Counter Parcel</span>
+    <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterParcelRev/totalRev*100):0}%;background:linear-gradient(90deg,#D35400,#E67E22)"></div></div>
+    <span class="b-val">₹${counterParcelRev.toLocaleString('en-IN')}</span>
+  </div>
+  <div class="b-row">
+    <span class="b-label">📦 All Parcels</span>
+    <div class="b-bar-wrap"><div class="b-bar" style="width:${parcelPct}%;background:linear-gradient(90deg,#E67E22,#F39C12)"></div></div>
+    <span class="b-val">₹${parcelRev.toLocaleString('en-IN')}</span>
+  </div>
+</div>
+
+<!-- DAILY BREAKDOWN -->
+<div class="section">
+  <div class="section-hdr"><h3>📅 Daily Breakdown</h3><span>${Object.keys(byDate).length} days</span></div>
+  <table>
+    <thead><tr><th colspan="5">Date & Orders</th><th style="text-align:right">Revenue</th></tr></thead>
+    <tbody>${dailyRows}</tbody>
+  </table>
+</div>
+
+<!-- ALL ORDERS -->
+<div class="section">
+  <div class="section-hdr"><h3>🧾 All Orders</h3><span>${totalOrders} orders</span></div>
+  <table>
+    <thead><tr><th>Date & Time</th><th>Order #</th><th>Table</th><th>Type</th><th>Source</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${tableRows}</tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" style="padding:12px;font-size:13px;color:#6B3F1E;">TOTAL</td>
+        <td style="padding:12px;font-size:15px;color:#6B3F1E;text-align:right;">₹${totalRev.toLocaleString('en-IN')}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<div class="footer">Powered by <strong>HK Digital Solutions</strong> · Report generated for ${rname}</div>
 </div>
 </body>
 </html>`;
@@ -1719,10 +1817,11 @@ td{padding:9px 12px;font-size:12px;border-bottom:1px solid #F0E8D0;vertical-alig
   const url=URL.createObjectURL(blob);
   window.open(url,'_blank');
   setTimeout(()=>URL.revokeObjectURL(url),30000);
-  showToast('✅ Report opened in new tab!');
+  showToast('✅ Report opened — use Print to save as PDF!');
 }
 
 /* ════════════════════════════════════════════════════
+   KITCHEN PASSWORD MANAGEMENT/* ════════════════════════════════════════════════════
    KITCHEN PASSWORD MANAGEMENT
 ════════════════════════════════════════════════════ */
 async function changeKitchenPassword(){

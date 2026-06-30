@@ -1069,6 +1069,7 @@ async function submitNewOrder(){
       items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),
       total,note,status:'new',order_num:orderNum,
       payment_status:'pending',placed_at:new Date().toISOString(),
+      order_source:'counter',
       ...(custName&&{customer_name:custName}),
       ...(custPhone&&{customer_phone:custPhone}),
     };

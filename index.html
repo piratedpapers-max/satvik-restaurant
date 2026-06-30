@@ -515,7 +515,7 @@ async function doPlaceOrder(){
   const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order...';
   try{
     const orderNum=await getNextOrderNum();
-    const order={restaurant_id:RESTAURANT_ID,table_no:TABLE,items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),total:getTotal(),note:document.getElementById('orderNote').value.trim(),status:'new',order_num:orderNum,payment_status:'pending',placed_at:new Date().toISOString(),customer_name:CUST_NAME||null,customer_phone:CUST_PHONE||null};
+    const order={restaurant_id:RESTAURANT_ID,table_no:TABLE,items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),total:getTotal(),note:document.getElementById('orderNote').value.trim(),status:'new',order_num:orderNum,payment_status:'pending',placed_at:new Date().toISOString(),customer_name:CUST_NAME||null,customer_phone:CUST_PHONE||null,order_source:'qr'};
     const {data,error}=await sb.from('orders').insert([order]).select().single();if(error)throw error;
     activeOrderIds.push(data.id);localStorage.setItem(STORAGE_KEY,JSON.stringify(activeOrderIds));
     // Clear cart

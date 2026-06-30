@@ -905,7 +905,7 @@ async function placeOrder(){
       restaurant_id:RESTAURANT_ID,table_no:selectedTable,
       items:items.map(c=>({name:c.item.name,qty:c.qty,price:c.item.price,total:c.item.price*c.qty})),
       total,note,status:'new',order_num:orderNum,payment_status:'pending',
-      placed_at:new Date().toISOString(),waiter_id:WAITER.id,waiter_name:WAITER.name
+      placed_at:new Date().toISOString(),waiter_id:WAITER.id,waiter_name:WAITER.name,order_source:'waiter'
     }]);
     if(error)throw error;
     toast(`✅ Order #${orderNum} sent — Table ${selectedTable}`);
