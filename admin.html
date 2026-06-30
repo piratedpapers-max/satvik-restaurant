@@ -1526,44 +1526,25 @@ function downloadReport(format='pdf'){
   if(format==='xls'){
     // Build CSV-based XLS
     const esc=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
-    let csv='sep=,
-';
-    csv+=`${rname} - ${tab} Sales Report
-`;
-    csv+=`Period: ${periodLabel}
-Generated: ${dateStr}
-
-`;
-    csv+='SUMMARY
-';
-    csv+=`Total Revenue,₹${totalRev.toLocaleString('en-IN')}
-`;
-    csv+=`Total Orders,${totalOrders}
-`;
-    csv+=`Avg Order Value,₹${avgOrder}
-`;
-    csv+=`QR Self-Orders,${qrOrders.length},₹${qrRev.toLocaleString('en-IN')}
-`;
-    csv+=`Staff / Waiter Orders,${staffOrders.length},₹${waiterRev.toLocaleString('en-IN')}
-`;
-    csv+=`Counter Orders,${counterOrders.length},₹${counterRev.toLocaleString('en-IN')}
-`;
-    csv+=`Parcel Orders,${parcelOrders.length},₹${parcelRev.toLocaleString('en-IN')}
-
-`;
-    csv+='DAILY BREAKDOWN
-';
-    csv+='Date,Orders,Revenue
-';
+    const NL='\r\n';
+    let csv='sep=,'+NL;
+    csv+=rname+' - '+tab+' Sales Report'+NL;
+    csv+='Period: '+periodLabel+NL+'Generated: '+dateStr+NL+NL;
+    csv+='SUMMARY'+NL;
+    csv+='Total Revenue,₹'+totalRev.toLocaleString('en-IN')+NL;
+    csv+='Total Orders,'+totalOrders+NL;
+    csv+='Avg Order Value,₹'+avgOrder+NL;
+    csv+='QR Self-Orders,'+qrOrders.length+',₹'+qrRev.toLocaleString('en-IN')+NL;
+    csv+='Staff / Waiter Orders,'+staffOrders.length+',₹'+waiterRev.toLocaleString('en-IN')+NL;
+    csv+='Counter Orders,'+counterOrders.length+',₹'+counterRev.toLocaleString('en-IN')+NL;
+    csv+='Parcel Orders,'+parcelOrders.length+',₹'+parcelRev.toLocaleString('en-IN')+NL+NL;
+    csv+='DAILY BREAKDOWN'+NL;
+    csv+='Date,Orders,Revenue'+NL;
     Object.entries(byDate).forEach(([d,v])=>{
-      csv+=`${esc(d)},${v.orders.length},${v.rev}
-`;
+      csv+=esc(d)+','+v.orders.length+','+v.rev+NL;
     });
-    csv+='
-ALL ORDERS
-';
-    csv+='Date,Time,Order #,Table,Type,Source,Amount,Customer Name,Customer Phone,Note
-';
+    csv+=NL+'ALL ORDERS'+NL;
+    csv+='Date,Time,Order #,Table,Type,Source,Amount,Customer Name,Customer Phone,Note'+NL;
     orders.forEach(o=>{
       const {isParcel,isQR,isWaiterOrder,isCounter}=classifyOrder(o);
       const type=isParcel?'Parcel':'Dine-in';
@@ -1572,8 +1553,7 @@ ALL ORDERS
       const date=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
       const time=dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
       const tbl=String(o.table_no||'').startsWith('Parcel')?o.table_no:'T'+o.table_no;
-      csv+=`${esc(date)},${esc(time)},${o.order_num||''},${esc(tbl)},${type},${src},${o.total||0},${esc(o.customer_name||'')},${esc(o.customer_phone||'')},${esc((o.note||'').replace(/[📦🙋]/g,''))}
-`;
+      csv+=esc(date)+','+esc(time)+','+(o.order_num||'')+','+esc(tbl)+','+type+','+src+','+(o.total||0)+','+esc(o.customer_name||'')+','+esc(o.customer_phone||'')+','+esc((o.note||'').replace(/[📦🙋]/g,''))+NL;
     });
     const bom='﻿';
     const blob=new Blob([bom+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
