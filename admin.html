@@ -1813,11 +1813,7 @@ tfoot td{background:#F8F5EF;font-weight:800;font-size:13px;}
     <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterDineRev/totalRev*100):0}%;background:linear-gradient(90deg,#16A085,#1ABC9C)"></div></div>
     <span class="b-val">₹${counterDineRev.toLocaleString('en-IN')}</span>
   </div>
-  <div class="b-row">
-    <span class="b-label">🏪 Counter Parcel</span>
-    <div class="b-bar-wrap"><div class="b-bar" style="width:${totalRev?Math.round(counterParcelRev/totalRev*100):0}%;background:linear-gradient(90deg,#D35400,#E67E22)"></div></div>
-    <span class="b-val">₹${counterParcelRev.toLocaleString('en-IN')}</span>
-  </div>
+
   <div class="b-row">
     <span class="b-label">📦 All Parcels</span>
     <div class="b-bar-wrap"><div class="b-bar" style="width:${parcelPct}%;background:linear-gradient(90deg,#E67E22,#F39C12)"></div></div>
