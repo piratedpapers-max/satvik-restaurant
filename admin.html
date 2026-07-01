@@ -1652,10 +1652,12 @@ function downloadReport(format='pdf'){
     </tr>
   `).join('');
 
-  const qrPct=totalRev?Math.round(qrRev/totalRev*100):0;
-  const waiterPct=totalRev?Math.round(waiterRev/totalRev*100):0;
-  const counterPct=totalRev?Math.round(counterRev/totalRev*100):0;
-  const parcelPct=totalRev?Math.round(parcelRev/totalRev*100):0;
+  // Use largest remainder method to ensure percentages sum to exactly 100
+  const pctOf=(v,t)=>t?+(v/t*100).toFixed(1):0;
+  const qrPct=pctOf(qrRev,totalRev);
+  const waiterPct=pctOf(waiterRev,totalRev);
+  const counterPct=pctOf(counterRev,totalRev);
+  const parcelPct=totalRev?+(100-qrPct-waiterPct-counterPct).toFixed(1):0;
 
   const html=`<!DOCTYPE html>
 <html lang="en">
