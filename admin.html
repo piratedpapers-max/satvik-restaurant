@@ -391,6 +391,7 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
         <button class="report-tab active" id="tabWeek" onclick="switchReportTab('week')">📅 This Week</button>
         <button class="report-tab" id="tabMonth" onclick="switchReportTab('month')">📆 This Month</button>
         <button class="download-btn" onclick="downloadReport()">⬇️ Download Report</button>
+        <button class="report-tab" onclick="openGSTReport()" style="background:linear-gradient(135deg,#FF6B35,#E84393);color:#fff;border-color:transparent;font-weight:700;">📊 GST Report</button>
       </div>
       <div id="reportDateRange" style="font-size:11px;color:var(--muted);margin-bottom:14px;font-style:italic"></div>
 
@@ -1867,6 +1868,53 @@ tfoot td{background:#F8F5EF;font-weight:800;font-size:13px;}
 
 <div class="footer">Powered by <strong>HK Digital Solutions</strong> · Report generated for ${rname}</div>
 </div>
+
+<!-- GST REPORT MODAL -->
+<div id="gstModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);">
+  <div style="background:var(--paper);border-radius:18px;max-width:440px;width:100%;padding:24px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-family:'Yatra One',sans-serif;color:var(--brown);font-size:18px;">📊 GST Report</h3>
+      <button onclick="document.getElementById('gstModalBg').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label>
+        <select id="gstMonth" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Year</label>
+        <select id="gstYear" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="2025">2025-26</option><option value="2026">2026-27</option>
+        </select>
+      </div>
+    </div>
+    <div id="gstSummaryBox" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;display:none;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">GST Summary — <span id="gstPeriodLabel"></span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#F0FDF4;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#16A34A" id="gstTotalSales">—</div><div style="font-size:10px;color:#666;margin-top:2px">Total Sales</div></div>
+        <div style="background:#FFF7ED;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#EA580C" id="gstTaxableVal">—</div><div style="font-size:10px;color:#666;margin-top:2px">Taxable Value</div></div>
+        <div style="background:#EFF6FF;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#2563EB" id="gstCGST">—</div><div style="font-size:10px;color:#666;margin-top:2px">CGST @2.5%</div></div>
+        <div style="background:#EFF6FF;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#2563EB" id="gstSGST">—</div><div style="font-size:10px;color:#666;margin-top:2px">SGST @2.5%</div></div>
+        <div style="background:#FDF4FF;border-radius:8px;padding:12px;text-align:center;grid-column:span 2"><div style="font-size:22px;font-weight:800;color:#9333EA" id="gstTotal">—</div><div style="font-size:10px;color:#666;margin-top:2px">Total GST Liability (CGST + SGST)</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:#FFFBEB;border-radius:8px;font-size:11px;color:#92400E;">
+        ℹ️ These figures are for <strong>GSTR-3B Table 3.1(a)</strong> — Outward taxable supplies (other than zero rated, nil rated and exempted). HSN: 9963 (Restaurant Services)
+      </div>
+    </div>
+    <div id="gstNoData" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;">No paid orders found for this period.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="loadGSTData()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--green),#2d5e3e);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">🔍 Load GST Data</button>
+      <button onclick="downloadGSTExcel()" id="gstExcelBtn" style="display:none;width:100%;padding:13px;background:linear-gradient(135deg,#1D6F42,#107C41);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📊 Download GST Excel (CA Ready)</button>
+      <button onclick="downloadGSTPDF()" id="gstPDFBtn" style="display:none;width:100%;padding:13px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📄 Download GST PDF Report</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>`;
 
@@ -2192,6 +2240,296 @@ function closeCRMDetail(){
   document.getElementById('crmDetailOverlay').classList.remove('show');
 }
 
+
+
+/* ════════════════════════════════════════════════════════
+   GST REPORT — MONTHLY GST SUMMARY & CA-READY EXCEL
+════════════════════════════════════════════════════════ */
+let gstData = [];
+let gstMeta = {month:0, year:0, monthName:'', gstPct:0, gstin:'', address:'', invoicePrefix:''};
+
+function openGSTReport(){
+  const now = new Date();
+  const monthSel = document.getElementById('gstMonth');
+  const yearSel = document.getElementById('gstYear');
+  if(monthSel) monthSel.value = now.getMonth() + 1;
+  if(yearSel) yearSel.value = now.getFullYear();
+  document.getElementById('gstSummaryBox').style.display='none';
+  document.getElementById('gstNoData').style.display='none';
+  document.getElementById('gstExcelBtn').style.display='none';
+  document.getElementById('gstPDFBtn').style.display='none';
+  document.getElementById('gstModalBg').style.display='flex';
+}
+
+async function loadGSTData(){
+  const month = parseInt(document.getElementById('gstMonth').value);
+  const year = parseInt(document.getElementById('gstYear').value);
+  const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthName = monthNames[month];
+
+  // IST range for selected month
+  const startIST = new Date(year, month-1, 1, 0, 0, 0);
+  const endIST = new Date(year, month, 0, 23, 59, 59); // last day of month
+  const startUTC = new Date(startIST.getTime() - (5.5*60*60*1000));
+  const endUTC = new Date(endIST.getTime() - (5.5*60*60*1000));
+
+  const gstPct = DATA?.gstPercent || 0;
+  const gstin = DATA?.gstNumber || '';
+  const address = DATA?.billAddress || '';
+  const rname = DATA?.restaurantName || RESTAURANT_ID;
+  const rsub = DATA?.restaurantSub || '';
+  const invoicePrefix = (rname.substring(0,3).toUpperCase().replace(/\s/g,'')) + '/' + year + '-' + String(year+1).slice(2) + '/';
+
+  gstMeta = {month, year, monthName, gstPct, gstin, address, rname, rsub, invoicePrefix};
+
+  try{
+    const {data, error} = await sb.from('orders')
+      .select('id,order_num,table_no,items,total,placed_at,payment_status,customer_name')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('payment_status', 'paid')
+      .gte('placed_at', startUTC.toISOString())
+      .lte('placed_at', endUTC.toISOString())
+      .order('placed_at', {ascending:true});
+
+    if(error) throw error;
+    gstData = data || [];
+
+    if(!gstData.length){
+      document.getElementById('gstSummaryBox').style.display='none';
+      document.getElementById('gstNoData').style.display='block';
+      document.getElementById('gstExcelBtn').style.display='none';
+      document.getElementById('gstPDFBtn').style.display='none';
+      return;
+    }
+
+    // Calculate GST figures
+    const totalSales = gstData.reduce((s,o)=>s+(o.total||0),0);
+    let taxableVal, cgst, sgst, totalGST;
+
+    if(gstPct > 0){
+      // GST is inclusive in bill total
+      taxableVal = Math.round(totalSales * 100 / (100 + gstPct));
+      totalGST = totalSales - taxableVal;
+      cgst = Math.round(totalGST / 2);
+      sgst = totalGST - cgst;
+    } else {
+      taxableVal = totalSales;
+      cgst = 0; sgst = 0; totalGST = 0;
+    }
+
+    const fmt = v => '₹' + v.toLocaleString('en-IN');
+    document.getElementById('gstPeriodLabel').textContent = monthName + ' ' + year;
+    document.getElementById('gstTotalSales').textContent = fmt(totalSales);
+    document.getElementById('gstTaxableVal').textContent = fmt(taxableVal);
+    document.getElementById('gstCGST').textContent = fmt(cgst);
+    document.getElementById('gstSGST').textContent = fmt(sgst);
+    document.getElementById('gstTotal').textContent = fmt(totalGST);
+
+    document.getElementById('gstSummaryBox').style.display='block';
+    document.getElementById('gstNoData').style.display='none';
+    document.getElementById('gstExcelBtn').style.display='block';
+    document.getElementById('gstPDFBtn').style.display='block';
+
+    // Store computed values for download
+    gstMeta = {...gstMeta, totalSales, taxableVal, cgst, sgst, totalGST};
+
+  }catch(e){
+    alert('Error loading GST data: ' + e.message);
+  }
+}
+
+function downloadGSTExcel(){
+  if(!gstData.length) return;
+  const {month, year, monthName, gstPct, gstin, address, rname, rsub, invoicePrefix,
+         totalSales, taxableVal, cgst, sgst, totalGST} = gstMeta;
+  const NL = '\r\n';
+  const esc = v => '"' + String(v||'').replace(/"/g, '""') + '"';
+  const fyEnd = year + 1;
+
+  // ── SHEET 1: GSTR-3B SUMMARY ──
+  let s1 = 'GSTR-3B SUMMARY — TABLE 3.1(a)' + NL;
+  s1 += 'Restaurant Name,' + esc(rname) + NL;
+  s1 += 'GSTIN,' + esc(gstin||'NOT REGISTERED') + NL;
+  s1 += 'Address,' + esc(address) + NL;
+  s1 += 'Tax Period,' + esc(monthName + ' ' + year) + NL;
+  s1 += 'Financial Year,' + year + '-' + String(fyEnd).slice(2) + NL + NL;
+  s1 += 'TABLE 3.1 — OUTWARD TAXABLE SUPPLIES' + NL;
+  s1 += 'Nature of Supplies,Total Taxable Value,Integrated Tax (IGST),Central Tax (CGST),State/UT Tax (SGST/UTGST),Cess' + NL;
+  s1 += 'Outward taxable supplies (other than zero rated\, nil rated and exempted),' + taxableVal + ',0,' + cgst + ',' + sgst + ',0' + NL + NL;
+  s1 += 'SUMMARY' + NL;
+  s1 += 'Total Sales (incl. GST),₹' + totalSales.toLocaleString('en-IN') + NL;
+  s1 += 'Taxable Value (excl. GST),₹' + taxableVal.toLocaleString('en-IN') + NL;
+  s1 += 'CGST @' + (gstPct/2) + '%,₹' + cgst.toLocaleString('en-IN') + NL;
+  s1 += 'SGST @' + (gstPct/2) + '%,₹' + sgst.toLocaleString('en-IN') + NL;
+  s1 += 'Total GST Liability,₹' + totalGST.toLocaleString('en-IN') + NL + NL;
+  s1 += 'HSN CODE,9963 (Restaurant Services)' + NL;
+  s1 += 'Note: No ITC applicable for restaurant services (Rule 42 restriction)' + NL + NL;
+  s1 += 'INSTRUCTIONS FOR CA:' + NL;
+  s1 += '1. Login to GST Portal (gstin.gov.in)' + NL;
+  s1 += '2. Go to Returns Dashboard > GSTR-3B > Prepare Online' + NL;
+  s1 += '3. In Table 3.1(a): Enter Taxable Value = ₹' + taxableVal.toLocaleString('en-IN') + NL;
+  s1 += '4. Enter CGST = ₹' + cgst.toLocaleString('en-IN') + ' and SGST = ₹' + sgst.toLocaleString('en-IN') + NL;
+  s1 += '5. No ITC to claim (Section 17(5) — restaurant food)' + NL;
+  s1 += '6. Pay tax and file return' + NL;
+
+  // ── SHEET 2: INVOICE REGISTER ──
+  let s2 = 'INVOICE REGISTER — ' + monthName.toUpperCase() + ' ' + year + NL;
+  s2 += 'GSTIN: ' + (gstin||'NOT REGISTERED') + ' | Restaurant: ' + rname + NL + NL;
+  s2 += 'Invoice No.,Date,Time,Table / Order,Customer,Total Amount,Taxable Value,CGST @' + (gstPct/2) + '%,SGST @' + (gstPct/2) + '%,GST Total' + NL;
+
+  gstData.forEach((o, idx) => {
+    const dt = new Date(o.placed_at);
+    const dateStr = dt.toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'});
+    const timeStr = dt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+    const invNo = invoicePrefix + String(idx+1).padStart(3,'0');
+    const tbl = String(o.table_no||'').startsWith('Parcel') ? o.table_no : 'Table ' + o.table_no;
+    const total = o.total || 0;
+    let taxable, c_, s_;
+    if(gstPct > 0){
+      taxable = Math.round(total * 100 / (100 + gstPct));
+      const gstAmt = total - taxable;
+      c_ = Math.round(gstAmt / 2);
+      s_ = gstAmt - c_;
+    } else {
+      taxable = total; c_ = 0; s_ = 0;
+    }
+    s2 += esc(invNo) + ',' + esc(dateStr) + ',' + esc(timeStr) + ',' + esc(tbl) + ',' + esc(o.customer_name||'Walk-in') + ',' + total + ',' + taxable + ',' + c_ + ',' + s_ + ',' + (c_+s_) + NL;
+  });
+
+  s2 += NL + 'TOTALS,,,,,=' + 'SUM(F5:F' + (gstData.length+4) + ')' + ',=' + 'SUM(G5:G' + (gstData.length+4) + ')' + ',=' + 'SUM(H5:H' + (gstData.length+4) + ')' + ',=' + 'SUM(I5:I' + (gstData.length+4) + ')' + ',=' + 'SUM(J5:J' + (gstData.length+4) + ')' + NL;
+
+  // Combine sheets with separator
+  const combined = 'sep=,\n' + '=== SHEET 1: GSTR-3B SUMMARY ===' + NL + s1 + NL + NL + '=== SHEET 2: INVOICE REGISTER ===' + NL + s2;
+
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + combined], {type:'application/vnd.ms-excel;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = rname.replace(/\s+/g,'-') + '-GST-' + monthName + '-' + year + '.xls';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+
+function downloadGSTPDF(){
+  if(!gstData.length) return;
+  const {month, year, monthName, gstPct, gstin, address, rname, rsub, invoicePrefix,
+         totalSales, taxableVal, cgst, sgst, totalGST} = gstMeta;
+  const fyEnd = year + 1;
+  const fmt = v => '₹' + v.toLocaleString('en-IN');
+
+  const invRows = gstData.map((o, idx)=>{
+    const dt = new Date(o.placed_at);
+    const dateStr = dt.toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit'});
+    const timeStr = dt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+    const invNo = invoicePrefix + String(idx+1).padStart(3,'0');
+    const tbl = String(o.table_no||'').startsWith('Parcel') ? o.table_no : 'T' + o.table_no;
+    const total = o.total || 0;
+    let taxable, c_, s_;
+    if(gstPct > 0){
+      taxable = Math.round(total * 100 / (100 + gstPct));
+      const gstAmt = total - taxable;
+      c_ = Math.round(gstAmt / 2);
+      s_ = gstAmt - c_;
+    } else {
+      taxable = total; c_ = 0; s_ = 0;
+    }
+    return `<tr style="background:${idx%2===0?'#fff':'#f9fafb'}">
+      <td>${invNo}</td><td>${dateStr} ${timeStr}</td><td>${tbl}</td>
+      <td>${o.customer_name||'Walk-in'}</td>
+      <td style="text-align:right">₹${total.toLocaleString('en-IN')}</td>
+      <td style="text-align:right">₹${taxable.toLocaleString('en-IN')}</td>
+      <td style="text-align:right">₹${c_.toLocaleString('en-IN')}</td>
+      <td style="text-align:right">₹${s_.toLocaleString('en-IN')}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>GST Report — ${monthName} ${year}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff;padding:24px;}
+.hdr{background:linear-gradient(135deg,#1a2f1e,#4a7c59);color:#fff;padding:24px;border-radius:12px;margin-bottom:20px;}
+.hdr h1{font-size:22px;font-weight:800;margin-bottom:4px;}
+.hdr p{font-size:12px;opacity:.8;}
+.badge{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;margin-top:8px;}
+.gstr-box{background:#f0fdf4;border:2px solid #16a34a;border-radius:12px;padding:20px;margin-bottom:20px;}
+.gstr-box h2{font-size:14px;font-weight:700;color:#15803d;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;}
+.gstr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+.gstr-cell{background:#fff;border-radius:8px;padding:12px;text-align:center;border:1px solid #bbf7d0;}
+.gstr-val{font-size:18px;font-weight:800;color:#15803d;}
+.gstr-lbl{font-size:10px;color:#666;margin-top:2px;}
+.gstr-total{background:#15803d;color:#fff;border-radius:8px;padding:12px;text-align:center;margin-top:4px;}
+.gstr-total .gstr-val{color:#fff;font-size:22px;}
+.note{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;margin-bottom:20px;}
+.inv-table{width:100%;border-collapse:collapse;font-size:11px;}
+.inv-table th{background:#1a2f1e;color:#fff;padding:8px 10px;text-align:left;font-size:10px;letter-spacing:.3px;}
+.inv-table td{padding:7px 10px;border-bottom:1px solid #e5e7eb;}
+.inv-table tfoot td{background:#f0fdf4;font-weight:800;font-size:12px;}
+.footer{text-align:center;margin-top:20px;font-size:10px;color:#999;}
+.instructions{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:20px;font-size:11px;}
+.instructions h3{font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px;}
+.instructions ol{padding-left:16px;line-height:1.8;}
+@media print{body{padding:12px;}.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style>
+</head><body>
+<div class="hdr">
+  <h1>${rname}</h1>
+  <p>${rsub}</p>
+  ${gstin?`<p style="margin-top:4px">GSTIN: ${gstin}</p>`:''}
+  ${address?`<p>${address}</p>`:''}
+  <div class="badge">GST Monthly Report — ${monthName} ${year}</div>
+</div>
+
+<div class="gstr-box">
+  <h2>GSTR-3B Table 3.1(a) — Outward Taxable Supplies</h2>
+  <div class="gstr-grid">
+    <div class="gstr-cell"><div class="gstr-val">${fmt(totalSales)}</div><div class="gstr-lbl">Total Sales</div></div>
+    <div class="gstr-cell"><div class="gstr-val">${fmt(taxableVal)}</div><div class="gstr-lbl">Taxable Value</div></div>
+    <div class="gstr-cell"><div class="gstr-val">${gstData.length}</div><div class="gstr-lbl">Total Invoices</div></div>
+    <div class="gstr-cell"><div class="gstr-val">${fmt(cgst)}</div><div class="gstr-lbl">CGST @${gstPct/2}%</div></div>
+    <div class="gstr-cell"><div class="gstr-val">${fmt(sgst)}</div><div class="gstr-lbl">SGST @${gstPct/2}%</div></div>
+    <div class="gstr-cell"><div class="gstr-val">${year}-${String(fyEnd).slice(2)}</div><div class="gstr-lbl">Financial Year</div></div>
+  </div>
+  <div class="gstr-total"><div class="gstr-val">${fmt(totalGST)}</div><div style="font-size:11px;opacity:.8;margin-top:2px">Total GST Payable (CGST + SGST)</div></div>
+</div>
+
+<div class="note">ℹ️ <strong>HSN Code: 9963</strong> (Restaurant Services) · No ITC applicable (Section 17(5) of CGST Act) · All supplies are B2C (intra-state)</div>
+
+<div class="instructions">
+  <h3>📋 Filing Instructions for CA</h3>
+  <ol>
+    <li>Login to GST Portal → Returns Dashboard → GSTR-3B → Prepare Online</li>
+    <li>In Table 3.1(a): Enter <strong>Taxable Value = ${fmt(taxableVal)}</strong></li>
+    <li>Enter <strong>CGST = ${fmt(cgst)}</strong> and <strong>SGST = ${fmt(sgst)}</strong> (IGST = 0)</li>
+    <li>No ITC to claim in Table 4 (restaurant food, Section 17(5) blocked)</li>
+    <li>Pay tax liability and submit return</li>
+  </ol>
+</div>
+
+<h3 style="margin-bottom:10px;font-size:13px;">Invoice Register — ${monthName} ${year}</h3>
+<table class="inv-table">
+  <thead><tr><th>Invoice No.</th><th>Date & Time</th><th>Table</th><th>Customer</th><th style="text-align:right">Total</th><th style="text-align:right">Taxable</th><th style="text-align:right">CGST</th><th style="text-align:right">SGST</th></tr></thead>
+  <tbody>${invRows}</tbody>
+  <tfoot><tr>
+    <td colspan="4"><strong>TOTAL (${gstData.length} invoices)</strong></td>
+    <td style="text-align:right"><strong>${fmt(totalSales)}</strong></td>
+    <td style="text-align:right"><strong>${fmt(taxableVal)}</strong></td>
+    <td style="text-align:right"><strong>${fmt(cgst)}</strong></td>
+    <td style="text-align:right"><strong>${fmt(sgst)}</strong></td>
+  </tr></tfoot>
+</table>
+
+<div class="footer">Powered by HK Digital Solutions · Report generated on ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
+<scr'+'ipt>window.print();</scr'+'ipt>
+</body></html>`;
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(()=>URL.revokeObjectURL(url), 30000);
+}
+
 </script>
 <!-- UPGRADE PLAN MODAL -->
 <div id="upgradeModalBg">
@@ -2235,5 +2573,52 @@ function closeCRMDetail(){
     </div>
   </div>
 </div>
+
+<!-- GST REPORT MODAL -->
+<div id="gstModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);">
+  <div style="background:var(--paper);border-radius:18px;max-width:440px;width:100%;padding:24px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-family:'Yatra One',sans-serif;color:var(--brown);font-size:18px;">📊 GST Report</h3>
+      <button onclick="document.getElementById('gstModalBg').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label>
+        <select id="gstMonth" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Year</label>
+        <select id="gstYear" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="2025">2025-26</option><option value="2026">2026-27</option>
+        </select>
+      </div>
+    </div>
+    <div id="gstSummaryBox" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px;display:none;">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">GST Summary — <span id="gstPeriodLabel"></span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:#F0FDF4;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#16A34A" id="gstTotalSales">—</div><div style="font-size:10px;color:#666;margin-top:2px">Total Sales</div></div>
+        <div style="background:#FFF7ED;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#EA580C" id="gstTaxableVal">—</div><div style="font-size:10px;color:#666;margin-top:2px">Taxable Value</div></div>
+        <div style="background:#EFF6FF;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#2563EB" id="gstCGST">—</div><div style="font-size:10px;color:#666;margin-top:2px">CGST @2.5%</div></div>
+        <div style="background:#EFF6FF;border-radius:8px;padding:12px;text-align:center"><div style="font-size:18px;font-weight:800;color:#2563EB" id="gstSGST">—</div><div style="font-size:10px;color:#666;margin-top:2px">SGST @2.5%</div></div>
+        <div style="background:#FDF4FF;border-radius:8px;padding:12px;text-align:center;grid-column:span 2"><div style="font-size:22px;font-weight:800;color:#9333EA" id="gstTotal">—</div><div style="font-size:10px;color:#666;margin-top:2px">Total GST Liability (CGST + SGST)</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:#FFFBEB;border-radius:8px;font-size:11px;color:#92400E;">
+        ℹ️ These figures are for <strong>GSTR-3B Table 3.1(a)</strong> — Outward taxable supplies (other than zero rated, nil rated and exempted). HSN: 9963 (Restaurant Services)
+      </div>
+    </div>
+    <div id="gstNoData" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;">No paid orders found for this period.</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="loadGSTData()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--green),#2d5e3e);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">🔍 Load GST Data</button>
+      <button onclick="downloadGSTExcel()" id="gstExcelBtn" style="display:none;width:100%;padding:13px;background:linear-gradient(135deg,#1D6F42,#107C41);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📊 Download GST Excel (CA Ready)</button>
+      <button onclick="downloadGSTPDF()" id="gstPDFBtn" style="display:none;width:100%;padding:13px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📄 Download GST PDF Report</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
