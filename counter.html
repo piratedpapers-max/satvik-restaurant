@@ -1226,7 +1226,7 @@ function openSettle(idsJson,tableNo,grandTotal){
         <span class="change-amt" id="changeAmt">\u20B90</span>
       </div>
     </div>
-    <button class="settle-confirm-btn" id="settleConfirmBtn" disabled onclick="confirmSettle()">&#10003; Confirm Payment</button>
+    <button class="settle-confirm-btn" id="settleConfirmBtn" disabled onclick="confirmSettle()">✓ Confirm Payment</button>
   `;
   document.getElementById('settleBg').classList.add('show');
 }
@@ -1258,11 +1258,20 @@ async function confirmSettle(){
     }
     const lbl={cash:'Cash',upi:'UPI',card:'Card'}[selectedPayMethod]||selectedPayMethod;
     playPaymentDing();toast('\u2705 '+tableNo+' \u2014 Paid via '+lbl);
-    if(RESTAURANT_INFO.autoPrintBill){
-      const tbl=settleState.tableNo;
-      const items=settleState.items;
-      const total=settleState.total;
-      setTimeout(()=>printTableBill(tbl,items,total),400);
+    if(RESTAURANT_INFO.autoPrintBill&&settlePending){
+      const tbl=settlePending.tableNo;
+      const total=settlePending.grandTotal;
+      // Build merged items from all KOTs
+      const mergedItems={};
+      (settlePending.kots||[]).forEach(o=>{
+        (o.items||[]).forEach(it=>{
+          const k=it.name;
+          if(!mergedItems[k])mergedItems[k]={name:it.name,qty:0,price:it.price,total:0};
+          mergedItems[k].qty+=it.qty||1;
+          mergedItems[k].total+=it.total||0;
+        });
+      });
+      setTimeout(()=>printTableBill(tbl,mergedItems,total),400);
     }
     closeSettle();render();updateStats();
     // Auto-print
