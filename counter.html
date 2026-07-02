@@ -681,7 +681,7 @@ async function loadAll(){
     const {data:rdata}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
     if(rdata?.data?.menu?.length){MENU_DATA=rdata.data.menu;}
     if(rdata?.data){document.getElementById('counterSubtitle').textContent=(rdata.data.restaurantName||RESTAURANT_ID)+' · '+( rdata.data.restaurantSub||'');const prn=document.getElementById('printRestName');if(prn)prn.textContent=rdata.data.restaurantName||RESTAURANT_ID;
-    RESTAURANT_INFO={name:rdata.data.restaurantName||RESTAURANT_ID,sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||'',gstPercent:rdata.data.gstPercent||0,gstNumber:rdata.data.gstNumber||'',billAddress:rdata.data.billAddress||'',billFooter:rdata.data.billFooter||'Thank you for dining with us! \uD83D\uDE4F'};}
+    RESTAURANT_INFO={name:rdata.data.restaurantName||RESTAURANT_ID,sub:rdata.data.restaurantSub||'',review:rdata.data.googleReview||'',gstPercent:rdata.data.gstPercent||0,gstNumber:rdata.data.gstNumber||'',billAddress:rdata.data.billAddress||'',billFooter:rdata.data.billFooter||'Thank you for dining with us! \uD83D\uDE4F',autoPrintBill:rdata.data.autoPrintBill||false};}
   }catch(e){console.error('loadAll error:',e);}
   render();updateStats();
 }
@@ -879,6 +879,21 @@ async function confirmPay(ids,tableNo,method){
     }
     const methodLabel={cash:'Cash 💵',upi:'UPI 📱',card:'Card 💳'}[method]||method;
     playPaymentDing();toast(`✅ Table ${tableNo} — Paid via ${methodLabel}`);
+    if(RESTAURANT_INFO.autoPrintBill){
+      // Collect items from paid orders for auto-print
+      const paidItems={};let paidTotal=0;
+      ids.forEach(id=>{
+        const o=orders[id]||{};
+        (o.items||[]).forEach(it=>{
+          const k=it.name;
+          if(!paidItems[k])paidItems[k]={name:it.name,qty:0,price:it.price,total:0};
+          paidItems[k].qty+=it.qty||1;
+          paidItems[k].total+=it.total||0;
+          paidTotal+=it.total||0;
+        });
+      });
+      setTimeout(()=>printTableBill(tableNo,paidItems,paidTotal),400);
+    }
     render();updateStats();
   }catch(e){
     console.error(e);
@@ -1243,6 +1258,12 @@ async function confirmSettle(){
     }
     const lbl={cash:'Cash',upi:'UPI',card:'Card'}[selectedPayMethod]||selectedPayMethod;
     playPaymentDing();toast('\u2705 '+tableNo+' \u2014 Paid via '+lbl);
+    if(RESTAURANT_INFO.autoPrintBill){
+      const tbl=settleState.tableNo;
+      const items=settleState.items;
+      const total=settleState.total;
+      setTimeout(()=>printTableBill(tbl,items,total),400);
+    }
     closeSettle();render();updateStats();
     // Auto-print
     const allItems={};kots.forEach(o=>(o.items||[]).forEach(i=>{if(i.name.includes('WAITER'))return;allItems[i.name]=allItems[i.name]||{...i,qty:0,total:0};allItems[i.name].qty+=i.qty;allItems[i.name].total+=i.total;}));

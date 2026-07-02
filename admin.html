@@ -567,6 +567,17 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
       <label>Bill Footer Message</label>
       <input type="text" id="billFooter" placeholder="e.g. Thank you for dining! Visit again 🙏"/>
       <p class="hint">This appears at the bottom of every printed and WhatsApp bill.</p>
+
+      <div style="border-top:1px solid var(--line);margin:18px 0;"></div>
+      <label>🖨️ Auto-Print Bill After Payment</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+        <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;">
+          <input type="checkbox" id="autoPrintBill" style="opacity:0;width:0;height:0;position:absolute;">
+          <span id="autoPrintSlider" style="position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s;"></span>
+        </label>
+        <span style="font-size:13px;color:var(--muted);">Automatically print thermal bill when counter marks payment as done</span>
+      </div>
+      <p class="hint">Counter staff won't need to tap Print separately — bill prints instantly on payment.</p>
     </div>
 
     <div class="panel">
@@ -857,6 +868,14 @@ function renderForm(){
   document.getElementById('billGSTIN').value=DATA.gstNumber||'';
   document.getElementById('billAddress').value=DATA.billAddress||'';
   document.getElementById('billFooter').value=DATA.billFooter||'Thank you for dining with us! 🙏 Visit again soon.';
+  // Auto-print toggle
+  const apCb=document.getElementById('autoPrintBill');
+  const apSlider=document.getElementById('autoPrintSlider');
+  if(apCb){
+    apCb.checked=DATA.autoPrintBill||false;
+    if(apSlider)apSlider.style.background=DATA.autoPrintBill?'var(--green)':'#ccc';
+    apCb.addEventListener('change',()=>{if(apSlider)apSlider.style.background=apCb.checked?'var(--green)':'#ccc';});
+  }
   const cats=document.getElementById('cats');cats.innerHTML='';(DATA.menu||[]).forEach(cat=>renderCat(cat));
 }
 function renderCat(cat){
@@ -954,6 +973,7 @@ function collectData(){
     gstNumber:document.getElementById('billGSTIN').value.trim(),
     billAddress:document.getElementById('billAddress').value.trim(),
     billFooter:document.getElementById('billFooter').value.trim(),
+    autoPrintBill:document.getElementById('autoPrintBill')?.checked||false,
     totalTables:DATA.totalTables||12,
     menu
   };
