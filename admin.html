@@ -392,6 +392,7 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
         <button class="report-tab" id="tabMonth" onclick="switchReportTab('month')">📆 This Month</button>
         <button class="download-btn" onclick="downloadReport()">⬇️ Download Report</button>
         <button class="report-tab" onclick="openGSTReport()" style="background:linear-gradient(135deg,#FF6B35,#E84393);color:#fff;border-color:transparent;font-weight:700;">📊 GST Report</button>
+        <button class="report-tab" onclick="openStaffReport()" style="background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border-color:transparent;font-weight:700;">👨‍💼 Staff Report</button>
       </div>
       <div id="reportDateRange" style="font-size:11px;color:var(--muted);margin-bottom:14px;font-style:italic"></div>
 
@@ -1916,6 +1917,44 @@ tfoot td{background:#F8F5EF;font-weight:800;font-size:13px;}
   </div>
 </div>
 
+
+<!-- STAFF PERFORMANCE REPORT MODAL -->
+<div id="staffModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);">
+  <div style="background:var(--paper);border-radius:18px;max-width:500px;width:100%;padding:24px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-family:'Yatra One',sans-serif;color:var(--brown);font-size:18px;">👨‍💼 Staff Performance Report</h3>
+      <button onclick="document.getElementById('staffModalBg').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label>
+        <select id="staffMonth" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Year</label>
+        <select id="staffYear" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="2025">2025</option><option value="2026">2026</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="loadStaffReport()" id="staffLoadBtn" style="width:100%;padding:13px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:12px;">🔍 Load Staff Data</button>
+    <div id="staffReportContent" style="display:none;">
+      <div id="staffSummaryCards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
+      <div id="staffTableWrap" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="downloadStaffPDF()" style="width:100%;padding:13px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📄 Download Staff PDF Report</button>
+      </div>
+      <button onclick="resetStaffModal()" style="width:100%;margin-top:10px;padding:10px;background:none;color:var(--muted);border:1.5px solid var(--line);border-radius:11px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">← Change Month</button>
+    </div>
+    <div id="staffNoData" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;">No waiter orders found for this period.</div>
+  </div>
+</div>
+
 </body>
 </html>`;
 
@@ -2539,6 +2578,352 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;backgr
 
 <div class="footer">Powered by HK Digital Solutions · Report generated on ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
 <scr'+'ipt>window.print();</scr'+'ipt>
+
+<!-- STAFF PERFORMANCE REPORT MODAL -->
+<div id="staffModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);">
+  <div style="background:var(--paper);border-radius:18px;max-width:500px;width:100%;padding:24px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-family:'Yatra One',sans-serif;color:var(--brown);font-size:18px;">👨‍💼 Staff Performance Report</h3>
+      <button onclick="document.getElementById('staffModalBg').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label>
+        <select id="staffMonth" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Year</label>
+        <select id="staffYear" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="2025">2025</option><option value="2026">2026</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="loadStaffReport()" id="staffLoadBtn" style="width:100%;padding:13px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:12px;">🔍 Load Staff Data</button>
+    <div id="staffReportContent" style="display:none;">
+      <div id="staffSummaryCards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
+      <div id="staffTableWrap" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="downloadStaffPDF()" style="width:100%;padding:13px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📄 Download Staff PDF Report</button>
+      </div>
+      <button onclick="resetStaffModal()" style="width:100%;margin-top:10px;padding:10px;background:none;color:var(--muted);border:1.5px solid var(--line);border-radius:11px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">← Change Month</button>
+    </div>
+    <div id="staffNoData" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;">No waiter orders found for this period.</div>
+  </div>
+</div>
+
+</body></html>`;
+
+  const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(()=>URL.revokeObjectURL(url), 30000);
+}
+
+
+
+/* ════════════════════════════════════════════════════════
+   STAFF PERFORMANCE REPORT
+════════════════════════════════════════════════════════ */
+let staffReportData = [];
+let staffReportMeta = {};
+
+function openStaffReport(){
+  const now = new Date();
+  document.getElementById('staffMonth').value = now.getMonth() + 1;
+  document.getElementById('staffYear').value = now.getFullYear();
+  document.getElementById('staffReportContent').style.display = 'none';
+  document.getElementById('staffNoData').style.display = 'none';
+  document.getElementById('staffLoadBtn').style.display = 'block';
+  document.getElementById('staffModalBg').style.display = 'flex';
+}
+
+function resetStaffModal(){
+  document.getElementById('staffReportContent').style.display = 'none';
+  document.getElementById('staffNoData').style.display = 'none';
+  document.getElementById('staffLoadBtn').style.display = 'block';
+  document.getElementById('staffMonth').disabled = false;
+  document.getElementById('staffYear').disabled = false;
+  staffReportData = [];
+}
+
+async function loadStaffReport(){
+  const month = parseInt(document.getElementById('staffMonth').value);
+  const year = parseInt(document.getElementById('staffYear').value);
+  const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthName = monthNames[month];
+
+  // IST range for selected month
+  const startIST = new Date(year, month-1, 1, 0, 0, 0);
+  const endIST = new Date(year, month, 0, 23, 59, 59);
+  const startUTC = new Date(startIST.getTime() - (5.5*60*60*1000));
+  const endUTC = new Date(endIST.getTime() - (5.5*60*60*1000));
+
+  const btn = document.getElementById('staffLoadBtn');
+  btn.textContent = 'Loading...'; btn.disabled = true;
+
+  try{
+    // Fetch all paid orders with waiter info for this month
+    const {data, error} = await sb.from('orders')
+      .select('waiter_id,waiter_name,total,table_no,placed_at,items,order_source')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('payment_status', 'paid')
+      .gte('placed_at', startUTC.toISOString())
+      .lte('placed_at', endUTC.toISOString())
+      .not('waiter_id', 'is', null);
+
+    if(error) throw error;
+
+    // Also fetch QR orders to show alongside (for context)
+    const {data: qrData} = await sb.from('orders')
+      .select('total,table_no,placed_at,order_source')
+      .eq('restaurant_id', RESTAURANT_ID)
+      .eq('payment_status', 'paid')
+      .eq('order_source', 'qr')
+      .gte('placed_at', startUTC.toISOString())
+      .lte('placed_at', endUTC.toISOString());
+
+    if(!data || !data.length){
+      document.getElementById('staffNoData').style.display = 'block';
+      btn.textContent = '🔍 Load Staff Data'; btn.disabled = false;
+      return;
+    }
+
+    // Group by waiter
+    const waiterMap = {};
+    data.forEach(o => {
+      const wid = o.waiter_id;
+      const wname = o.waiter_name || 'Unknown';
+      if(!waiterMap[wid]) {
+        waiterMap[wid] = {
+          id: wid, name: wname,
+          orders: 0, revenue: 0,
+          tables: new Set(), activeDays: new Set(),
+          itemCount: 0
+        };
+      }
+      waiterMap[wid].orders++;
+      waiterMap[wid].revenue += o.total || 0;
+      if(!String(o.table_no||'').startsWith('Parcel')) waiterMap[wid].tables.add(o.table_no);
+      const day = new Date(o.placed_at).toLocaleDateString('en-IN');
+      waiterMap[wid].activeDays.add(day);
+      waiterMap[wid].itemCount += (o.items||[]).reduce((s,i)=>s+(i.qty||1),0);
+    });
+
+    // Convert sets to counts
+    staffReportData = Object.values(waiterMap).map(w => ({
+      ...w,
+      tables: w.tables.size,
+      activeDays: w.activeDays.size,
+      avgOrderVal: w.orders > 0 ? Math.round(w.revenue / w.orders) : 0,
+      avgDailyRev: w.activeDays.size > 0 ? Math.round(w.revenue / w.activeDays.size) : 0,
+    })).sort((a,b) => b.revenue - a.revenue);
+
+    staffReportMeta = {
+      month, year, monthName,
+      rname: DATA?.restaurantName || RESTAURANT_ID,
+      totalWaiters: staffReportData.length,
+      totalOrders: staffReportData.reduce((s,w)=>s+w.orders,0),
+      totalRevenue: staffReportData.reduce((s,w)=>s+w.revenue,0),
+      qrOrders: (qrData||[]).length,
+      qrRevenue: (qrData||[]).reduce((s,o)=>s+(o.total||0),0),
+    };
+
+    renderStaffReport();
+
+    document.getElementById('staffLoadBtn').style.display = 'none';
+    document.getElementById('staffMonth').disabled = true;
+    document.getElementById('staffYear').disabled = true;
+    document.getElementById('staffReportContent').style.display = 'block';
+
+  }catch(e){
+    showToast('Error loading staff data: ' + e.message, true);
+  }finally{
+    btn.textContent = '🔍 Load Staff Data'; btn.disabled = false;
+  }
+}
+
+function renderStaffReport(){
+  const m = staffReportMeta;
+  const fmt = v => '₹' + v.toLocaleString('en-IN');
+
+  // Summary cards
+  document.getElementById('staffSummaryCards').innerHTML = `
+    <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:22px;font-weight:800;color:#7C3AED">${m.totalWaiters}</div>
+      <div style="font-size:10px;color:#6D28D9;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Active Waiters</div>
+    </div>
+    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:22px;font-weight:800;color:#16A34A">${fmt(m.totalRevenue)}</div>
+      <div style="font-size:10px;color:#15803D;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Staff Revenue</div>
+    </div>
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:22px;font-weight:800;color:#2563EB">${m.totalOrders}</div>
+      <div style="font-size:10px;color:#1D4ED8;margin-top:2px;text-transform:uppercase;letter-spacing:.5px">Total Orders</div>
+    </div>
+  `;
+
+  // Staff table
+  const rows = staffReportData.map((w,i) => `
+    <tr style="background:${i%2===0?'#fff':'#fafafa'}">
+      <td style="padding:10px 12px;font-weight:700;font-size:13px">${w.name}</td>
+      <td style="padding:10px 12px;text-align:center">${w.orders}</td>
+      <td style="padding:10px 12px;text-align:center;font-weight:700;color:#16A34A">₹${w.revenue.toLocaleString('en-IN')}</td>
+      <td style="padding:10px 12px;text-align:center">₹${w.avgOrderVal.toLocaleString('en-IN')}</td>
+      <td style="padding:10px 12px;text-align:center">${w.activeDays}</td>
+      <td style="padding:10px 12px;text-align:center">₹${w.avgDailyRev.toLocaleString('en-IN')}</td>
+      <td style="padding:10px 12px;text-align:center">${w.tables}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('staffTableWrap').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="background:#1a2f1e;color:#fff;">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;letter-spacing:.3px">Waiter Name</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px">Orders</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px">Revenue</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px">Avg/Order</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px">Active Days</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px">Avg/Day</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px">Tables</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr style="background:#F0FDF4;border-top:2px solid #16A34A;">
+          <td style="padding:10px 12px;font-weight:800">TOTAL</td>
+          <td style="padding:10px 12px;text-align:center;font-weight:800">${m.totalOrders}</td>
+          <td style="padding:10px 12px;text-align:center;font-weight:800;color:#16A34A">₹${m.totalRevenue.toLocaleString('en-IN')}</td>
+          <td colspan="4"></td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+}
+
+function downloadStaffExcel(){
+  if(!staffReportData.length) return;
+  const m = staffReportMeta;
+  const NL = '\r\n';
+  const T = '\t';
+  const esc = v => String(v||'').replace(/\t/g,' ');
+
+  let out = 'STAFF PERFORMANCE REPORT - ' + m.monthName.toUpperCase() + ' ' + m.year + NL;
+  out += 'Restaurant' + T + esc(m.rname) + NL;
+  out += 'Period' + T + m.monthName + ' ' + m.year + NL + NL;
+
+  out += 'SUMMARY' + NL;
+  out += 'Total Active Waiters' + T + m.totalWaiters + NL;
+  out += 'Total Staff Orders' + T + m.totalOrders + NL;
+  out += 'Total Staff Revenue (Rs.)' + T + m.totalRevenue + NL;
+  out += 'QR Self-Orders (for comparison)' + T + m.qrOrders + NL;
+  out += 'QR Revenue (Rs.)' + T + m.qrRevenue + NL + NL;
+
+  out += 'WAITER-WISE BREAKDOWN' + NL;
+  out += 'Waiter Name' + T + 'Orders Served' + T + 'Revenue Generated (Rs.)' + T + 'Avg Order Value (Rs.)' + T + 'Active Days' + T + 'Avg Daily Revenue (Rs.)' + T + 'Tables Served' + NL;
+
+  staffReportData.forEach(w => {
+    out += esc(w.name) + T + w.orders + T + w.revenue + T + w.avgOrderVal + T + w.activeDays + T + w.avgDailyRev + T + w.tables + NL;
+  });
+
+  out += 'TOTAL' + T + m.totalOrders + T + m.totalRevenue + T + T + T + T + NL + NL;
+  out += 'NOTE: Revenue figures are from paid orders only.' + NL;
+  out += 'This report can be used for performance-based salary/bonus calculations.' + NL;
+  out += 'Active Days = number of days the waiter had at least one paid order.' + NL;
+
+  const blob = new Blob([out], {type:'application/vnd.ms-excel'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = esc(m.rname).replace(/\s+/g,'-') + '-Staff-' + m.monthName + '-' + m.year + '.xls';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+}
+
+function downloadStaffPDF(){
+  if(!staffReportData.length) return;
+  const m = staffReportMeta;
+  const fmt = v => 'Rs.' + v.toLocaleString('en-IN');
+
+  const rows = staffReportData.map((w,i) => `
+    <tr style="background:${i%2===0?'#fff':'#f9fafb'}">
+      <td>${i+1}</td>
+      <td style="font-weight:700">${w.name}</td>
+      <td style="text-align:center">${w.orders}</td>
+      <td style="text-align:right;font-weight:700;color:#16a34a">${fmt(w.revenue)}</td>
+      <td style="text-align:center">${fmt(w.avgOrderVal)}</td>
+      <td style="text-align:center">${w.activeDays}</td>
+      <td style="text-align:center">${fmt(w.avgDailyRev)}</td>
+      <td style="text-align:center">${w.tables}</td>
+    </tr>
+  `).join('');
+
+  const topWaiter = staffReportData[0];
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Staff Report - ${m.monthName} ${m.year}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;background:#fff;padding:24px;}
+.hdr{background:linear-gradient(135deg,#3b0764,#7c3aed);color:#fff;padding:24px;border-radius:12px;margin-bottom:20px;}
+.hdr h1{font-size:22px;font-weight:800;margin-bottom:4px;}
+.hdr p{font-size:12px;opacity:.8;}
+.badge{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;margin-top:8px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kpi{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center;}
+.kpi-val{font-size:20px;font-weight:800;color:#1a1a1a;}
+.kpi-lbl{font-size:10px;color:#666;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:#3b0764;color:#fff;padding:9px 10px;text-align:left;font-size:10px;letter-spacing:.3px;}
+td{padding:8px 10px;border-bottom:1px solid #e5e7eb;}
+tfoot td{background:#f5f3ff;font-weight:800;font-size:12px;}
+.footer{text-align:center;margin-top:20px;font-size:10px;color:#999;}
+.note{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px;margin-top:16px;font-size:11px;color:#92400e;}
+@media print{body{padding:12px;}.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style>
+</head><body>
+<div class="hdr">
+  <h1>${m.rname}</h1>
+  <div class="badge">Staff Performance Report - ${m.monthName} ${m.year}</div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-val">${m.totalWaiters}</div><div class="kpi-lbl">Active Waiters</div></div>
+  <div class="kpi"><div class="kpi-val">${m.totalOrders}</div><div class="kpi-lbl">Orders Served</div></div>
+  <div class="kpi"><div class="kpi-val">${fmt(m.totalRevenue)}</div><div class="kpi-lbl">Revenue Generated</div></div>
+  <div class="kpi"><div class="kpi-val">${fmt(m.totalOrders>0?Math.round(m.totalRevenue/m.totalOrders):0)}</div><div class="kpi-lbl">Avg Order Value</div></div>
+</div>
+
+${topWaiter ? `<div class="highlight">🏆 <strong>Top Performer: ${topWaiter.name}</strong> — ${topWaiter.orders} orders, ${fmt(topWaiter.revenue)} revenue, ${topWaiter.activeDays} active days</div>` : ''}
+
+<table>
+  <thead><tr>
+    <th>#</th><th>Waiter Name</th><th style="text-align:center">Orders</th>
+    <th style="text-align:right">Revenue</th><th style="text-align:center">Avg/Order</th>
+    <th style="text-align:center">Active Days</th><th style="text-align:center">Avg/Day</th><th style="text-align:center">Tables</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr>
+    <td colspan="2"><strong>TOTAL (${m.totalWaiters} waiters)</strong></td>
+    <td style="text-align:center"><strong>${m.totalOrders}</strong></td>
+    <td style="text-align:right"><strong>${fmt(m.totalRevenue)}</strong></td>
+    <td colspan="4"></td>
+  </tr></tfoot>
+</table>
+
+<div class="note">
+  ℹ️ <strong>Note for salary calculation:</strong> Revenue figures show paid orders only. Active Days = days with at least one paid order. 
+  QR self-orders this month: ${m.qrOrders} orders (${fmt(m.qrRevenue)}) — handled without waiter assistance.
+</div>
+
+<div class="footer">Powered by HK Digital Solutions · Generated on ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
+<scr'+'ipt>window.print();</scr'+'ipt>
 </body></html>`;
 
   const blob = new Blob([html], {type:'text/html;charset=utf-8'});
@@ -2635,6 +3020,44 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;backgr
       <button onclick="downloadGSTPDF()" id="gstPDFBtn" style="display:none;width:100%;padding:13px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📄 Download GST PDF Report</button>
       <button onclick="resetGSTModal()" id="gstResetBtn" style="display:none;width:100%;padding:10px;background:none;color:var(--muted);border:1.5px solid var(--line);border-radius:11px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">← Change Month / Year</button>
     </div>
+  </div>
+</div>
+
+
+<!-- STAFF PERFORMANCE REPORT MODAL -->
+<div id="staffModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);">
+  <div style="background:var(--paper);border-radius:18px;max-width:500px;width:100%;padding:24px;max-height:92vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-family:'Yatra One',sans-serif;color:var(--brown);font-size:18px;">👨‍💼 Staff Performance Report</h3>
+      <button onclick="document.getElementById('staffModalBg').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label>
+        <select id="staffMonth" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+          <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+          <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Year</label>
+        <select id="staffYear" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;font-family:'Poppins',sans-serif;font-size:13px;background:var(--cream);color:var(--ink);">
+          <option value="2025">2025</option><option value="2026">2026</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="loadStaffReport()" id="staffLoadBtn" style="width:100%;padding:13px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:12px;">🔍 Load Staff Data</button>
+    <div id="staffReportContent" style="display:none;">
+      <div id="staffSummaryCards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
+      <div id="staffTableWrap" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="downloadStaffPDF()" style="width:100%;padding:13px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📄 Download Staff PDF Report</button>
+      </div>
+      <button onclick="resetStaffModal()" style="width:100%;margin-top:10px;padding:10px;background:none;color:var(--muted);border:1.5px solid var(--line);border-radius:11px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">← Change Month</button>
+    </div>
+    <div id="staffNoData" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:13px;">No waiter orders found for this period.</div>
   </div>
 </div>
 
