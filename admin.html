@@ -392,7 +392,6 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
         <button class="report-tab" id="tabMonth" onclick="switchReportTab('month')">📆 This Month</button>
         <button class="download-btn" onclick="downloadReport()">⬇️ Download Report</button>
         <button class="report-tab" onclick="openGSTReport()" style="background:linear-gradient(135deg,#FF6B35,#E84393);color:#fff;border-color:transparent;font-weight:700;">📊 GST Report</button>
-        <button class="report-tab" onclick="openStaffReport()" style="background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border-color:transparent;font-weight:700;">👨‍💼 Staff Report</button>
       </div>
       <div id="reportDateRange" style="font-size:11px;color:var(--muted);margin-bottom:14px;font-style:italic"></div>
 
@@ -463,6 +462,8 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
     <div class="panel">
       <h2>🧑 Waiter Management</h2>
       <p class="hint">Create waiter profiles and share their unique link. Each waiter uses their own link to take orders from their phone — no login needed.</p>
+      <button onclick="openStaffReport()" style="margin-bottom:16px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">👨‍💼 Monthly Staff Performance Report</button>
+      <button onclick="openStaffReport()" style="background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:16px;">📄 Monthly Staff Performance Report</button>
 
       <!-- Create new waiter -->
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
@@ -473,6 +474,7 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
       <!-- Waiter list -->
       <div id="waiterList"><div style="text-align:center;color:var(--muted);font-size:12px;padding:16px">Loading...</div></div>
 
+      <button onclick="openStaffReport()" style="background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:10px 18px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;margin-bottom:16px;">📊 Monthly Staff Performance Report</button>
       <!-- Per-waiter analytics -->
       <div id="waiterAnalytics" style="display:none;margin-top:20px">
         <div class="td-title" style="margin-bottom:10px">📊 Waiter Performance — <span id="waiterAnalyticsName"></span></div>
@@ -2577,7 +2579,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1a1a1a;backgr
 </table>
 
 <div class="footer">Powered by HK Digital Solutions · Report generated on ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
-<scr'+'ipt>window.print();</scr'+'ipt>
+<scr'+'ipt>window.print();</'+'script>
 
 <!-- STAFF PERFORMANCE REPORT MODAL -->
 <div id="staffModalBg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);">
@@ -2709,16 +2711,24 @@ async function loadStaffReport(){
       waiterMap[wid].orders++;
       waiterMap[wid].revenue += o.total || 0;
       if(!String(o.table_no||'').startsWith('Parcel')) waiterMap[wid].tables.add(o.table_no);
-      const day = new Date(o.placed_at).toLocaleDateString('en-IN');
+      // Convert to IST before extracting date to avoid day-shift bug
+      const istMs = new Date(o.placed_at).getTime() + (5.5*60*60*1000);
+      const day = new Date(istMs).toISOString().slice(0,10);
       waiterMap[wid].activeDays.add(day);
       waiterMap[wid].itemCount += (o.items||[]).reduce((s,i)=>s+(i.qty||1),0);
     });
+
+    // Days elapsed in selected month (cap at today if current month)
+    const now2 = new Date();
+    const isCurrentMonth = (month === now2.getMonth()+1 && year === now2.getFullYear());
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysElapsed = isCurrentMonth ? now2.getDate() : daysInMonth;
 
     // Convert sets to counts
     staffReportData = Object.values(waiterMap).map(w => ({
       ...w,
       tables: w.tables.size,
-      activeDays: w.activeDays.size,
+      activeDays: Math.min(w.activeDays.size, daysElapsed),
       avgOrderVal: w.orders > 0 ? Math.round(w.revenue / w.orders) : 0,
       avgDailyRev: w.activeDays.size > 0 ? Math.round(w.revenue / w.activeDays.size) : 0,
     })).sort((a,b) => b.revenue - a.revenue);
@@ -2776,7 +2786,6 @@ function renderStaffReport(){
       <td style="padding:10px 12px;text-align:center">₹${w.avgOrderVal.toLocaleString('en-IN')}</td>
       <td style="padding:10px 12px;text-align:center">${w.activeDays}</td>
       <td style="padding:10px 12px;text-align:center">₹${w.avgDailyRev.toLocaleString('en-IN')}</td>
-      <td style="padding:10px 12px;text-align:center">${w.tables}</td>
     </tr>
   `).join('');
 
@@ -2790,7 +2799,7 @@ function renderStaffReport(){
           <th style="padding:10px 12px;text-align:center;font-size:11px">Avg/Order</th>
           <th style="padding:10px 12px;text-align:center;font-size:11px">Active Days</th>
           <th style="padding:10px 12px;text-align:center;font-size:11px">Avg/Day</th>
-          <th style="padding:10px 12px;text-align:center;font-size:11px">Tables</th>
+          
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -2799,7 +2808,7 @@ function renderStaffReport(){
           <td style="padding:10px 12px;font-weight:800">TOTAL</td>
           <td style="padding:10px 12px;text-align:center;font-weight:800">${m.totalOrders}</td>
           <td style="padding:10px 12px;text-align:center;font-weight:800;color:#16A34A">₹${m.totalRevenue.toLocaleString('en-IN')}</td>
-          <td colspan="4"></td>
+          <td colspan="3"></td>
         </tr>
       </tfoot>
     </table>
@@ -2859,7 +2868,6 @@ function downloadStaffPDF(){
       <td style="text-align:center">${fmt(w.avgOrderVal)}</td>
       <td style="text-align:center">${w.activeDays}</td>
       <td style="text-align:center">${fmt(w.avgDailyRev)}</td>
-      <td style="text-align:center">${w.tables}</td>
     </tr>
   `).join('');
 
@@ -2906,14 +2914,14 @@ ${topWaiter ? `<div class="highlight">🏆 <strong>Top Performer: ${topWaiter.na
   <thead><tr>
     <th>#</th><th>Waiter Name</th><th style="text-align:center">Orders</th>
     <th style="text-align:right">Revenue</th><th style="text-align:center">Avg/Order</th>
-    <th style="text-align:center">Active Days</th><th style="text-align:center">Avg/Day</th><th style="text-align:center">Tables</th>
+    <th style="text-align:center">Active Days</th><th style="text-align:center">Avg/Day</th>
   </tr></thead>
   <tbody>${rows}</tbody>
   <tfoot><tr>
     <td colspan="2"><strong>TOTAL (${m.totalWaiters} waiters)</strong></td>
     <td style="text-align:center"><strong>${m.totalOrders}</strong></td>
     <td style="text-align:right"><strong>${fmt(m.totalRevenue)}</strong></td>
-    <td colspan="4"></td>
+    <td colspan="3"></td>
   </tr></tfoot>
 </table>
 
@@ -2923,7 +2931,7 @@ ${topWaiter ? `<div class="highlight">🏆 <strong>Top Performer: ${topWaiter.na
 </div>
 
 <div class="footer">Powered by HK Digital Solutions · Generated on ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}</div>
-<scr'+'ipt>window.print();</scr'+'ipt>
+<scr'+'ipt>window.print();</'+'script>
 </body></html>`;
 
   const blob = new Blob([html], {type:'text/html;charset=utf-8'});
