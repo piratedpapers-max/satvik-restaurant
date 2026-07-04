@@ -615,24 +615,28 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const RESTAURANT_ID=_params.get('rid')||'satvik';
+const RESTAURANT_ID=_params.get('rid')||'';
 
-// ── Show restaurant name on login screen immediately ──
-(async function(){
-  try{
-    const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-    const name=data?.data?.restaurantName||RESTAURANT_ID;
-    document.title=name+' — Admin';
-    const el=document.getElementById('loginRestName');
-    if(el)el.textContent=name;
-  }catch(e){
-    const el=document.getElementById('loginRestName');
-    if(el)el.textContent=RESTAURANT_ID;
-  }
-})();
-// Safety: redirect to login if no rid and not satvik
-if(!_params.get('rid')){
-  console.warn('No rid param — defaulting to satvik');
+function hkShowNotFound(){
+  document.body.innerHTML='<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔍</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Restaurant Not Found</h2><p style="color:#777;font-size:13px;line-height:1.8;">This link is missing or has an invalid restaurant ID. Please use the exact admin link provided by HK Digital.</p></div></div>';
+}
+
+if(!RESTAURANT_ID){
+  hkShowNotFound();
+}else{
+  // ── Show restaurant name on login screen immediately ──
+  (async function(){
+    try{
+      const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+      if(error||!data){hkShowNotFound();return;}
+      const name=data?.data?.restaurantName||RESTAURANT_ID;
+      document.title=name+' — Admin';
+      const el=document.getElementById('loginRestName');
+      if(el)el.textContent=name;
+    }catch(e){
+      hkShowNotFound();
+    }
+  })();
 }
 function getISTDayStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const mid=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate()));return new Date(mid.getTime()-off);}
 function getISTMonthStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const m=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),1));return new Date(m.getTime()-off);}
@@ -673,9 +677,9 @@ async function tryLogin(){
   if(!pass){document.getElementById('loginErr').style.display='block';return;}
   document.getElementById('loginBtn').textContent='Checking...';document.getElementById('loginBtn').disabled=true;
   try{
-    const {data,error}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
-    if(error||!data){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
-    if(pass===data.password){
+    const {data:ok,error}=await sb.rpc('hk_verify_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_password:pass});
+    if(error){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
+    if(ok===true){
       document.getElementById('loginWrapper').style.display='none';
       document.getElementById('adminPanel').classList.remove('hidden');
       document.getElementById('loading').classList.remove('hidden');
@@ -712,8 +716,9 @@ async function sendResetCode(){
     if(!phone10||phone10.length!==10){
       showForgotErr('No WhatsApp number registered in admin settings. Please contact support.');return;
     }
+    const rName=data?.data?.restaurantName||RESTAURANT_ID;
     resetCode=Math.floor(100000+Math.random()*900000).toString();
-    const msg=`Your Satvik Admin password reset code is: *${resetCode}*%0AThis code expires in 10 minutes.`;
+    const msg=`Your ${rName} Admin password reset code is: *${resetCode}*%0AThis code expires in 10 minutes.`;
     window.open(`https://wa.me/91${phone10}?text=${msg}`,'_blank');
     document.getElementById('forgotStep2').style.display='block';
     document.getElementById('forgotErr').style.display='none';
@@ -740,8 +745,8 @@ async function confirmReset(){
     document.getElementById('forgotErr').textContent='Password must be at least 4 characters.';
     document.getElementById('forgotErr').style.display='block';return;
   }
-  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
-  if(error){document.getElementById('forgotErr').textContent='Could not update password. Try again.';document.getElementById('forgotErr').style.display='block';return;}
+  const {data:ok,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_new_password:newPass});
+  if(error||ok===false){document.getElementById('forgotErr').textContent='Could not update password. Try again.';document.getElementById('forgotErr').style.display='block';return;}
   showToast('✅ Password updated! Please login with your new password.');
   resetCode='';
   showLogin();
@@ -1138,11 +1143,12 @@ async function changePassword(){
   if(!current||!newPass||!confirm){showToast('Fill in all fields.',true);return;}
   if(newPass.length<4){showToast('New password must be at least 4 characters.',true);return;}
   if(newPass!==confirm){showToast('New passwords do not match.',true);return;}
-  // Verify current password
-  const {data}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
-  if(current!==data?.password){showToast('Current password is incorrect.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error updating password: '+error.message,true);return;}
+  // Verify current password securely (never fetches the real password to the browser)
+  const {data:currentOk,error:verifyErr}=await sb.rpc('hk_verify_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_password:current});
+  if(verifyErr){showToast('Could not verify password. Try again.',true);return;}
+  if(currentOk!==true){showToast('Current password is incorrect.',true);return;}
+  const {data:setOk,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_new_password:newPass});
+  if(error||setOk===false){showToast('Error updating password.',true);return;}
   document.getElementById('cpCurrent').value='';
   document.getElementById('cpNew').value='';
   document.getElementById('cpConfirm').value='';
@@ -1976,8 +1982,8 @@ async function changeKitchenPassword(){
   if(!np||!cp){showToast('Fill in both fields.',true);return;}
   if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
   if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({kitchen_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data:setOk,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'kitchen',p_new_password:np});
+  if(error||setOk===false){showToast('Error updating password.',true);return;}
   document.getElementById('kpNew').value='';
   document.getElementById('kpConfirm').value='';
   document.getElementById('kitchenPassStatus').style.display='block';
@@ -2005,8 +2011,8 @@ async function changeCounterPassword(){
   if(!np||!cp){showToast('Fill in both fields.',true);return;}
   if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
   if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({counter_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data:setOk,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'counter',p_new_password:np});
+  if(error||setOk===false){showToast('Error updating password.',true);return;}
   document.getElementById('copNew').value='';
   document.getElementById('copConfirm').value='';
   document.getElementById('counterPassStatus').style.display='block';
@@ -2062,18 +2068,27 @@ async function loadSuperadminFeatures(){
 
 function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.core).includes(f);}
 
-async function fetchPlanAndGate(gateCallback){
+async function fetchPlanAndGate(gateCallback,retriesLeft=2){
   try{
     const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(error){console.warn('Plan fetch error:',error.message);return;}
-    if(!data||!data.length){console.warn('No subscription found');return;}
+    if(error||!data||!data.length){
+      if(retriesLeft>0){setTimeout(()=>fetchPlanAndGate(gateCallback,retriesLeft-1),1500);return;}
+      showAccessCheckFailedScreen();return;
+    }
     const row=data[0];
-    CURRENT_PLAN=row.plan||'basic';
+    CURRENT_PLAN=row.plan||'core';
     const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
     if(expired){showExpiredScreen();return;}
     if(gateCallback)gateCallback();
     showPlanBadge();
-  }catch(e){console.warn('Plan check failed:',e);}
+  }catch(e){
+    if(retriesLeft>0){setTimeout(()=>fetchPlanAndGate(gateCallback,retriesLeft-1),1500);return;}
+    showAccessCheckFailedScreen();
+  }
+}
+
+function showAccessCheckFailedScreen(){
+  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">⚠️</div><h2 style="color:#FFA502;font-size:22px;margin-bottom:8px">Couldn't Verify Access</h2><p style="color:#777;font-size:13px;line-height:1.8;margin-bottom:24px">We couldn't confirm your subscription status. Please check your internet connection and try again.</p><button onclick="location.reload()" style="background:#6C63FF;color:#fff;border:none;padding:12px 28px;border-radius:99px;font-weight:700;font-size:14px;cursor:pointer;">↻ Retry</button></div></div>`;
 }
 
 function showPlanBadge(){
