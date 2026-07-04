@@ -669,6 +669,55 @@ if(sessionStorage.getItem('counter_auth_'+RESTAURANT_ID)==='1'){document.getElem
 
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
 
+
+/* ══════════════════════════════════════════════
+   COUNTER SOFT FEATURE GATING
+══════════════════════════════════════════════ */
+let COUNTER_PLAN='core';
+async function loadCounterFeatureFlags(){
+  try{
+    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
+    if(data){
+      COUNTER_PLAN=data.plan||'core';
+      const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
+      if(!expired)applyCounterGating();
+    }
+  }catch(e){}
+}
+function counterHasFeature(f){
+  const F={
+    core:['qr_ordering','kitchen','counter'],
+    growth:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app'],
+    premium:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','whatsapp_bill']
+  };
+  return(F[COUNTER_PLAN]||F.core).includes(f);
+}
+function applyCounterGating(){
+  // Gate parcel toggle
+  if(!counterHasFeature('parcel')){
+    const row=document.getElementById('parcelToggleRow');
+    if(row){
+      row.style.opacity='.5';row.style.pointerEvents='none';
+      const lbl=row.querySelector('.parcel-toggle-label');
+      if(lbl)lbl.innerHTML+=' <span style="font-size:10px;background:#f59e0b22;color:#d97706;padding:2px 7px;border-radius:99px;font-weight:700;border:1px solid #f59e0b44;margin-left:6px">Growth+</span>';
+    }
+  }
+  // Gate print bill
+  if(!counterHasFeature('print_bill')){
+    document.querySelectorAll('[onclick*="printBill"],[onclick*="printTableBill"]').forEach(btn=>{
+      btn.style.opacity='.5';
+      btn.onclick=(e)=>{e.stopPropagation();e.preventDefault();showPlanToast('Print Bill','Growth');};
+    });
+  }
+  // Gate GST display
+  if(!counterHasFeature('gst')){
+    document.querySelectorAll('.gst-row,.gst-section,.cgst-row,.sgst-row').forEach(el=>{el.style.display='none';});
+  }
+}
+function showPlanToast(feature,plan){
+  toast('🔒 '+feature+' is available on '+plan+' plan. Contact HK Digital to upgrade.',true);
+}
+
 async function loadAll(){
   const today=getISTDayStart();
   const {data:activeData}=await sb.from('orders').select('*').eq('restaurant_id',RESTAURANT_ID)

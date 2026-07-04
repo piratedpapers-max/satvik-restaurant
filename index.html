@@ -389,6 +389,8 @@ async function init(){
   document.title=(RDATA.restaurantName||RESTAURANT_ID)+' — Order';
   const pm=document.getElementById('paidMsg');
   if(pm)pm.textContent='See you again at '+(RDATA.restaurantName||'us')+'!';
+  // Load plan features for soft gating
+  loadIndexFeatureFlags();
   document.getElementById('rName').textContent=RDATA.restaurantName||RESTAURANT_ID;
   document.getElementById('rSub').textContent=RDATA.restaurantSub||'';
   document.getElementById('trackRestName').textContent=RDATA.restaurantName||RESTAURANT_ID;
@@ -791,6 +793,36 @@ async function confirmCustomerInfo() {
   hideCustPopup();
   // Now actually place the order
   await doPlaceOrder();
+}
+
+
+/* ══════════════════════════════════
+   INDEX SOFT FEATURE GATING
+══════════════════════════════════ */
+let INDEX_PLAN='core';
+async function loadIndexFeatureFlags(){
+  try{
+    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
+    if(data){INDEX_PLAN=data.plan||'core';}
+  }catch(e){}
+}
+function indexHasFeature(f){
+  const F={
+    core:['qr_ordering'],
+    growth:['qr_ordering','menu_images'],
+    premium:['qr_ordering','menu_images']
+  };
+  return(F[INDEX_PLAN]||F.core).includes(f);
+}
+// Called after menu renders — hide images if not on plan
+function applyIndexGating(){
+  if(!indexHasFeature('menu_images')){
+    document.querySelectorAll('.dish-img').forEach(img=>{
+      img.style.display='none';
+      const placeholder=img.nextElementSibling;
+      if(placeholder)placeholder.style.display='flex';
+    });
+  }
 }
 
 </script>

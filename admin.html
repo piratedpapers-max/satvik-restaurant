@@ -2029,13 +2029,13 @@ async function removeCounterPassword(){
    SUBSCRIPTION & PLAN GATING
 ══════════════════════════════════════════ */
 const PLAN_FEATURES={
-  basic:['qr_ordering','kitchen','counter'],
-  growth:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report'],
-  premium:['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding']
+  core:    ['qr_ordering','kitchen','counter'],
+  growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','waiter_app','staff_report'],
+  premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding','waiter_app','crm','gst_report','staff_report']
 };
-let CURRENT_PLAN='basic';
+let CURRENT_PLAN='core';
 
-function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.basic).includes(f);}
+function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.core).includes(f);}
 
 async function fetchPlanAndGate(gateCallback){
   try{
@@ -2072,7 +2072,7 @@ function showUpgradeModal(featureName,requiredPlan){
   document.getElementById('upgPlanGrowth').classList.toggle('rec',requiredPlan==='growth');
   document.getElementById('upgPlanPremium').classList.toggle('rec',requiredPlan==='premium');
   const rid=typeof RESTAURANT_ID!=='undefined'?RESTAURANT_ID:'';
-  const pl=requiredPlan==='growth'?'Growth Rs.599/month':'Premium Rs.999/month';
+  const pl=requiredPlan==='growth'?'Growth Rs.899/month':'Premium Rs.1499/month';
   const msg=encodeURIComponent('Hi HK Digital, I want to upgrade to '+pl+(rid?' (Restaurant: '+rid+')':'')+'. Please share payment details.');
   document.getElementById('upgWaBtn').href='https://wa.me/918102806704?text='+msg;
   const bg=document.getElementById('upgradeModalBg');
@@ -2122,6 +2122,38 @@ function applyAdminGating(){
     document.querySelectorAll('button[onclick*="shareWA"],button[onclick*="sendReport"],button[onclick*="waReport"]').forEach(btn=>{
       btn.disabled=true;btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('WhatsApp Reports','growth');};
     });
+  }
+  // CRM Panel
+  if(!hasFeature('crm')){
+    const crmEl=document.querySelector('#crmList')?.closest('.panel');
+    if(crmEl)lockPanel(crmEl,'Customer CRM','Build your customer database on Premium','premium');
+  }
+  // GST Report button
+  if(!hasFeature('gst_report')){
+    document.querySelectorAll('button[onclick*="openGSTReport"]').forEach(btn=>{
+      btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('GST Monthly Report','premium');};
+      btn.style.opacity='.6';
+    });
+  }
+  // Staff Report button
+  if(!hasFeature('staff_report')){
+    document.querySelectorAll('button[onclick*="openStaffReport"]').forEach(btn=>{
+      btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('Staff Performance Report','growth');};
+      btn.style.opacity='.6';
+    });
+  }
+  // Analytics (weekly/monthly reports)
+  if(!hasFeature('pdf_reports')){
+    document.querySelectorAll('button[onclick*="downloadReport"],button[onclick*="loadReport"]').forEach(btn=>{
+      btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('Sales Reports & Analytics','premium');};
+      btn.style.opacity='.6';
+    });
+  }
+  // Waiter management — lock entire panel
+  if(!hasFeature('waiter_app')){
+    const waiterEl=document.querySelector('.waiter-card')?.closest('.panel')||
+                   Array.from(document.querySelectorAll('.panel h2')).find(h=>h.textContent.includes('Waiter'))?.closest('.panel');
+    if(waiterEl)lockPanel(waiterEl,'Waiter App','Manage waiters on Growth plan','growth');
   }
 }
 

@@ -383,6 +383,8 @@ document.addEventListener('touchstart',primeAudio);
 /* ── INIT ── */
 async function init(){
   if(!TOKEN){showError('No Waiter Token','Open this page using the link sent by your admin.');return;}
+  const planOk=await checkWaiterPlanAccess();
+  if(!planOk)return;
   try{
     // Look up waiter by token only — restaurant_id is derived from the DB record
     // This means the link works even without ?rid= in the URL
@@ -928,6 +930,28 @@ function toast(text,isErr){
 }
 
 init();
+
+/* ══════════════════════════════════
+   WAITER SOFT FEATURE GATING
+══════════════════════════════════ */
+async function checkWaiterPlanAccess(){
+  try{
+    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
+    if(!data) return;
+    const plan=data.plan||'core';
+    const waiterPlans=['growth','premium'];
+    const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
+    if(expired||!waiterPlans.includes(plan)){
+      showError(
+        '🔒 Feature Locked',
+        'Waiter App is available on Growth and Premium plans.\nContact HK Digital to upgrade your subscription.'
+      );
+      return false;
+    }
+    return true;
+  }catch(e){return true;} // fail open — don't block if check fails
+}
+
 </script>
 </body>
 </html>
