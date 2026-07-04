@@ -753,6 +753,7 @@ async function loadAll(){
   loadReport('week');
 }
 async function loadMenuData(){
+  await loadSuperadminFeatures();
   fetchPlanAndGate(applyAdminGating);
   document.getElementById("adminTitle").textContent=(RESTAURANT_ID||"Restaurant")+" — Admin";
   // Update login screen restaurant name
@@ -2028,12 +2029,36 @@ async function removeCounterPassword(){
 /* ══════════════════════════════════════════
    SUBSCRIPTION & PLAN GATING
 ══════════════════════════════════════════ */
-const PLAN_FEATURES={
+// Default PLAN_FEATURES — overridden by superadmin saved settings
+let PLAN_FEATURES={
   core:    ['qr_ordering','kitchen','counter'],
   growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','waiter_app','staff_report'],
   premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding','waiter_app','crm','gst_report','staff_report']
 };
 let CURRENT_PLAN='core';
+
+// Load feature toggles saved by superadmin
+async function loadSuperadminFeatures(){
+  try{
+    const {data}=await sb.from('sa_settings').select('value').eq('key','plan_features').single();
+    if(data?.value){
+      const saved=JSON.parse(data.value);
+      // Rebuild PLAN_FEATURES from saved toggles
+      const plans=['core','growth','premium'];
+      const rebuilt={core:[],growth:[],premium:[]};
+      Object.entries(saved).forEach(([key,planMap])=>{
+        plans.forEach(plan=>{
+          if(planMap[plan]||planMap['basic']) rebuilt[plan].push(key);
+        });
+      });
+      // Merge with always-on features
+      ['qr_ordering','kitchen','counter'].forEach(f=>{
+        plans.forEach(p=>{ if(!rebuilt[p].includes(f)) rebuilt[p].push(f); });
+      });
+      PLAN_FEATURES=rebuilt;
+    }
+  }catch(e){} // use defaults on error
+}
 
 function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.core).includes(f);}
 

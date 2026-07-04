@@ -937,20 +937,29 @@ init();
 async function checkWaiterPlanAccess(){
   try{
     const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-    if(!data) return;
+    if(!data) return true;
     const plan=data.plan||'core';
-    const waiterPlans=['growth','premium'];
     const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
-    if(expired||!waiterPlans.includes(plan)){
-      showError(
-        '🔒 Feature Locked',
-        'Waiter App is available on Growth and Premium plans.\nContact HK Digital to upgrade your subscription.'
-      );
+    if(expired){showError('🔒 Subscription Expired','Your subscription has expired. Contact HK Digital to renew.');return false;}
+    // Check from superadmin feature settings
+    try{
+      const {data:fd}=await sb.from('sa_settings').select('value').eq('key','plan_features').single();
+      if(fd?.value){
+        const saved=JSON.parse(fd.value);
+        const enabled=saved['waiter_app']?.[plan]??false;
+        if(!enabled){showError('🔒 Feature Locked','Waiter App is not enabled on your current plan.\nContact HK Digital to upgrade.');return false;}
+        return true;
+      }
+    }catch(e){}
+    // Fallback to default
+    if(!['growth','premium'].includes(plan)){
+      showError('🔒 Feature Locked','Waiter App is available on Growth and Premium plans.\nContact HK Digital to upgrade.');
       return false;
     }
     return true;
-  }catch(e){return true;} // fail open — don't block if check fails
+  }catch(e){return true;}
 }
+
 
 </script>
 </body>

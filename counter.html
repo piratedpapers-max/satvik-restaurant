@@ -681,23 +681,38 @@ setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocal
    COUNTER SOFT FEATURE GATING
 ══════════════════════════════════════════════ */
 let COUNTER_PLAN='core';
+let COUNTER_FEATURES={
+  core:['qr_ordering','kitchen','counter'],
+  growth:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app'],
+  premium:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','whatsapp_bill']
+};
 async function loadCounterFeatureFlags(){
   try{
     const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
     if(data){
       COUNTER_PLAN=data.plan||'core';
       const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
-      if(!expired)applyCounterGating();
+      if(expired) return;
     }
-  }catch(e){}
+    // Sync feature toggles from superadmin
+    const {data:fd}=await sb.from('sa_settings').select('value').eq('key','plan_features').single();
+    if(fd?.value){
+      const saved=JSON.parse(fd.value);
+      const plans=['core','growth','premium'];
+      const rebuilt={core:[],growth:[],premium:[]};
+      Object.entries(saved).forEach(([key,planMap])=>{
+        plans.forEach(plan=>{if(planMap[plan]||planMap['basic'])rebuilt[plan].push(key);});
+      });
+      ['qr_ordering','kitchen','counter'].forEach(f=>{
+        plans.forEach(p=>{if(!rebuilt[p].includes(f))rebuilt[p].push(f);});
+      });
+      COUNTER_FEATURES=rebuilt;
+    }
+    applyCounterGating();
+  }catch(e){applyCounterGating();}
 }
 function counterHasFeature(f){
-  const F={
-    core:['qr_ordering','kitchen','counter'],
-    growth:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app'],
-    premium:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','whatsapp_bill']
-  };
-  return(F[COUNTER_PLAN]||F.core).includes(f);
+  return(COUNTER_FEATURES[COUNTER_PLAN]||COUNTER_FEATURES.core).includes(f);
 }
 function applyCounterGating(){
   // Gate parcel toggle
