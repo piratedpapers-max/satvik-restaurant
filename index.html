@@ -398,13 +398,14 @@ const DEFAULT={restaurantName:"",restaurantSub:"",todaySpecial:"",googleReview:"
 /* ── SUBSCRIPTION CHECK — blocks the public menu if suspended/expired ── */
 async function hkCheckSubscription(retriesLeft=2){
   try{
-    const {data,error}=await sb.from('subscriptions').select('status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
     if(error){
       if(retriesLeft>0){await new Promise(r=>setTimeout(r,1200));return hkCheckSubscription(retriesLeft-1);}
       return{ok:true}; // customer menu: fail-open on connectivity errors only, to avoid blocking real diners over a network blip
     }
-    if(!data)return{ok:true};
-    const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
+    if(!data||!data.length)return{ok:true};
+    const row=data[0];
+    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
     return{ok:!expired,reason:expired?'expired':null};
   }catch(e){
     return{ok:true};
