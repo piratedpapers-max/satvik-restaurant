@@ -189,18 +189,26 @@ main{padding:14px 14px 0;}
 /* ── CUSTOMER INFO POPUP ── */
 #custPopup{position:fixed;inset:0;z-index:400;display:none;align-items:flex-end;justify-content:center;}
 #custPopup.show{display:flex;}
-.cust-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);}
-.cust-sheet{position:relative;background:var(--cream);width:100%;max-width:480px;border-radius:20px 20px 0 0;padding:28px 24px 32px;z-index:1;}
-.cust-handle{width:36px;height:4px;background:var(--line);border-radius:4px;margin:0 auto 20px;}
-.cust-title{font-family:'Yatra One',sans-serif;color:var(--brown);font-size:18px;margin-bottom:4px;text-align:center;}
-.cust-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;}
-.cust-field{margin-bottom:14px;}
-.cust-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
-.cust-field input{width:100%;padding:13px 16px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;font-family:'Poppins',sans-serif;background:#fff;color:var(--ink);box-sizing:border-box;transition:border-color .2s;}
-.cust-field input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(74,124,89,.1);}
-.cust-confirm-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--green),#2d5e3e);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;font-family:'Poppins',sans-serif;margin-top:4px;transition:opacity .2s;}
-.cust-confirm-btn:disabled{opacity:.6;cursor:not-allowed;}
+.cust-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);}
+.cust-sheet{position:relative;background:#fff;width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:0 0 env(safe-area-inset-bottom,0);z-index:1;box-shadow:0 -8px 40px rgba(0,0,0,.15);}
+.cust-sheet-inner{padding:8px 20px 28px;}
+.cust-handle{width:40px;height:4px;background:#E5DCC8;border-radius:4px;margin:12px auto 20px;}
+.cust-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #F0EBE0;}
+.cust-header-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--green),#2d5e3e);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.cust-title{font-family:'Yatra One',sans-serif;color:var(--ink);font-size:17px;line-height:1.2;}
+.cust-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.cust-field{margin-bottom:12px;}
+.cust-field label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
+.cust-field-icon{font-size:13px;}
+.cust-field input{width:100%;padding:14px 16px;border:1.5px solid #E5DCC8;border-radius:14px;font-size:15px;font-family:'Poppins',sans-serif;background:#FAFAF8;color:var(--ink);box-sizing:border-box;transition:border-color .2s,box-shadow .2s;}
+.cust-field input:focus{outline:none;border-color:var(--green);background:#fff;box-shadow:0 0 0 3px rgba(74,124,89,.08);}
+.cust-field input::placeholder{color:#C5BEB3;}
+.cust-confirm-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--green),#2d5e3e);color:#fff;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;font-family:'Poppins',sans-serif;margin-top:6px;transition:opacity .2s,transform .1s;letter-spacing:.3px;}
+.cust-confirm-btn:hover{opacity:.92;transform:translateY(-1px);}
+.cust-confirm-btn:active{transform:translateY(0);}
+.cust-confirm-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .cust-err{color:#c0392b;font-size:12px;margin-top:8px;text-align:center;min-height:16px;}
+.cust-privacy{text-align:center;font-size:10px;color:var(--muted);margin-top:10px;opacity:.7;}
 </style>
 </head>
 <body>
@@ -208,19 +216,27 @@ main{padding:14px 14px 0;}
 <div id="custPopup">
   <div class="cust-backdrop" id="custBackdrop"></div>
   <div class="cust-sheet">
-    <div class="cust-handle"></div>
-    <div class="cust-title">Almost there! 🍽️</div>
-    <div class="cust-sub">Tell us who you are so we can serve you better</div>
-    <div class="cust-field">
-      <label>Your Name</label>
-      <input type="text" id="custName" placeholder="e.g. Rahul" autocomplete="name"/>
+    <div class="cust-sheet-inner">
+      <div class="cust-handle"></div>
+      <div class="cust-header">
+        <div class="cust-header-icon">🛎️</div>
+        <div>
+          <div class="cust-title">One last step!</div>
+          <div class="cust-sub">Quick details so we can serve you right</div>
+        </div>
+      </div>
+      <div class="cust-field">
+        <label><span class="cust-field-icon">👤</span>Your Name</label>
+        <input type="text" id="custName" placeholder="Enter your name" autocomplete="name"/>
+      </div>
+      <div class="cust-field">
+        <label><span class="cust-field-icon">📱</span>Mobile Number</label>
+        <input type="tel" id="custPhone" placeholder="10-digit number" maxlength="10" inputmode="numeric"/>
+      </div>
+      <div class="cust-err" id="custErr"></div>
+      <button class="cust-confirm-btn" id="custConfirmBtn" onclick="confirmCustomerInfo()">Confirm & Place Order →</button>
+      <div class="cust-privacy">🔒 Your details are only shared with this restaurant</div>
     </div>
-    <div class="cust-field">
-      <label>Mobile Number</label>
-      <input type="tel" id="custPhone" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric"/>
-    </div>
-    <div class="cust-err" id="custErr"></div>
-    <button class="cust-confirm-btn" id="custConfirmBtn" onclick="confirmCustomerInfo()">Place Order →</button>
   </div>
 </div>
 

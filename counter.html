@@ -665,7 +665,7 @@ async function tryLogin(){
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 function logout(){sessionStorage.removeItem('counter_auth_'+RESTAURANT_ID);document.getElementById('loginScreen').classList.remove('hide');document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent='';}
-if(sessionStorage.getItem('counter_auth_'+RESTAURANT_ID)==='1'){document.getElementById('loginScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadAll();subscribe();primeAudio();});}
+if(sessionStorage.getItem('counter_auth_'+RESTAURANT_ID)==='1'){document.getElementById('loginScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadAll();subscribe();primeAudio();loadCounterFeatureFlags();});}
 
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
 
@@ -716,6 +716,13 @@ function applyCounterGating(){
 }
 function showPlanToast(feature,plan){
   toast('🔒 '+feature+' is available on '+plan+' plan. Contact HK Digital to upgrade.',true);
+}
+function handleTablesBtnClick(){
+  if(!counterHasFeature('parcel')){
+    showPlanToast('Table Management','Growth');
+    return;
+  }
+  openTableMgmt();
 }
 
 async function loadAll(){
