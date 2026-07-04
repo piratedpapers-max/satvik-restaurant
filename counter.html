@@ -703,11 +703,26 @@ function applyCounterGating(){
   // Gate parcel toggle
   if(!counterHasFeature('parcel')){
     const row=document.getElementById('parcelToggleRow');
+    const chk=document.getElementById('parcelToggle');
     if(row){
-      row.style.opacity='.5';row.style.pointerEvents='none';
-      const lbl=row.querySelector('.parcel-toggle-label');
-      if(lbl)lbl.innerHTML+=' <span style="font-size:10px;background:#f59e0b22;color:#d97706;padding:2px 7px;border-radius:99px;font-weight:700;border:1px solid #f59e0b44;margin-left:6px">Growth+</span>';
+      row.style.opacity='.5';
+      row.style.pointerEvents='none';
+      row.style.cursor='not-allowed';
+      row.title='Parcel orders available on Growth plan';
     }
+    if(chk){
+      chk.disabled=true;
+      chk.checked=false;
+      // Override onchange to show toast instead
+      chk.onchange=null;
+      chk.addEventListener('change',function(e){
+        e.preventDefault();
+        this.checked=false;
+        showPlanToast('Parcel Orders','Growth');
+      });
+    }
+    // Also intercept onParcelToggle calls
+    window._parcelGated=true;
   }
   // Gate print bill
   if(!counterHasFeature('print_bill')){
@@ -1023,6 +1038,7 @@ function closeNewOrderModal(){
   isSubmittingOrder=false;document.getElementById('noModalBg').classList.remove('show');}
 
 async function onParcelToggle(){
+  if(window._parcelGated){document.getElementById('parcelToggle').checked=false;showPlanToast('Parcel Orders','Growth');return;}
   const isParcel=document.getElementById('parcelToggle').checked;
   document.getElementById('tableNumSection').style.display=isParcel?'none':'block';
   document.getElementById('parcelLabelSection').style.display=isParcel?'block':'none';
