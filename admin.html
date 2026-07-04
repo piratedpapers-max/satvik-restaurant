@@ -2068,6 +2068,11 @@ function showExpiredScreen(){
 
 /* ── UPGRADE MODAL ── */
 function showUpgradeModal(featureName,requiredPlan){
+  // Update prices from PLAN_PRICES (reflects any saved pricing changes)
+  const gp=document.getElementById('upgGrowthPrice');
+  const pp=document.getElementById('upgPremiumPrice');
+  if(gp)gp.innerHTML='₹'+(PLAN_PRICES?.growth||899)+'<small>/mo</small>';
+  if(pp)pp.innerHTML='₹'+(PLAN_PRICES?.premium||1499)+'<small>/mo</small>';
   document.getElementById('upgFeatBadge').textContent='🔒 '+featureName;
   document.getElementById('upgPlanGrowth').classList.toggle('rec',requiredPlan==='growth');
   document.getElementById('upgPlanPremium').classList.toggle('rec',requiredPlan==='premium');
@@ -2107,7 +2112,7 @@ function applyAdminGating(){
   }
   if(!hasFeature('gst')){
     const gstEl=document.querySelector('.gst-row')?.closest('.panel') || document.querySelector('#gstSection');
-    if(gstEl)lockPanel(gstEl,'GST & Bill Settings','Available on Growth plan ₹599/month','growth');
+    if(gstEl)lockPanel(gstEl,'GST & Bill Settings','Available on Growth plan — upgrade to unlock','growth');
   }
   if(!hasFeature('custom_branding')){
     const brandEl=document.querySelector('#rName')?.closest('.panel');
@@ -2984,7 +2989,7 @@ ${topWaiter ? `<div class="highlight">🏆 <strong>Top Performer: ${topWaiter.na
       <div class="upg-plan rec" id="upgPlanGrowth">
         <div class="upg-rec-badge">POPULAR</div>
         <div class="upg-plan-name">Growth</div>
-        <div class="upg-plan-price">₹599<small>/mo</small></div>
+        <div class="upg-plan-price" id="upgGrowthPrice">₹899<small>/mo</small></div>
         <ul class="upg-feats">
           <li>Parcel orders</li>
           <li>Menu images</li>
@@ -2996,7 +3001,7 @@ ${topWaiter ? `<div class="highlight">🏆 <strong>Top Performer: ${topWaiter.na
       </div>
       <div class="upg-plan" id="upgPlanPremium">
         <div class="upg-plan-name">Premium</div>
-        <div class="upg-plan-price">₹999<small>/mo</small></div>
+        <div class="upg-plan-price" id="upgPremiumPrice">₹1,499<small>/mo</small></div>
         <ul class="upg-feats">
           <li>All Growth features</li>
           <li>WhatsApp bills</li>
