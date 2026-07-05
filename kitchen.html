@@ -142,60 +142,26 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const RESTAURANT_ID=_params.get('rid')||'';
+const RESTAURANT_ID=_params.get('rid')||'satvik';
 // Kitchen PIN is managed via Admin panel → stored in Supabase restaurant_data.kitchen_password
 
-function hkShowNotFound(){
-  document.body.innerHTML='<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔍</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Restaurant Not Found</h2><p style="color:#777;font-size:13px;line-height:1.8;">This link is missing or has an invalid restaurant ID. Please use the exact kitchen link provided by HK Digital.</p></div></div>';
-}
-
-// ── Subscription check — blocks kitchen display if suspended/expired ──
-async function hkCheckSubscription(retriesLeft=2){
+// ── Load restaurant name for login/header display ──
+(async function setRestaurantName(){
   try{
-    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(error){
-      if(retriesLeft>0){await new Promise(r=>setTimeout(r,1200));return hkCheckSubscription(retriesLeft-1);}
-      return{ok:false,reason:'error'};
-    }
-    if(!data||!data.length)return{ok:true};
-    const row=data[0];
-    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
-    return{ok:!expired,reason:expired?'expired':null};
+    const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+    const name=data?.data?.restaurantName||RESTAURANT_ID;
+    const sub=data?.data?.restaurantSub||'';
+    const label=name+(sub?' · '+sub:'');
+    document.title=name+' — Kitchen';
+    const roleEl=document.getElementById('kitchenPinRole');
+    const subEl=document.getElementById('kitchenSubtitle');
+    if(roleEl)roleEl.textContent=label;
+    if(subEl)subEl.textContent=label;
   }catch(e){
-    if(retriesLeft>0){await new Promise(r=>setTimeout(r,1200));return hkCheckSubscription(retriesLeft-1);}
-    return{ok:false,reason:'error'};
+    const roleEl=document.getElementById('kitchenPinRole');
+    if(roleEl)roleEl.textContent=RESTAURANT_ID;
   }
-}
-function hkShowLockScreen(reason){
-  const isErr=reason==='error';
-  const icon=isErr?'⚠️':'🔒',color=isErr?'#FFA502':'#FF4757',title=isErr?"Couldn't Verify Access":'Subscription Expired';
-  const body=isErr?"We couldn't confirm your subscription status. Check your internet connection and retry.":"This restaurant's subscription has expired or been suspended. Contact HK Digital to renew.";
-  const btn=isErr?'<button onclick="location.reload()" style="background:#6C63FF;color:#fff;border:none;padding:12px 28px;border-radius:99px;font-weight:700;font-size:14px;cursor:pointer;">↻ Retry</button>'
-    :`<a href="https://wa.me/918102806704?text=${encodeURIComponent('Hi HK Digital, my restaurant subscription has expired. Restaurant ID: '+RESTAURANT_ID+'. Please help me renew.')}" style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:14px 28px;border-radius:99px;font-weight:800;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a>`;
-  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">${icon}</div><h2 style="color:${color};font-size:22px;margin-bottom:8px">${title}</h2><p style="color:#777;font-size:13px;line-height:1.8;margin-bottom:24px">${body}</p>${btn}</div></div>`;
-}
-
-if(!RESTAURANT_ID){
-  hkShowNotFound();
-}else{
-  // ── Load restaurant name for login/header display ──
-  (async function setRestaurantName(){
-    try{
-      const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-      if(error||!data){hkShowNotFound();return;}
-      const name=data?.data?.restaurantName||RESTAURANT_ID;
-      const sub=data?.data?.restaurantSub||'';
-      const label=name+(sub?' · '+sub:'');
-      document.title=name+' — Kitchen';
-      const roleEl=document.getElementById('kitchenPinRole');
-      const subEl=document.getElementById('kitchenSubtitle');
-      if(roleEl)roleEl.textContent=label;
-      if(subEl)subEl.textContent=label;
-    }catch(e){
-      hkShowNotFound();
-    }
-  })();
-}
+})();
 
 let orders={},soundOn=true,pinInput='';
 let audioCtx=null;
@@ -214,11 +180,10 @@ async function pe(){
   document.querySelectorAll('.pin-btn').forEach(b=>b.disabled=true);
   document.getElementById('pinErr').textContent='';
   try{
-    const {data:pinOk,error}=await sb.rpc('hk_verify_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'kitchen',p_password:pinInput});
+    const {data,error}=await sb.from('restaurant_data').select('kitchen_password').eq('id',RESTAURANT_ID).single();
     if(error)throw error;
-    if(pinOk===true){
-      const access=await hkCheckSubscription();
-      if(!access.ok){hkShowLockScreen(access.reason);return;}
+    const storedPin=data?.kitchen_password;
+    if(!storedPin||pinInput===storedPin){
       sessionStorage.setItem('k_auth_'+RESTAURANT_ID,'1');
       document.getElementById('pinScreen').classList.add('hide');
       loadOrders();subscribe();primeAudio();
@@ -235,14 +200,7 @@ async function pe(){
 }
 function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinInput.length);}
 function logout(){sessionStorage.removeItem('k_auth_'+RESTAURANT_ID);pinInput='';updateDots();document.getElementById('pinErr').textContent='';document.getElementById('pinScreen').classList.remove('hide');}
-if(sessionStorage.getItem('k_auth_'+RESTAURANT_ID)==='1'){
-  document.getElementById('pinScreen').classList.add('hide');
-  window.addEventListener('DOMContentLoaded',async()=>{
-    const access=await hkCheckSubscription();
-    if(!access.ok){hkShowLockScreen(access.reason);return;}
-    loadOrders();subscribe();primeAudio();
-  });
-}
+if(sessionStorage.getItem('k_auth_'+RESTAURANT_ID)==='1'){document.getElementById('pinScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadOrders();subscribe();primeAudio();});}
 // Re-prime audio on EVERY click/tap (not just once) so it survives context suspension during idle periods
 document.addEventListener('click',primeAudio);
 document.addEventListener('touchstart',primeAudio);
@@ -460,6 +418,22 @@ function toggleTheme(){
       if(btn)btn.textContent='☀️';
     }
   },0);
+})();
+
+
+/* ── Plan badge in kitchen ── */
+(async function showKitchenPlanBadge(){
+  try{
+    const {data}=await sb.from('subscriptions').select('plan').eq('restaurant_id',RESTAURANT_ID).single();
+    const plan=(data?.plan||'core');
+    const colors={core:'#7A7ACF',basic:'#7A7ACF',growth:'#00A86B',premium:'#D4A017'};
+    const c=colors[plan]||'#7A7ACF';
+    const badge=document.createElement('span');
+    badge.style.cssText=`font-size:9px;font-weight:800;padding:2px 8px;border-radius:99px;background:${c}22;color:${c};border:1px solid ${c}44;letter-spacing:1px;margin-left:8px;vertical-align:middle;`;
+    badge.textContent=(plan==='basic'?'CORE':plan).toUpperCase();
+    const hdr=document.querySelector('.hl h1,.hdr h1,h1');
+    if(hdr&&!hdr.querySelector('.plan-badge-k')){{badge.className='plan-badge-k';hdr.appendChild(badge);}}
+  }catch(e){}
 })();
 
 </script>
