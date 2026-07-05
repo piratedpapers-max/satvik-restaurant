@@ -585,22 +585,56 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const RESTAURANT_ID=_params.get('rid')||'satvik';
+const RESTAURANT_ID=_params.get('rid')||'';
 
-// ── Load restaurant name for login screen display ──
-(async function setCounterLoginName(){
+function hkShowNotFound(){
+  document.body.innerHTML='<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔍</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Restaurant Not Found</h2><p style="color:#777;font-size:13px;line-height:1.8;">This link is missing or has an invalid restaurant ID. Please use the exact counter link provided by HK Digital.</p></div></div>';
+}
+
+// ── Subscription check — blocks the counter panel if suspended/expired ──
+async function hkCheckSubscription(retriesLeft=2){
   try{
-    const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-    const name=data?.data?.restaurantName||RESTAURANT_ID;
-    const sub=data?.data?.restaurantSub||'';
-    document.title=name+' — Counter & Billing';
-    const roleEl=document.getElementById('counterLoginRole');
-    if(roleEl)roleEl.textContent=name+(sub?' · '+sub:'')+' · Cashier Access';
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(error){
+      if(retriesLeft>0){await new Promise(r=>setTimeout(r,1200));return hkCheckSubscription(retriesLeft-1);}
+      return{ok:false,reason:'error'};
+    }
+    if(!data||!data.length)return{ok:true};
+    const row=data[0];
+    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
+    return{ok:!expired,reason:expired?'expired':null};
   }catch(e){
-    const roleEl=document.getElementById('counterLoginRole');
-    if(roleEl)roleEl.textContent=RESTAURANT_ID+' · Cashier Access';
+    if(retriesLeft>0){await new Promise(r=>setTimeout(r,1200));return hkCheckSubscription(retriesLeft-1);}
+    return{ok:false,reason:'error'};
   }
-})();
+}
+function hkShowLockScreen(reason){
+  const isErr=reason==='error';
+  const icon=isErr?'⚠️':'🔒',color=isErr?'#FFA502':'#FF4757',title=isErr?"Couldn't Verify Access":'Subscription Expired';
+  const body=isErr?"We couldn't confirm your subscription status. Check your internet connection and retry.":"This restaurant's subscription has expired or been suspended. Contact HK Digital to renew.";
+  const btn=isErr?'<button onclick="location.reload()" style="background:#6C63FF;color:#fff;border:none;padding:12px 28px;border-radius:99px;font-weight:700;font-size:14px;cursor:pointer;">↻ Retry</button>'
+    :`<a href="https://wa.me/918102806704?text=${encodeURIComponent('Hi HK Digital, my restaurant subscription has expired. Restaurant ID: '+RESTAURANT_ID+'. Please help me renew.')}" style="display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;padding:14px 28px;border-radius:99px;font-weight:800;font-size:14px;text-decoration:none">📱 Renew on WhatsApp</a>`;
+  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">${icon}</div><h2 style="color:${color};font-size:22px;margin-bottom:8px">${title}</h2><p style="color:#777;font-size:13px;line-height:1.8;margin-bottom:24px">${body}</p>${btn}</div></div>`;
+}
+
+if(!RESTAURANT_ID){
+  hkShowNotFound();
+}else{
+  // ── Load restaurant name for login screen display ──
+  (async function setCounterLoginName(){
+    try{
+      const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+      if(error||!data){hkShowNotFound();return;}
+      const name=data?.data?.restaurantName||RESTAURANT_ID;
+      const sub=data?.data?.restaurantSub||'';
+      document.title=name+' — Counter & Billing';
+      const roleEl=document.getElementById('counterLoginRole');
+      if(roleEl)roleEl.textContent=name+(sub?' · '+sub:'')+' · Cashier Access';
+    }catch(e){
+      hkShowNotFound();
+    }
+  })();
+}
 // Counter password is managed via Admin panel → stored in Supabase restaurant_data.counter_password
 
 /* ── THEME ── */
@@ -654,13 +688,14 @@ async function tryLogin(){
   const btn=document.querySelector('.login-btn');
   btn.disabled=true;btn.textContent='Checking...';
   try{
-    const {data,error}=await sb.from('restaurant_data').select('counter_password').eq('id',RESTAURANT_ID).single();
+    const {data:passOk,error}=await sb.rpc('hk_verify_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'counter',p_password:val});
     if(error)throw error;
-    const storedPass=data?.counter_password;
-    if(!storedPass||val===storedPass){
+    if(passOk===true){
+      const access=await hkCheckSubscription();
+      if(!access.ok){hkShowLockScreen(access.reason);return;}
       sessionStorage.setItem('counter_auth_'+RESTAURANT_ID,'1');
       document.getElementById('loginScreen').classList.add('hide');
-      loadAll();subscribe();primeAudio();
+      loadAll();subscribe();primeAudio();loadCounterFeatureFlags();
     }else{
       document.getElementById('loginErr').textContent='Incorrect password. Try again.';
     }
@@ -672,7 +707,14 @@ async function tryLogin(){
 }
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 function logout(){sessionStorage.removeItem('counter_auth_'+RESTAURANT_ID);document.getElementById('loginScreen').classList.remove('hide');document.getElementById('loginPass').value='';document.getElementById('loginErr').textContent='';}
-if(sessionStorage.getItem('counter_auth_'+RESTAURANT_ID)==='1'){document.getElementById('loginScreen').classList.add('hide');window.addEventListener('DOMContentLoaded',()=>{loadAll();subscribe();primeAudio();loadCounterFeatureFlags();});}
+if(sessionStorage.getItem('counter_auth_'+RESTAURANT_ID)==='1'){
+  document.getElementById('loginScreen').classList.add('hide');
+  window.addEventListener('DOMContentLoaded',async()=>{
+    const access=await hkCheckSubscription();
+    if(!access.ok){hkShowLockScreen(access.reason);return;}
+    loadAll();subscribe();primeAudio();loadCounterFeatureFlags();
+  });
+}
 
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});},1000);
 
@@ -683,15 +725,16 @@ setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocal
 let COUNTER_PLAN='core';
 let COUNTER_FEATURES={
   core:['qr_ordering','kitchen','counter'],
-  growth:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app'],
-  premium:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','whatsapp_bill']
+  growth:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','table_mgmt','edit_cancel'],
+  premium:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','table_mgmt','edit_cancel','whatsapp_bill']
 };
 async function loadCounterFeatureFlags(){
   try{
-    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-    if(data){
-      COUNTER_PLAN=data.plan||'core';
-      const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
+    const {data:planRows,error:planErr}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(!planErr&&planRows&&planRows.length){
+      const row=planRows[0];
+      COUNTER_PLAN=row.plan||'core';
+      const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
       if(expired) return;
     }
     // Sync feature toggles from superadmin
@@ -709,14 +752,6 @@ async function loadCounterFeatureFlags(){
       COUNTER_FEATURES=rebuilt;
     }
     applyCounterGating();
-    // Show plan badge in header
-    const colors={core:'#7A7ACF',basic:'#7A7ACF',growth:'#00A86B',premium:'#D4A017'};
-    const pc=colors[COUNTER_PLAN]||'#7A7ACF';
-    const badge=document.createElement('span');
-    badge.style.cssText=`font-size:9px;font-weight:800;padding:2px 8px;border-radius:99px;background:${pc}22;color:${pc};border:1px solid ${pc}44;letter-spacing:1px;margin-left:6px;vertical-align:middle;`;
-    badge.textContent=(COUNTER_PLAN==='basic'?'CORE':COUNTER_PLAN).toUpperCase();
-    const hdr=document.querySelector('.hdr-title,.counter-title,h1,.brand');
-    if(hdr&&!hdr.querySelector('.plan-badge-c')){{badge.className='plan-badge-c';hdr.appendChild(badge);}}
   }catch(e){applyCounterGating();}
 }
 function counterHasFeature(f){
@@ -758,12 +793,19 @@ function applyCounterGating(){
   if(!counterHasFeature('gst')){
     document.querySelectorAll('.gst-row,.gst-section,.cgst-row,.sgst-row').forEach(el=>{el.style.display='none';});
   }
+  // Gate Edit & Cancel Orders
+  if(!counterHasFeature('edit_cancel')){
+    document.querySelectorAll('.tcard-edit-btn,.tcard-cancel-btn').forEach(btn=>{
+      btn.style.opacity='.5';
+      btn.onclick=(e)=>{e.stopPropagation();e.preventDefault();showPlanToast('Edit & Cancel Orders','Growth');};
+    });
+  }
 }
 function showPlanToast(feature,plan){
   toast('🔒 '+feature+' is available on '+plan+' plan. Contact HK Digital to upgrade.',true);
 }
 function handleTablesBtnClick(){
-  if(!counterHasFeature('parcel')){
+  if(!counterHasFeature('table_mgmt')){
     showPlanToast('Table Management','Growth');
     return;
   }
@@ -1147,14 +1189,9 @@ async function getNextParcelNum(){
   const dateStr=ist.toISOString().slice(0,10);
   const counterId=RESTAURANT_ID+'_parcel_'+dateStr;
   try{
-    const {data,error}=await sb.from('order_counter').select('count').eq('id',counterId).single();
-    if(error||!data){
-      await sb.from('order_counter').upsert({id:counterId,count:1,date:dateStr,updated_at:new Date().toISOString()});
-      return 1;
-    }
-    const n=data.count+1;
-    await sb.from('order_counter').update({count:n,updated_at:new Date().toISOString()}).eq('id',counterId);
-    return n;
+    const{data,error}=await sb.rpc('hk_increment_order_counter',{p_counter_id:counterId,p_date:dateStr});
+    if(error||data==null)throw error||new Error('no data');
+    return data;
   }catch(e){
     return Math.floor(Math.random()*90)+1;
   }
@@ -1461,6 +1498,7 @@ let editState = { orderIds:[], tableNo:'', editCart:{}, originalItems:{} };
 let isSavingEdit = false;
 
 function openEditModal(idsJson, tableNo){
+  if(!counterHasFeature('edit_cancel')){showPlanToast('Edit & Cancel Orders','Growth');return;}
   const ids = typeof idsJson === 'string' ? JSON.parse(idsJson) : idsJson;
   // Gather all items from these orders
   const combined = {};
@@ -1639,6 +1677,7 @@ let cancelState = { orderIds:[], tableNo:'' };
 let isCancellingOrder = false;
 
 function openCancelModal(idsJson, tableNo){
+  if(!counterHasFeature('edit_cancel')){showPlanToast('Edit & Cancel Orders','Growth');return;}
   const ids = typeof idsJson === 'string' ? JSON.parse(idsJson) : idsJson;
   cancelState = { orderIds: ids, tableNo };
   const isParcel = String(tableNo).startsWith('Parcel');

@@ -370,12 +370,6 @@ body.dark-mode .quick-links a{background:#1A1A1A;color:#ccc;border-color:#2A2A2A
       </div>
       <div id="ordersTableWrap"><div class="no-orders">Loading orders...</div></div>
     </div>
-    <!-- SUBSCRIPTION CARD -->
-    <div class="panel" id="subscriptionCard" style="display:none;">
-      <h2>💳 My Subscription</h2>
-      <div id="subscriptionCardContent"></div>
-    </div>
-
     <div class="panel">
       <h2>📊 Analytics</h2>
       <div class="a-grid">
@@ -621,24 +615,28 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT: reads ?rid=xxx from URL ──
 const _params=new URLSearchParams(window.location.search);
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const RESTAURANT_ID=_params.get('rid')||'satvik';
+const RESTAURANT_ID=_params.get('rid')||'';
 
-// ── Show restaurant name on login screen immediately ──
-(async function(){
-  try{
-    const {data}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
-    const name=data?.data?.restaurantName||RESTAURANT_ID;
-    document.title=name+' — Admin';
-    const el=document.getElementById('loginRestName');
-    if(el)el.textContent=name;
-  }catch(e){
-    const el=document.getElementById('loginRestName');
-    if(el)el.textContent=RESTAURANT_ID;
-  }
-})();
-// Safety: redirect to login if no rid and not satvik
-if(!_params.get('rid')){
-  console.warn('No rid param — defaulting to satvik');
+function hkShowNotFound(){
+  document.body.innerHTML='<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔍</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Restaurant Not Found</h2><p style="color:#777;font-size:13px;line-height:1.8;">This link is missing or has an invalid restaurant ID. Please use the exact admin link provided by HK Digital.</p></div></div>';
+}
+
+if(!RESTAURANT_ID){
+  hkShowNotFound();
+}else{
+  // ── Show restaurant name on login screen immediately ──
+  (async function(){
+    try{
+      const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
+      if(error||!data){hkShowNotFound();return;}
+      const name=data?.data?.restaurantName||RESTAURANT_ID;
+      document.title=name+' — Admin';
+      const el=document.getElementById('loginRestName');
+      if(el)el.textContent=name;
+    }catch(e){
+      hkShowNotFound();
+    }
+  })();
 }
 function getISTDayStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const mid=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),ist.getUTCDate()));return new Date(mid.getTime()-off);}
 function getISTMonthStart(){const now=new Date();const off=5.5*60*60*1000;const ist=new Date(now.getTime()+off);const m=new Date(Date.UTC(ist.getUTCFullYear(),ist.getUTCMonth(),1));return new Date(m.getTime()-off);}
@@ -679,9 +677,9 @@ async function tryLogin(){
   if(!pass){document.getElementById('loginErr').style.display='block';return;}
   document.getElementById('loginBtn').textContent='Checking...';document.getElementById('loginBtn').disabled=true;
   try{
-    const {data,error}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
-    if(error||!data){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
-    if(pass===data.password){
+    const {data:ok,error}=await sb.rpc('hk_verify_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_password:pass});
+    if(error){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
+    if(ok===true){
       document.getElementById('loginWrapper').style.display='none';
       document.getElementById('adminPanel').classList.remove('hidden');
       document.getElementById('loading').classList.remove('hidden');
@@ -718,8 +716,9 @@ async function sendResetCode(){
     if(!phone10||phone10.length!==10){
       showForgotErr('No WhatsApp number registered in admin settings. Please contact support.');return;
     }
+    const rName=data?.data?.restaurantName||RESTAURANT_ID;
     resetCode=Math.floor(100000+Math.random()*900000).toString();
-    const msg=`Your Satvik Admin password reset code is: *${resetCode}*%0AThis code expires in 10 minutes.`;
+    const msg=`Your ${rName} Admin password reset code is: *${resetCode}*%0AThis code expires in 10 minutes.`;
     window.open(`https://wa.me/91${phone10}?text=${msg}`,'_blank');
     document.getElementById('forgotStep2').style.display='block';
     document.getElementById('forgotErr').style.display='none';
@@ -746,8 +745,8 @@ async function confirmReset(){
     document.getElementById('forgotErr').textContent='Password must be at least 4 characters.';
     document.getElementById('forgotErr').style.display='block';return;
   }
-  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
-  if(error){document.getElementById('forgotErr').textContent='Could not update password. Try again.';document.getElementById('forgotErr').style.display='block';return;}
+  const {data:ok,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_new_password:newPass});
+  if(error||ok===false){document.getElementById('forgotErr').textContent='Could not update password. Try again.';document.getElementById('forgotErr').style.display='block';return;}
   showToast('✅ Password updated! Please login with your new password.');
   resetCode='';
   showLogin();
@@ -1144,11 +1143,12 @@ async function changePassword(){
   if(!current||!newPass||!confirm){showToast('Fill in all fields.',true);return;}
   if(newPass.length<4){showToast('New password must be at least 4 characters.',true);return;}
   if(newPass!==confirm){showToast('New passwords do not match.',true);return;}
-  // Verify current password
-  const {data}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
-  if(current!==data?.password){showToast('Current password is incorrect.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error updating password: '+error.message,true);return;}
+  // Verify current password securely (never fetches the real password to the browser)
+  const {data:currentOk,error:verifyErr}=await sb.rpc('hk_verify_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_password:current});
+  if(verifyErr){showToast('Could not verify password. Try again.',true);return;}
+  if(currentOk!==true){showToast('Current password is incorrect.',true);return;}
+  const {data:setOk,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'admin',p_new_password:newPass});
+  if(error||setOk===false){showToast('Error updating password.',true);return;}
   document.getElementById('cpCurrent').value='';
   document.getElementById('cpNew').value='';
   document.getElementById('cpConfirm').value='';
@@ -1982,8 +1982,8 @@ async function changeKitchenPassword(){
   if(!np||!cp){showToast('Fill in both fields.',true);return;}
   if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
   if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({kitchen_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data:setOk,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'kitchen',p_new_password:np});
+  if(error||setOk===false){showToast('Error updating password.',true);return;}
   document.getElementById('kpNew').value='';
   document.getElementById('kpConfirm').value='';
   document.getElementById('kitchenPassStatus').style.display='block';
@@ -2011,8 +2011,8 @@ async function changeCounterPassword(){
   if(!np||!cp){showToast('Fill in both fields.',true);return;}
   if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
   if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({counter_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data:setOk,error}=await sb.rpc('hk_set_password',{p_restaurant_id:RESTAURANT_ID,p_password_type:'counter',p_new_password:np});
+  if(error||setOk===false){showToast('Error updating password.',true);return;}
   document.getElementById('copNew').value='';
   document.getElementById('copConfirm').value='';
   document.getElementById('counterPassStatus').style.display='block';
@@ -2038,8 +2038,8 @@ async function removeCounterPassword(){
 // Default PLAN_FEATURES — overridden by superadmin saved settings
 let PLAN_FEATURES={
   core:    ['qr_ordering','kitchen','counter'],
-  growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','waiter_app','staff_report'],
-  premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding','waiter_app','crm','gst_report','staff_report']
+  growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','ebill','table_mgmt','whatsapp_report','waiter_app','staff_report'],
+  premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','ebill','table_mgmt','whatsapp_report','whatsapp_bill','analytics_reports','custom_branding','waiter_app','crm','gst_report','staff_report']
 };
 let CURRENT_PLAN='core';
 
@@ -2068,49 +2068,36 @@ async function loadSuperadminFeatures(){
 
 function hasFeature(f){return(PLAN_FEATURES[CURRENT_PLAN]||PLAN_FEATURES.core).includes(f);}
 
-async function fetchPlanAndGate(gateCallback){
+async function fetchPlanAndGate(gateCallback,retriesLeft=2){
   try{
-    // Try RPC first
-    let plan='core', expired=false, paidUntil=null, status='active';
-    try{
-      const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-      if(!error&&data&&data.length){
-        const row=data[0];
-        plan=row.plan||'core';
-        status=row.status||'active';
-        paidUntil=row.paid_until;
-        expired=status==='suspended'||(paidUntil&&new Date(paidUntil)<new Date());
-      } else {
-        // Fallback: query subscriptions directly
-        const {data:sub}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-        if(sub){
-          plan=sub.plan||'core';
-          status=sub.status||'active';
-          paidUntil=sub.paid_until;
-          expired=status==='suspended'||(paidUntil&&new Date(paidUntil)<new Date());
-        }
-        // If no subscription at all, treat as core (demo/satvik)
-      }
-    }catch(e2){
-      // No subscription — treat as core, still apply gating
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(error||!data||!data.length){
+      if(retriesLeft>0){setTimeout(()=>fetchPlanAndGate(gateCallback,retriesLeft-1),1500);return;}
+      showAccessCheckFailedScreen();return;
     }
-    CURRENT_PLAN=plan;
-    SUBSCRIPTION_DATA={plan,status,paidUntil};
+    const row=data[0];
+    CURRENT_PLAN=row.plan||'core';
+    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
     if(expired){showExpiredScreen();return;}
     if(gateCallback)gateCallback();
     showPlanBadge();
-    renderSubscriptionCard();
-  }catch(e){console.warn('Plan check failed:',e);}
+  }catch(e){
+    if(retriesLeft>0){setTimeout(()=>fetchPlanAndGate(gateCallback,retriesLeft-1),1500);return;}
+    showAccessCheckFailedScreen();
+  }
 }
-let SUBSCRIPTION_DATA={plan:'core',status:'active',paidUntil:null};
+
+function showAccessCheckFailedScreen(){
+  document.body.innerHTML=`<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">⚠️</div><h2 style="color:#FFA502;font-size:22px;margin-bottom:8px">Couldn't Verify Access</h2><p style="color:#777;font-size:13px;line-height:1.8;margin-bottom:24px">We couldn't confirm your subscription status. Please check your internet connection and try again.</p><button onclick="location.reload()" style="background:#6C63FF;color:#fff;border:none;padding:12px 28px;border-radius:99px;font-weight:700;font-size:14px;cursor:pointer;">↻ Retry</button></div></div>`;
+}
 
 function showPlanBadge(){
-  const colors={core:'#7A7ACF',basic:'#7A7ACF',growth:'#00A86B',premium:'#FFD700'};
+  const colors={basic:'#7A7ACF',growth:'#00A86B',premium:'#FFD700'};
   const c=colors[CURRENT_PLAN]||'#7A7ACF';
   const b=document.createElement('span');
   b.className='plan-pill-badge';
   b.style.cssText=`font-size:8px;font-weight:700;padding:2px 8px;border-radius:99px;background:${c}22;color:${c};border:1px solid ${c}55;letter-spacing:1px;vertical-align:middle;margin-left:8px;`;
-  b.textContent=(CURRENT_PLAN==='basic'?'CORE':CURRENT_PLAN).toUpperCase();
+  b.textContent=CURRENT_PLAN.toUpperCase();
   const h=document.querySelector('header h1,.h-left h1');
   if(h&&!h.querySelector('.plan-pill-badge'))h.appendChild(b);
 }
@@ -2171,7 +2158,7 @@ function applyAdminGating(){
     const brandEl=document.querySelector('#rName')?.closest('.panel');
     if(brandEl)lockPanel(brandEl,'Custom Branding','Edit restaurant name & branding on Growth+','growth');
   }
-  if(!hasFeature('pdf_reports')){
+  if(!hasFeature('analytics_reports')){
     document.querySelectorAll('button[onclick*="PDF"],button[onclick*="pdf"],button[onclick*="exportReport"]').forEach(btn=>{
       btn.disabled=true;btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('PDF Reports','premium');};
     });
@@ -2214,7 +2201,7 @@ function applyAdminGating(){
     });
   }
   // Analytics (weekly/monthly reports)
-  if(!hasFeature('pdf_reports')){
+  if(!hasFeature('analytics_reports')){
     document.querySelectorAll('button[onclick*="downloadReport"],button[onclick*="loadReport"]').forEach(btn=>{
       btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('Sales Reports & Analytics','premium');};
       btn.style.opacity='.6';
@@ -3040,68 +3027,6 @@ ${topWaiter ? `<div class="highlight">🏆 <strong>Top Performer: ${topWaiter.na
   window.open(url, '_blank');
   setTimeout(()=>URL.revokeObjectURL(url), 30000);
 }
-
-
-/* ════════════════════════════════════════════════════════
-   SUBSCRIPTION CARD IN ADMIN
-════════════════════════════════════════════════════════ */
-function renderSubscriptionCard(){
-  const card=document.getElementById('subscriptionCard');
-  const content=document.getElementById('subscriptionCardContent');
-  if(!card||!content) return;
-
-  const {plan,status,paidUntil}=SUBSCRIPTION_DATA;
-  const displayPlan=(plan==='basic'?'core':plan).toUpperCase();
-  const planColors={core:'#7A7ACF',basic:'#7A7ACF',growth:'#00A86B',premium:'#D4A017'};
-  const planEmojis={core:'🍽️',basic:'🍽️',growth:'🚀',premium:'👑'};
-  const color=planColors[plan]||'#7A7ACF';
-  const emoji=planEmojis[plan]||'🍽️';
-
-  let expiryHtml='';
-  let daysLeft=null;
-  if(paidUntil){
-    const exp=new Date(paidUntil);
-    daysLeft=Math.ceil((exp-new Date())/(1000*60*60*24));
-    const expStr=exp.toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
-    const expColor=daysLeft<=7?'#C0392B':daysLeft<=30?'#E67E22':'#27AE60';
-    expiryHtml=`<div style="margin-top:8px;font-size:12px;color:${expColor};font-weight:600;">
-      ${daysLeft<=0?'⚠️ Expired':'📅 Valid till'} ${expStr} ${daysLeft>0&&daysLeft<=30?`(${daysLeft} days left)`:''}
-    </div>`;
-  }
-
-  const waMsg=encodeURIComponent('Hi HK Digital! I want to upgrade my restaurant plan. Restaurant ID: '+RESTAURANT_ID+'. Current plan: '+displayPlan+'. Please help me upgrade.');
-  const renewMsg=encodeURIComponent('Hi HK Digital! I want to renew my subscription. Restaurant ID: '+RESTAURANT_ID+'. Plan: '+displayPlan+'. Please share payment details.');
-
-  content.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-      <div style="display:flex;align-items:center;gap:14px;">
-        <div style="width:52px;height:52px;background:${color}18;border:2px solid ${color}33;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;">${emoji}</div>
-        <div>
-          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Current Plan</div>
-          <div style="font-size:22px;font-weight:800;color:${color};letter-spacing:-.5px;">${displayPlan}</div>
-          ${expiryHtml}
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${daysLeft!==null&&daysLeft<=30?`<a href="https://wa.me/${YOUR_WA_NUMBER}?text=${renewMsg}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12px;text-decoration:none;">📱 Renew Now</a>`:''}
-        <a href="https://wa.me/${YOUR_WA_NUMBER}?text=${waMsg}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:${color};color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12px;text-decoration:none;">⬆️ Upgrade Plan</a>
-      </div>
-    </div>
-    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
-      ${['Core','Growth','Premium'].map((p,i)=>{
-        const pKey=p.toLowerCase();
-        const active=plan===pKey||(plan==='basic'&&p==='Core');
-        const pc=planColors[pKey]||'#7A7ACF';
-        return `<div style="flex:1;min-width:90px;background:${active?pc+'18':'var(--cream)'};border:1.5px solid ${active?pc+'44':'var(--line)'};border-radius:10px;padding:10px 12px;text-align:center;">
-          <div style="font-size:10px;font-weight:800;color:${active?pc:'var(--muted)'};letter-spacing:.5px;">${planEmojis[pKey]} ${p.toUpperCase()}</div>
-          <div style="font-size:12px;font-weight:700;color:${active?pc:'var(--muted)'};margin-top:2px;">${active?'✓ Active':'—'}</div>
-        </div>`;
-      }).join('')}
-    </div>
-  `;
-  card.style.display='block';
-}
-const YOUR_WA_NUMBER='918102806704';
 
 </script>
 <!-- UPGRADE PLAN MODAL -->
