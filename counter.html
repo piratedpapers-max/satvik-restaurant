@@ -46,6 +46,7 @@
 [data-theme="light"] .cart-total{color:#6B3F1E;}
 [data-theme="light"] .tcard-actions-row{background:#F9F5EE;border-color:#E5DCC8;}
 [data-theme="light"] .edit-modal,.cancel-modal{background:#fff;}
+body.edit-gated .tcard-edit-btn{opacity:.4;cursor:not-allowed;}
 [data-theme="light"] .empty-panel{color:#7A6E5F;}
 [data-theme="light"] .watermark{color:#999;}
 /* THEME TOGGLE */
@@ -758,6 +759,11 @@ function applyCounterGating(){
   if(!counterHasFeature('gst')){
     document.querySelectorAll('.gst-row,.gst-section,.cgst-row,.sgst-row').forEach(el=>{el.style.display='none';});
   }
+  // Gate edit & cancel — set global flag checked in openEditModal
+  window._editGated=!counterHasFeature('edit_cancel');
+  window._cancelGated=!counterHasFeature('edit_cancel');
+  if(window._editGated) document.body.classList.add('edit-gated');
+  else document.body.classList.remove('edit-gated');
 }
 function showPlanToast(feature,plan){
   toast('🔒 '+feature+' is available on '+plan+' plan. Contact HK Digital to upgrade.',true);
@@ -1461,6 +1467,7 @@ let editState = { orderIds:[], tableNo:'', editCart:{}, originalItems:{} };
 let isSavingEdit = false;
 
 function openEditModal(idsJson, tableNo){
+  if(window._editGated){showPlanToast('Edit & Cancel Orders','Growth');return;}
   const ids = typeof idsJson === 'string' ? JSON.parse(idsJson) : idsJson;
   // Gather all items from these orders
   const combined = {};
@@ -1639,6 +1646,7 @@ let cancelState = { orderIds:[], tableNo:'' };
 let isCancellingOrder = false;
 
 function openCancelModal(idsJson, tableNo){
+  if(window._cancelGated){showPlanToast('Edit & Cancel Orders','Growth');return;}
   const ids = typeof idsJson === 'string' ? JSON.parse(idsJson) : idsJson;
   cancelState = { orderIds: ids, tableNo };
   const isParcel = String(tableNo).startsWith('Parcel');
@@ -1655,6 +1663,7 @@ function closeCancelModal(){
 }
 
 async function confirmCancelOrder(){
+  if(window._cancelGated){closeCancelModal();showPlanToast('Edit & Cancel Orders','Growth');return;}
   if(isCancellingOrder) return;
   isCancellingOrder = true;
   const btn = document.getElementById('cancelConfirmBtn');
