@@ -387,7 +387,7 @@ const SUPABASE_KEY="sb_publishable_aD3IHhfZNNZcbDK-L_yRmQ_70UrDiJO";
 // ── MULTI-TENANT ──
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const params=new URLSearchParams(window.location.search);
-const RESTAURANT_ID=params.get('rid')||params.get('r')||'';
+const RESTAURANT_ID=params.get('rid')||params.get('r')||'satvik';
 const TOKEN=params.get('t');
 let TABLE=null,RDATA=null,activeOrderIds=[],orderChannel=null,customerPollTimer=null;
 const STORAGE_KEY=`${RESTAURANT_ID}_v4_${TOKEN}`;
@@ -395,33 +395,9 @@ const lnk=document.createElement('link');lnk.rel='stylesheet';lnk.href='https://
 
 const DEFAULT={restaurantName:"",restaurantSub:"",todaySpecial:"",googleReview:"",menu:[]};
 
-/* ── SUBSCRIPTION CHECK — blocks the public menu if suspended/expired ── */
-async function hkCheckSubscription(retriesLeft=2){
-  try{
-    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(error){
-      if(retriesLeft>0){await new Promise(r=>setTimeout(r,1200));return hkCheckSubscription(retriesLeft-1);}
-      return{ok:true}; // customer menu: fail-open on connectivity errors only, to avoid blocking real diners over a network blip
-    }
-    if(!data||!data.length)return{ok:true};
-    const row=data[0];
-    const expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
-    return{ok:!expired,reason:expired?'expired':null};
-  }catch(e){
-    return{ok:true};
-  }
-}
-function hkShowClosed(){
-  document.getElementById('loading').classList.add('hide');
-  document.body.innerHTML='<div style="position:fixed;inset:0;background:#0A0A0F;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:24px;"><div style="max-width:380px;width:100%;text-align:center"><div style="font-size:52px;margin-bottom:16px">🔒</div><h2 style="color:#FF4757;font-size:22px;margin-bottom:8px">Ordering Unavailable</h2><p style="color:#777;font-size:13px;line-height:1.8;">This restaurant\'s online ordering is temporarily unavailable. Please order at the counter.</p></div></div>';
-}
-
 /* ── INIT ── */
 async function init(){
-  if(!RESTAURANT_ID){showInvalid();return;}
   const valid=await validateToken();if(!valid)return;
-  const access=await hkCheckSubscription();
-  if(!access.ok){hkShowClosed();return;}
   try{
     const {data,error}=await sb.from('restaurant_data').select('data').eq('id',RESTAURANT_ID).single();
     if(error)throw error;RDATA=data?.data||DEFAULT;
@@ -429,8 +405,8 @@ async function init(){
   document.title=(RDATA.restaurantName||RESTAURANT_ID)+' — Order';
   const pm=document.getElementById('paidMsg');
   if(pm)pm.textContent='See you again at '+(RDATA.restaurantName||'us')+'!';
-  // Load plan features for soft gating (must finish before we render/gate the menu)
-  await loadIndexFeatureFlags();
+  // Load plan features for soft gating
+  loadIndexFeatureFlags();
   document.getElementById('rName').textContent=RDATA.restaurantName||RESTAURANT_ID;
   document.getElementById('rSub').textContent=RDATA.restaurantSub||'';
   document.getElementById('trackRestName').textContent=RDATA.restaurantName||RESTAURANT_ID;
@@ -440,7 +416,6 @@ async function init(){
   document.getElementById('paidReviewBtn').href=reviewUrl;
   if(RDATA.todaySpecial?.trim()){document.getElementById('specialTxt').textContent=RDATA.todaySpecial;document.getElementById('special').classList.add('show');}
   renderMenu();
-  applyIndexGating();
   // Restore active session if any
   try{
     const saved=localStorage.getItem(STORAGE_KEY);
@@ -652,9 +627,9 @@ function updateStatusUI(status){
   // Order More: visible when new/cooking/ready/bill_pending — always until paid
   const canOrderMore=['new','cooking','ready','bill_pending'].includes(status);
   document.getElementById('orderMoreBtn').style.display=canOrderMore?'flex':'none';
-  // E-bill box — show when food is ready or bill pending (and plan allows e-bill)
+  // E-bill box — show when food is ready or bill pending
   const phoneBox=document.getElementById('phoneBox');
-  if(phoneBox) phoneBox.style.display=(['ready','bill_pending'].includes(status)&&indexHasFeature('ebill'))?'block':'none';
+  if(phoneBox) phoneBox.style.display=['ready','bill_pending'].includes(status)?'block':'none';
 }
 
 function updateTrackBanner(status){
@@ -735,7 +710,6 @@ function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('er
 
 /* ── DOWNLOAD E-BILL ── */
 function downloadEBill(){
-  if(!indexHasFeature('ebill'))return;
   const items=[...document.querySelectorAll('#trackBillLines .bill-line')].map(line=>({
     name:line.querySelector('.bill-line-name')?.textContent||'',
     qty:line.querySelector('.bill-line-qty')?.textContent||'',
@@ -842,35 +816,21 @@ async function confirmCustomerInfo() {
    INDEX SOFT FEATURE GATING
 ══════════════════════════════════ */
 let INDEX_PLAN='core';
-let INDEX_FEATURES={
-  core:['qr_ordering'],
-  growth:['qr_ordering','menu_images','ebill'],
-  premium:['qr_ordering','menu_images','ebill']
-};
 async function loadIndexFeatureFlags(){
   try{
-    const {data:planRows,error:planErr}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
-    if(!planErr&&planRows&&planRows.length){
-      INDEX_PLAN=planRows[0].plan||'core';
-    }
-    // Sync feature toggles from superadmin (so real toggles actually take effect here too)
-    const {data:fd}=await sb.from('sa_settings').select('value').eq('key','plan_features').single();
-    if(fd?.value){
-      const saved=JSON.parse(fd.value);
-      const plans=['core','growth','premium'];
-      const rebuilt={core:[],growth:[],premium:[]};
-      Object.entries(saved).forEach(([key,planMap])=>{
-        plans.forEach(plan=>{if(planMap[plan]||planMap['basic'])rebuilt[plan].push(key);});
-      });
-      rebuilt.core.push('qr_ordering');
-      INDEX_FEATURES=rebuilt;
-    }
-  }catch(e){/* keep defaults on error — customer menu should still render */}
+    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
+    if(data){INDEX_PLAN=data.plan||'core';}
+  }catch(e){}
 }
 function indexHasFeature(f){
-  return(INDEX_FEATURES[INDEX_PLAN]||INDEX_FEATURES.core).includes(f);
+  const F={
+    core:['qr_ordering'],
+    growth:['qr_ordering','menu_images'],
+    premium:['qr_ordering','menu_images']
+  };
+  return(F[INDEX_PLAN]||F.core).includes(f);
 }
-// Called after menu renders — hide images / e-bill if not on plan
+// Called after menu renders — hide images if not on plan
 function applyIndexGating(){
   if(!indexHasFeature('menu_images')){
     document.querySelectorAll('.dish-img').forEach(img=>{
@@ -878,10 +838,6 @@ function applyIndexGating(){
       const placeholder=img.nextElementSibling;
       if(placeholder)placeholder.style.display='flex';
     });
-  }
-  if(!indexHasFeature('ebill')){
-    const phoneBox=document.getElementById('phoneBox');
-    if(phoneBox)phoneBox.style.display='none';
   }
 }
 
