@@ -2038,8 +2038,8 @@ async function removeCounterPassword(){
 // Default PLAN_FEATURES — overridden by superadmin saved settings
 let PLAN_FEATURES={
   core:    ['qr_ordering','kitchen','counter'],
-  growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','waiter_app','staff_report'],
-  premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding','waiter_app','crm','gst_report','staff_report']
+  growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','waiter_app','staff_report','pdf_reports','weekly_analytics','monthly_analytics'],
+  premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding','waiter_app','crm','gst_report','staff_report','weekly_analytics','monthly_analytics']
 };
 let CURRENT_PLAN='core';
 
@@ -2215,9 +2215,11 @@ function applyAdminGating(){
   }
   // Analytics (weekly/monthly reports)
   if(!hasFeature('pdf_reports')){
-    document.querySelectorAll('button[onclick*="downloadReport"],button[onclick*="loadReport"]').forEach(btn=>{
-      btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('Sales Reports & Analytics','premium');};
+    // Only block download button, not the week/month tab buttons
+    document.querySelectorAll('button[onclick*="downloadReport()"]').forEach(btn=>{
+      btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('Sales Reports & Analytics','growth');};
       btn.style.opacity='.6';
+      btn.title='Upgrade to Growth plan to download reports';
     });
   }
   // Waiter management — lock entire panel
