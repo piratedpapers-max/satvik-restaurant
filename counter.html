@@ -689,12 +689,16 @@ let COUNTER_FEATURES={
 };
 async function loadCounterFeatureFlags(){
   try{
-    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-    if(data){
-      COUNTER_PLAN=data.plan||'core';
-      const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
-      if(expired) return;
-    }
+    let expired=false;
+    try{
+      const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+      if(!error&&data&&data.length){
+        const row=data[0];
+        COUNTER_PLAN=row.plan||'core';
+        expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
+      }
+    }catch(e1){}
+    if(expired) return;
     // Sync feature toggles from superadmin
     const {data:fd}=await sb.from('sa_settings').select('value').eq('key','plan_features').single();
     if(fd?.value){

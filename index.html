@@ -825,8 +825,8 @@ let INDEX_FEATURES={
 };
 async function loadIndexFeatureFlags(){
   try{
-    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-    if(data){INDEX_PLAN=data.plan||'core';}
+    const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+    if(!error&&data&&data.length){INDEX_PLAN=data[0].plan||'core';}
   }catch(e){}
   // Sync actual feature toggles from superadmin — same source of truth as admin/counter/waiter panels
   try{

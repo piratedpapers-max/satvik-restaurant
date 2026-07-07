@@ -754,13 +754,13 @@ async function confirmReset(){
 }
 async function loadAll(){
   await Promise.all([loadMenuData(),loadAnalytics(),loadTodayOrders(),loadWaiters(),loadCRM()]);
+  applyAdminGating(); // final consistency pass — loadCRM runs concurrently and can otherwise race the lock overlay
   document.getElementById('loading').classList.add('hidden');
   setInterval(loadTodayOrders,30000);
   loadReport('week');
 }
 async function loadMenuData(){
   await loadSuperadminFeatures();
-  fetchPlanAndGate(applyAdminGating);
   document.getElementById("adminTitle").textContent=(RESTAURANT_ID||"Restaurant")+" — Admin";
   // Update login screen restaurant name
   // restaurant name already set on page load
@@ -782,6 +782,7 @@ async function loadMenuData(){
     }
   }catch(e){DATA=getDefault();}
   renderForm();
+  await fetchPlanAndGate(applyAdminGating);
 }
 async function loadAnalytics(){
   const now=new Date();const todayStart=getISTDayStart();

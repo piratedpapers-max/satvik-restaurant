@@ -424,8 +424,11 @@ function toggleTheme(){
 /* ── Plan badge in kitchen ── */
 (async function showKitchenPlanBadge(){
   try{
-    const {data}=await sb.from('subscriptions').select('plan').eq('restaurant_id',RESTAURANT_ID).single();
-    const plan=(data?.plan||'core');
+    let plan='core';
+    try{
+      const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+      if(!error&&data&&data.length) plan=data[0].plan||'core';
+    }catch(e2){}
     const colors={core:'#7A7ACF',basic:'#7A7ACF',growth:'#00A86B',premium:'#D4A017'};
     const c=colors[plan]||'#7A7ACF';
     const badge=document.createElement('span');

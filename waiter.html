@@ -938,10 +938,17 @@ init();
 ══════════════════════════════════ */
 async function checkWaiterPlanAccess(){
   try{
-    const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
-    if(!data) return true;
-    const plan=data.plan||'core';
-    const expired=data.status==='suspended'||(data.paid_until&&new Date(data.paid_until)<new Date());
+    let plan='core',expired=false,found=false;
+    try{
+      const {data,error}=await sb.rpc('get_restaurant_plan',{p_restaurant_id:RESTAURANT_ID});
+      if(!error&&data&&data.length){
+        const row=data[0];
+        plan=row.plan||'core';
+        expired=row.status==='suspended'||(row.paid_until&&new Date(row.paid_until)<new Date());
+        found=true;
+      }
+    }catch(e1){}
+    if(!found) return true;
     if(expired){showError('🔒 Subscription Expired','Your subscription has expired. Contact HK Digital to renew.');return false;}
     // Check from superadmin feature settings
     try{
