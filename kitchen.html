@@ -180,15 +180,14 @@ async function pe(){
   document.querySelectorAll('.pin-btn').forEach(b=>b.disabled=true);
   document.getElementById('pinErr').textContent='';
   try{
-    const {data,error}=await sb.from('restaurant_data').select('kitchen_password').eq('id',RESTAURANT_ID).single();
+    const {data,error}=await sb.functions.invoke('verify-password',{body:{scope:'kitchen',restaurant_id:RESTAURANT_ID,password:pinInput}});
     if(error)throw error;
-    const storedPin=data?.kitchen_password;
-    if(!storedPin||pinInput===storedPin){
+    if(data?.valid){
       sessionStorage.setItem('k_auth_'+RESTAURANT_ID,'1');
       document.getElementById('pinScreen').classList.add('hide');
       loadOrders();subscribe();primeAudio();
     }else{
-      document.getElementById('pinErr').textContent='Incorrect PIN. Try again.';
+      document.getElementById('pinErr').textContent=data?.error||'Incorrect PIN. Try again.';
       pinInput='';updateDots();
     }
   }catch(e){

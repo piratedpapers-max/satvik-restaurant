@@ -679,15 +679,15 @@ async function tryLogin(){
   if(!pass){document.getElementById('loginErr').style.display='block';return;}
   document.getElementById('loginBtn').textContent='Checking...';document.getElementById('loginBtn').disabled=true;
   try{
-    const {data,error}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
-    if(error||!data){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
-    if(pass===data.password){
+    const {data,error}=await sb.functions.invoke('verify-password',{body:{scope:'admin',restaurant_id:RESTAURANT_ID,password:pass}});
+    if(error){document.getElementById('loginErr').textContent='Could not connect. Try again.';document.getElementById('loginErr').style.display='block';return;}
+    if(data?.valid){
       document.getElementById('loginWrapper').style.display='none';
       document.getElementById('adminPanel').classList.remove('hidden');
       document.getElementById('loading').classList.remove('hidden');
       loadAll();
     }else{
-      document.getElementById('loginErr').textContent='Incorrect password. Try again.';
+      document.getElementById('loginErr').textContent=data?.error||'Incorrect password. Try again.';
       document.getElementById('loginErr').style.display='block';
     }
   }catch(e){document.getElementById('loginErr').textContent='Error: '+e.message;document.getElementById('loginErr').style.display='block';}
@@ -746,8 +746,8 @@ async function confirmReset(){
     document.getElementById('forgotErr').textContent='Password must be at least 4 characters.';
     document.getElementById('forgotErr').style.display='block';return;
   }
-  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
-  if(error){document.getElementById('forgotErr').textContent='Could not update password. Try again.';document.getElementById('forgotErr').style.display='block';return;}
+  const {data:setData,error}=await sb.functions.invoke('set-password',{body:{scope:'admin',restaurant_id:RESTAURANT_ID,new_password:newPass}});
+  if(error||!setData?.ok){document.getElementById('forgotErr').textContent=setData?.error||'Could not update password. Try again.';document.getElementById('forgotErr').style.display='block';return;}
   showToast('✅ Password updated! Please login with your new password.');
   resetCode='';
   showLogin();
@@ -765,17 +765,17 @@ async function loadMenuData(){
   // Update login screen restaurant name
   // restaurant name already set on page load
   try{
-    const {data,error}=await sb.from('restaurant_data').select('data,kitchen_password,counter_password').eq('id',RESTAURANT_ID).single();
+    const {data,error}=await sb.from('restaurant_data').select('data,kitchen_password_set,counter_password_set').eq('id',RESTAURANT_ID).single();
     if(error)throw error;
     DATA=(data?.data?.menu?.length)?data.data:getDefault();
     // Kitchen password status
-    if(data?.kitchen_password){
+    if(data?.kitchen_password_set){
       document.getElementById('kitchenPassStatus').style.display='block';
       document.getElementById('kitchenPassUnset').style.display='none';
       document.getElementById('removeKitchenPassBtn').style.display='';
     }
     // Counter password status
-    if(data?.counter_password){
+    if(data?.counter_password_set){
       document.getElementById('counterPassStatus').style.display='block';
       document.getElementById('counterPassUnset').style.display='none';
       document.getElementById('removeCounterPassBtn').style.display='';
@@ -1145,11 +1145,10 @@ async function changePassword(){
   if(!current||!newPass||!confirm){showToast('Fill in all fields.',true);return;}
   if(newPass.length<4){showToast('New password must be at least 4 characters.',true);return;}
   if(newPass!==confirm){showToast('New passwords do not match.',true);return;}
-  // Verify current password
-  const {data}=await sb.from('restaurant_data').select('password').eq('id',RESTAURANT_ID).single();
-  if(current!==data?.password){showToast('Current password is incorrect.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({password:newPass}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error updating password: '+error.message,true);return;}
+  // Current password is verified server-side, inside the same call — the
+  // raw/hashed password never comes back to the browser.
+  const {data,error}=await sb.functions.invoke('set-password',{body:{scope:'admin',restaurant_id:RESTAURANT_ID,new_password:newPass,current_password:current}});
+  if(error||!data?.ok){showToast('Error updating password: '+(data?.error||error?.message||'unknown error'),true);return;}
   document.getElementById('cpCurrent').value='';
   document.getElementById('cpNew').value='';
   document.getElementById('cpConfirm').value='';
@@ -1984,8 +1983,8 @@ async function changeKitchenPassword(){
   if(!np||!cp){showToast('Fill in both fields.',true);return;}
   if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
   if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({kitchen_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data,error}=await sb.functions.invoke('set-password',{body:{scope:'kitchen',restaurant_id:RESTAURANT_ID,new_password:np}});
+  if(error||!data?.ok){showToast('Error: '+(data?.error||error?.message||'unknown error'),true);return;}
   document.getElementById('kpNew').value='';
   document.getElementById('kpConfirm').value='';
   document.getElementById('kitchenPassStatus').style.display='block';
@@ -1996,8 +1995,8 @@ async function changeKitchenPassword(){
 
 async function removeKitchenPassword(){
   if(!confirm('Remove kitchen password? The kitchen panel will be accessible to anyone.'))return;
-  const {error}=await sb.from('restaurant_data').update({kitchen_password:null}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data,error}=await sb.functions.invoke('set-password',{body:{scope:'kitchen',restaurant_id:RESTAURANT_ID,remove:true}});
+  if(error||!data?.ok){showToast('Error: '+(data?.error||error?.message||'unknown error'),true);return;}
   document.getElementById('kitchenPassStatus').style.display='none';
   document.getElementById('kitchenPassUnset').style.display='block';
   document.getElementById('removeKitchenPassBtn').style.display='none';
@@ -2013,8 +2012,8 @@ async function changeCounterPassword(){
   if(!np||!cp){showToast('Fill in both fields.',true);return;}
   if(np.length<4){showToast('Password must be at least 4 characters.',true);return;}
   if(np!==cp){showToast('Passwords do not match.',true);return;}
-  const {error}=await sb.from('restaurant_data').update({counter_password:np}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data,error}=await sb.functions.invoke('set-password',{body:{scope:'counter',restaurant_id:RESTAURANT_ID,new_password:np}});
+  if(error||!data?.ok){showToast('Error: '+(data?.error||error?.message||'unknown error'),true);return;}
   document.getElementById('copNew').value='';
   document.getElementById('copConfirm').value='';
   document.getElementById('counterPassStatus').style.display='block';
@@ -2025,8 +2024,8 @@ async function changeCounterPassword(){
 
 async function removeCounterPassword(){
   if(!confirm('Remove counter password? The counter panel will be accessible to anyone.'))return;
-  const {error}=await sb.from('restaurant_data').update({counter_password:null}).eq('id',RESTAURANT_ID);
-  if(error){showToast('Error: '+error.message,true);return;}
+  const {data,error}=await sb.functions.invoke('set-password',{body:{scope:'counter',restaurant_id:RESTAURANT_ID,remove:true}});
+  if(error||!data?.ok){showToast('Error: '+(data?.error||error?.message||'unknown error'),true);return;}
   document.getElementById('counterPassStatus').style.display='none';
   document.getElementById('counterPassUnset').style.display='block';
   document.getElementById('removeCounterPassBtn').style.display='none';
