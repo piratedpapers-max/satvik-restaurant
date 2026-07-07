@@ -406,7 +406,7 @@ async function init(){
   const pm=document.getElementById('paidMsg');
   if(pm)pm.textContent='See you again at '+(RDATA.restaurantName||'us')+'!';
   // Load plan features for soft gating
-  loadIndexFeatureFlags();
+  await loadIndexFeatureFlags();
   document.getElementById('rName').textContent=RDATA.restaurantName||RESTAURANT_ID;
   document.getElementById('rSub').textContent=RDATA.restaurantSub||'';
   document.getElementById('trackRestName').textContent=RDATA.restaurantName||RESTAURANT_ID;
@@ -416,6 +416,7 @@ async function init(){
   document.getElementById('paidReviewBtn').href=reviewUrl;
   if(RDATA.todaySpecial?.trim()){document.getElementById('specialTxt').textContent=RDATA.todaySpecial;document.getElementById('special').classList.add('show');}
   renderMenu();
+  applyIndexGating();
   // Restore active session if any
   try{
     const saved=localStorage.getItem(STORAGE_KEY);
@@ -627,9 +628,9 @@ function updateStatusUI(status){
   // Order More: visible when new/cooking/ready/bill_pending — always until paid
   const canOrderMore=['new','cooking','ready','bill_pending'].includes(status);
   document.getElementById('orderMoreBtn').style.display=canOrderMore?'flex':'none';
-  // E-bill box — show when food is ready or bill pending
+  // E-bill box — show when food is ready or bill pending, and only if the restaurant's plan includes e-bill
   const phoneBox=document.getElementById('phoneBox');
-  if(phoneBox) phoneBox.style.display=['ready','bill_pending'].includes(status)?'block':'none';
+  if(phoneBox) phoneBox.style.display=(['ready','bill_pending'].includes(status)&&indexHasFeature('ebill'))?'block':'none';
 }
 
 function updateTrackBanner(status){
@@ -816,21 +817,38 @@ async function confirmCustomerInfo() {
    INDEX SOFT FEATURE GATING
 ══════════════════════════════════ */
 let INDEX_PLAN='core';
+// Fallback defaults — used only if the sa_settings sync below fails
+let INDEX_FEATURES={
+  core:['qr_ordering'],
+  growth:['qr_ordering','menu_images','ebill'],
+  premium:['qr_ordering','menu_images','ebill']
+};
 async function loadIndexFeatureFlags(){
   try{
     const {data}=await sb.from('subscriptions').select('plan,status,paid_until').eq('restaurant_id',RESTAURANT_ID).single();
     if(data){INDEX_PLAN=data.plan||'core';}
   }catch(e){}
+  // Sync actual feature toggles from superadmin — same source of truth as admin/counter/waiter panels
+  try{
+    const {data:fd}=await sb.from('sa_settings').select('value').eq('key','plan_features').single();
+    if(fd?.value){
+      const saved=JSON.parse(fd.value);
+      const plans=['core','growth','premium'];
+      const rebuilt={core:[],growth:[],premium:[]};
+      Object.entries(saved).forEach(([key,planMap])=>{
+        plans.forEach(plan=>{if(planMap[plan]||planMap['basic'])rebuilt[plan].push(key);});
+      });
+      ['qr_ordering'].forEach(f=>{
+        plans.forEach(p=>{if(!rebuilt[p].includes(f))rebuilt[p].push(f);});
+      });
+      INDEX_FEATURES=rebuilt;
+    }
+  }catch(e){ /* use defaults */ }
 }
 function indexHasFeature(f){
-  const F={
-    core:['qr_ordering'],
-    growth:['qr_ordering','menu_images'],
-    premium:['qr_ordering','menu_images']
-  };
-  return(F[INDEX_PLAN]||F.core).includes(f);
+  return(INDEX_FEATURES[INDEX_PLAN]||INDEX_FEATURES.core).includes(f);
 }
-// Called after menu renders — hide images if not on plan
+// Called after menu renders — hide images / e-bill if not on plan
 function applyIndexGating(){
   if(!indexHasFeature('menu_images')){
     document.querySelectorAll('.dish-img').forEach(img=>{

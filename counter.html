@@ -661,7 +661,7 @@ async function tryLogin(){
     if(!storedPass||val===storedPass){
       sessionStorage.setItem('counter_auth_'+RESTAURANT_ID,'1');
       document.getElementById('loginScreen').classList.add('hide');
-      loadAll();subscribe();primeAudio();
+      loadAll();subscribe();primeAudio();loadCounterFeatureFlags();
     }else{
       document.getElementById('loginErr').textContent='Incorrect password. Try again.';
     }
@@ -684,8 +684,8 @@ setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocal
 let COUNTER_PLAN='core';
 let COUNTER_FEATURES={
   core:['qr_ordering','kitchen','counter'],
-  growth:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app'],
-  premium:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','whatsapp_bill']
+  growth:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','table_mgmt','edit_cancel'],
+  premium:['qr_ordering','kitchen','counter','parcel','gst','print_bill','waiter_app','whatsapp_bill','table_mgmt','edit_cancel']
 };
 async function loadCounterFeatureFlags(){
   try{
@@ -769,7 +769,7 @@ function showPlanToast(feature,plan){
   toast('🔒 '+feature+' is available on '+plan+' plan. Contact HK Digital to upgrade.',true);
 }
 function handleTablesBtnClick(){
-  if(!counterHasFeature('parcel')){
+  if(!counterHasFeature('table_mgmt')){
     showPlanToast('Table Management','Growth');
     return;
   }

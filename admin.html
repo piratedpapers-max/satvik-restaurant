@@ -1159,6 +1159,7 @@ async function changePassword(){
 let REPORT_DATA=null;
 
 async function openDailyReport(){
+  if(!hasFeature('daily_report')){showUpgradeModal('Daily Sales Report','growth');return;}
   const panel=document.getElementById('dailyReportPanel');
   const isOpen=panel.style.display!=='none';
   if(isOpen){panel.style.display='none';return;}
@@ -2038,8 +2039,8 @@ async function removeCounterPassword(){
 // Default PLAN_FEATURES — overridden by superadmin saved settings
 let PLAN_FEATURES={
   core:    ['qr_ordering','kitchen','counter'],
-  growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','waiter_app','staff_report','pdf_reports','weekly_analytics','monthly_analytics'],
-  premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','whatsapp_bill','pdf_reports','custom_branding','waiter_app','crm','gst_report','staff_report','weekly_analytics','monthly_analytics']
+  growth:  ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','daily_report','pdf_reports','waiter_app','staff_report','table_mgmt'],
+  premium: ['qr_ordering','kitchen','counter','parcel','menu_images','edit_cancel','gst','print_bill','whatsapp_report','daily_report','pdf_reports','whatsapp_bill','custom_branding','waiter_app','crm','gst_report','staff_report','weekly_analytics','monthly_analytics','table_mgmt']
 };
 let CURRENT_PLAN='core';
 
@@ -2173,13 +2174,34 @@ function applyAdminGating(){
   }
   if(!hasFeature('pdf_reports')){
     document.querySelectorAll('button[onclick*="PDF"],button[onclick*="pdf"],button[onclick*="exportReport"]').forEach(btn=>{
-      btn.disabled=true;btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('PDF Reports','premium');};
+      btn.disabled=true;btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('PDF Reports','growth');};
     });
   }
   if(!hasFeature('whatsapp_report')){
-    document.querySelectorAll('button[onclick*="shareWA"],button[onclick*="sendReport"],button[onclick*="waReport"]').forEach(btn=>{
+    document.querySelectorAll('button[onclick*="shareWA"],button[onclick*="sendReport"],button[onclick*="waReport"],button[onclick*="shareReportWhatsApp"]').forEach(btn=>{
       btn.disabled=true;btn.onclick=(e)=>{e.preventDefault();showUpgradeModal('WhatsApp Reports','growth');};
     });
+  }
+  // Daily Report — grey out the header button if the panel itself isn't unlocked
+  if(!hasFeature('daily_report')){
+    document.querySelectorAll('button[onclick*="openDailyReport"]').forEach(btn=>{
+      btn.style.opacity='.6';
+    });
+  }
+  // Weekly & Monthly Reports panel — lock the whole panel if neither tier feature is on
+  if(!hasFeature('weekly_analytics') && !hasFeature('monthly_analytics')){
+    const wmEl=Array.from(document.querySelectorAll('.panel h2')).find(h=>h.textContent.includes('Weekly & Monthly'))?.closest('.panel');
+    if(wmEl)lockPanel(wmEl,'Weekly & Monthly Reports','Available on Premium plan — upgrade to unlock','premium');
+  } else {
+    // Lock only the tab that isn't included for this plan
+    if(!hasFeature('weekly_analytics')){
+      const wkBtn=document.getElementById('tabWeek');
+      if(wkBtn){wkBtn.onclick=(e)=>{e.preventDefault();showUpgradeModal('Weekly Analytics','premium');};wkBtn.style.opacity='.6';}
+    }
+    if(!hasFeature('monthly_analytics')){
+      const moBtn=document.getElementById('tabMonth');
+      if(moBtn){moBtn.onclick=(e)=>{e.preventDefault();showUpgradeModal('Monthly Analytics','premium');};moBtn.style.opacity='.6';}
+    }
   }
   // CRM — lock just the list, not the whole panel
   if(!hasFeature('crm')){
