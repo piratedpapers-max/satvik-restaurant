@@ -45,7 +45,18 @@
 [data-theme="light"] .cart-bar{background:#FDFAF3;border-color:#E5DCC8;}
 [data-theme="light"] .cart-total{color:#6B3F1E;}
 [data-theme="light"] .tcard-actions-row{background:#F9F5EE;border-color:#E5DCC8;}
-[data-theme="light"] .edit-modal,.cancel-modal{background:#fff;}
+[data-theme="light"] .edit-modal{background:#fff;}
+[data-theme="light"] .edit-modal-handle{background:#D4C4A8;}
+[data-theme="light"] .edit-modal-hdr{border-bottom-color:#E5DCC8;}
+[data-theme="light"] .edit-modal-close{background:#F0EBE0;color:#7A6E5F;}
+[data-theme="light"] .edit-modal-close:hover{background:#E5DCC8;color:#1A1208;}
+[data-theme="light"] .edit-item-row{background:#F9F5EE;border-color:#E5DCC8;}
+[data-theme="light"] .edit-item-row:hover{border-color:#D4C4A8;}
+[data-theme="light"] .edit-item-row.modified{background:#FBF3DC;border-color:rgba(184,134,11,.4);}
+[data-theme="light"] .edit-item-row.added{background:#EAF7EE;border-color:rgba(74,124,89,.4);}
+[data-theme="light"] .edit-modal-foot{background:#F0EBE0;border-top-color:#E5DCC8;}
+[data-theme="light"] .cancel-modal{background:#fff;}
+[data-theme="light"] .cancel-modal-table{background:#F0EBE0;border-color:#E5DCC8;}
 body.edit-gated .tcard-edit-btn{opacity:.4;cursor:not-allowed;}
 [data-theme="light"] .empty-panel{color:#7A6E5F;}
 [data-theme="light"] .watermark{color:#999;}
@@ -655,14 +666,15 @@ async function tryLogin(){
   const btn=document.querySelector('.login-btn');
   btn.disabled=true;btn.textContent='Checking...';
   try{
-    const {data,error}=await sb.functions.invoke('verify-password',{body:{scope:'counter',restaurant_id:RESTAURANT_ID,password:val}});
+    const {data,error}=await sb.from('restaurant_data').select('counter_password').eq('id',RESTAURANT_ID).single();
     if(error)throw error;
-    if(data?.valid){
+    const storedPass=data?.counter_password;
+    if(!storedPass||val===storedPass){
       sessionStorage.setItem('counter_auth_'+RESTAURANT_ID,'1');
       document.getElementById('loginScreen').classList.add('hide');
       loadAll();subscribe();primeAudio();loadCounterFeatureFlags();
     }else{
-      document.getElementById('loginErr').textContent=data?.error||'Incorrect password. Try again.';
+      document.getElementById('loginErr').textContent='Incorrect password. Try again.';
     }
   }catch(e){
     document.getElementById('loginErr').textContent='Connection error. Please retry.';
