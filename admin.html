@@ -1611,7 +1611,7 @@ function renderReport(data,start,end,tab){
   }).join('');
 }
 
-function downloadReport(format='pdf'){
+async function downloadReport(format='pdf'){
   if(!currentReportData.length){showToast('No data to download for this period.',true);return;}
   const {start,end}=getReportRange(currentReportTab);
   const orders=currentReportData;
@@ -1653,45 +1653,58 @@ function downloadReport(format='pdf'){
 
   // ── XLS DOWNLOAD ──
   if(format==='xls'){
-    // Build CSV-based XLS
-    const esc=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
-    const NL='\r\n';
-    let csv='sep=,'+NL;
-    csv+=rname+' - '+tab+' Sales Report'+NL;
-    csv+='Period: '+periodLabel+NL+'Generated: '+dateStr+NL+NL;
-    csv+='SUMMARY'+NL;
-    csv+='Total Revenue,₹'+totalRev.toLocaleString('en-IN')+NL;
-    csv+='Total Orders,'+totalOrders+NL;
-    csv+='Avg Order Value,₹'+avgOrder+NL;
-    csv+='QR Self-Orders,'+qrOrders.length+',₹'+qrRev.toLocaleString('en-IN')+NL;
-    csv+='Staff / Waiter Orders,'+staffOrders.length+',₹'+waiterRev.toLocaleString('en-IN')+NL;
-    csv+='Counter Orders,'+counterOrders.length+',₹'+counterRev.toLocaleString('en-IN')+NL;
-    csv+='Parcel Orders,'+parcelOrders.length+',₹'+parcelRev.toLocaleString('en-IN')+NL+NL;
-    csv+='DAILY BREAKDOWN'+NL;
-    csv+='Date,Orders,Revenue'+NL;
-    Object.entries(byDate).forEach(([d,v])=>{
-      csv+=esc(d)+','+v.orders.length+','+v.rev+NL;
-    });
-    csv+=NL+'ALL ORDERS'+NL;
-    csv+='Date,Time,Order #,Table,Type,Source,Amount,Customer Name,Customer Phone,Note'+NL;
-    orders.forEach(o=>{
-      const {isParcel,isQR,isWaiterOrder,isCounter}=classifyOrder(o);
-      const type=isParcel?'Parcel':'Dine-in';
-      const src=isQR?'QR':isWaiterOrder?'Staff/Waiter':isCounter?'Counter':'Other';
-      const dt=new Date(o.placed_at);
-      const date=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-      const time=dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-      const tbl=String(o.table_no||'').startsWith('Parcel')?o.table_no:'T'+o.table_no;
-      csv+=esc(date)+','+esc(time)+','+(o.order_num||'')+','+esc(tbl)+','+type+','+src+','+(o.total||0)+','+esc(o.customer_name||'')+','+esc(o.customer_phone||'')+','+esc((o.note||'').replace(/[📦🙋]/g,''))+NL;
-    });
-    const bom='﻿';
-    const blob=new Blob([bom+csv],{type:'application/vnd.ms-excel;charset=utf-8;'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`${rname.replace(/\s+/g,'-')}-${tab}-Report-${dateStr}.xls`;
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(url),5000);
-    showToast('✅ Excel file downloaded!');
+    try{
+      // Load SheetJS so we emit a genuine .xlsx binary — a CSV/text file relabelled as
+      // .xls opens in desktop Excel but is rejected as "corrupted" by Google Sheets / WPS on mobile.
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+
+      const summaryRows=[
+        [rname+' - '+tab+' Sales Report'],
+        ['Period: '+periodLabel],
+        ['Generated: '+dateStr],
+        [],
+        ['SUMMARY'],
+        ['Total Revenue', totalRev],
+        ['Total Orders', totalOrders],
+        ['Avg Order Value', avgOrder],
+        ['QR Self-Orders', qrOrders.length, qrRev],
+        ['Staff / Waiter Orders', staffOrders.length, waiterRev],
+        ['Counter Orders', counterOrders.length, counterRev],
+        ['Parcel Orders', parcelOrders.length, parcelRev],
+      ];
+
+      const dailyRows=[['Date','Orders','Revenue']];
+      Object.entries(byDate).forEach(([d,v])=>{ dailyRows.push([d, v.orders.length, v.rev]); });
+
+      const orderRows=[['Date','Time','Order #','Table','Type','Source','Amount','Customer Name','Customer Phone','Note']];
+      orders.forEach(o=>{
+        const {isParcel,isQR,isWaiterOrder,isCounter}=classifyOrder(o);
+        const type=isParcel?'Parcel':'Dine-in';
+        const src=isQR?'QR':isWaiterOrder?'Staff/Waiter':isCounter?'Counter':'Other';
+        const dt=new Date(o.placed_at);
+        const date=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+        const time=dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        const tbl=String(o.table_no||'').startsWith('Parcel')?o.table_no:'T'+o.table_no;
+        orderRows.push([date, time, o.order_num||'', tbl, type, src, o.total||0, o.customer_name||'', o.customer_phone||'', (o.note||'').replace(/[📦🙋]/g,'')]);
+      });
+
+      const wb=XLSX.utils.book_new();
+      const ws1=XLSX.utils.aoa_to_sheet(summaryRows);
+      ws1['!cols']=[{wch:26},{wch:14},{wch:14}];
+      XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+      const ws2=XLSX.utils.aoa_to_sheet(dailyRows);
+      ws2['!cols']=[{wch:16},{wch:10},{wch:14}];
+      XLSX.utils.book_append_sheet(wb, ws2, 'Daily Breakdown');
+      const ws3=XLSX.utils.aoa_to_sheet(orderRows);
+      ws3['!cols']=[{wch:14},{wch:10},{wch:10},{wch:10},{wch:10},{wch:12},{wch:12},{wch:18},{wch:14},{wch:20}];
+      XLSX.utils.book_append_sheet(wb, ws3, 'All Orders');
+
+      XLSX.writeFile(wb, `${rname.replace(/\s+/g,'-')}-${tab}-Report-${dateStr}.xlsx`);
+      showToast('✅ Excel file downloaded!');
+    }catch(e){
+      console.error(e);
+      showToast('Could not generate Excel file. Check your connection and try again.', true);
+    }
     return;
   }
 
@@ -2010,7 +2023,7 @@ tfoot td{background:#F8F5EF;font-weight:800;font-size:13px;}
       <div id="staffSummaryCards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
       <div id="staffTableWrap" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px;"></div>
       <div style="display:flex;gap:10px;">
-        <button onclick="downloadStaffExcel()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1D6F42,#107C41);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📊 Download Staff Excel</button>
+        <button onclick="downloadStaffExcel()" id="staffExcelBtn" style="width:100%;padding:13px;background:linear-gradient(135deg,#1D6F42,#107C41);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📊 Download Staff Excel</button>
         <button onclick="downloadStaffPDF()" style="width:100%;padding:13px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;font-family:'Poppins',sans-serif;">📄 Download Staff PDF Report</button>
       </div>
       <button onclick="resetStaffModal()" style="width:100%;margin-top:10px;padding:10px;background:none;color:var(--muted);border:1.5px solid var(--line);border-radius:11px;font-weight:600;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;">← Change Month</button>
@@ -2578,77 +2591,90 @@ async function loadGSTData(){
   }
 }
 
-function downloadGSTExcel(){
+async function downloadGSTExcel(){
   if(!gstData.length) return;
   const {month, year, monthName, gstPct, gstin, address, rname, rsub, invoicePrefix,
          totalSales, taxableVal, cgst, sgst, totalGST} = gstMeta;
-  const NL = '\r\n';
   const fyEnd = year + 1;
-  // Quoted, comma-delimited CSV (same proven format used by the Weekly/Monthly report export)
-  // — this is what actually opens cleanly as .xls on mobile file/Excel viewers.
-  const esc = v => '"' + String(v??'').replace(/"/g,'""').replace(/\r?\n/g,' ') + '"';
+  const btn=document.getElementById('gstExcelBtn');
+  const origLabel=btn?btn.textContent:'';
+  try{
+    if(btn){btn.textContent='Generating...';btn.disabled=true;}
+    // Load SheetJS so we emit a genuine .xlsx binary — a CSV/text file relabelled as
+    // .xls opens in desktop Excel but is rejected as "corrupted" by Google Sheets / WPS on mobile.
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
 
-  let out = 'sep=,' + NL;
-  out += esc('GSTR-3B SUMMARY - TABLE 3.1(a)') + NL;
-  out += esc('Restaurant Name') + ',' + esc(rname) + NL;
-  out += esc('GSTIN') + ',' + esc(gstin||'NOT REGISTERED') + NL;
-  out += esc('Address') + ',' + esc(address) + NL;
-  out += esc('Tax Period') + ',' + esc(monthName + ' ' + year) + NL;
-  out += esc('Financial Year') + ',' + esc(year + '-' + String(fyEnd).slice(2)) + NL + NL;
-  out += esc('TABLE 3.1(a) - OUTWARD TAXABLE SUPPLIES') + NL;
-  out += esc('Nature of Supplies') + ',' + esc('Total Taxable Value') + ',' + esc('IGST') + ',' + esc('CGST') + ',' + esc('SGST/UTGST') + ',' + esc('Cess') + NL;
-  out += esc('Outward taxable supplies') + ',' + taxableVal + ',0,' + cgst + ',' + sgst + ',0' + NL + NL;
-  out += esc('SUMMARY') + NL;
-  out += esc('Total Sales (incl. GST)') + ',' + totalSales + NL;
-  out += esc('Taxable Value (excl. GST)') + ',' + taxableVal + NL;
-  out += esc('CGST @' + (gstPct/2) + '%') + ',' + cgst + NL;
-  out += esc('SGST @' + (gstPct/2) + '%') + ',' + sgst + NL;
-  out += esc('Total GST Liability') + ',' + totalGST + NL + NL;
-  out += esc('HSN CODE') + ',' + esc('9963 (Restaurant Services)') + NL;
-  out += esc('Note') + ',' + esc('No ITC applicable for restaurant services (Rule 42 restriction)') + NL + NL;
-  out += esc('INSTRUCTIONS FOR CA:') + NL;
-  out += esc('1.') + ',' + esc('Login to GST Portal (gstin.gov.in)') + NL;
-  out += esc('2.') + ',' + esc('Go to Returns Dashboard > GSTR-3B > Prepare Online') + NL;
-  out += esc('3.') + ',' + esc('In Table 3.1(a): Enter Taxable Value = ' + taxableVal) + NL;
-  out += esc('4.') + ',' + esc('Enter CGST = ' + cgst + ' and SGST = ' + sgst) + NL;
-  out += esc('5.') + ',' + esc('No ITC to claim (Section 17(5) - restaurant food)') + NL;
-  out += esc('6.') + ',' + esc('Pay tax liability and file return') + NL + NL + NL;
+    const summaryRows = [
+      ['GSTR-3B SUMMARY - TABLE 3.1(a)'],
+      ['Restaurant Name', rname],
+      ['GSTIN', gstin||'NOT REGISTERED'],
+      ['Address', address||''],
+      ['Tax Period', monthName+' '+year],
+      ['Financial Year', year+'-'+String(fyEnd).slice(2)],
+      [],
+      ['TABLE 3.1(a) - OUTWARD TAXABLE SUPPLIES'],
+      ['Nature of Supplies','Total Taxable Value','IGST','CGST','SGST/UTGST','Cess'],
+      ['Outward taxable supplies', taxableVal, 0, cgst, sgst, 0],
+      [],
+      ['SUMMARY'],
+      ['Total Sales (incl. GST)', totalSales],
+      ['Taxable Value (excl. GST)', taxableVal],
+      ['CGST @'+(gstPct/2)+'%', cgst],
+      ['SGST @'+(gstPct/2)+'%', sgst],
+      ['Total GST Liability', totalGST],
+      [],
+      ['HSN CODE','9963 (Restaurant Services)'],
+      ['Note','No ITC applicable for restaurant services (Rule 42 restriction)'],
+      [],
+      ['INSTRUCTIONS FOR CA:'],
+      ['1.','Login to GST Portal (gstin.gov.in)'],
+      ['2.','Go to Returns Dashboard > GSTR-3B > Prepare Online'],
+      ['3.','In Table 3.1(a): Enter Taxable Value = '+taxableVal],
+      ['4.','Enter CGST = '+cgst+' and SGST = '+sgst],
+      ['5.','No ITC to claim (Section 17(5) - restaurant food)'],
+      ['6.','Pay tax liability and file return'],
+    ];
 
-  // Invoice Register
-  out += esc('INVOICE REGISTER - ' + monthName.toUpperCase() + ' ' + year) + NL;
-  out += esc('GSTIN: ' + (gstin||'NOT REGISTERED') + ' | Restaurant: ' + rname) + NL + NL;
-  out += esc('Invoice No.') + ',' + esc('Date') + ',' + esc('Time') + ',' + esc('Table/Order') + ',' + esc('Customer') + ',' + esc('Total Amt (Rs.)') + ',' + esc('Taxable Value') + ',' + esc('CGST @' + (gstPct/2) + '%') + ',' + esc('SGST @' + (gstPct/2) + '%') + ',' + esc('GST Total') + NL;
+    const invHeader = ['Invoice No.','Date','Time','Table/Order','Customer','Total Amt (Rs.)','Taxable Value','CGST @'+(gstPct/2)+'%','SGST @'+(gstPct/2)+'%','GST Total'];
+    const invRows = [invHeader];
+    let sumTotal=0, sumTaxable=0, sumCGST=0, sumSGST=0;
+    gstData.forEach((o, idx) => {
+      const dt = new Date(o.placed_at);
+      const dateStr = dt.toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'});
+      const timeStr = dt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+      const invNo = invoicePrefix + String(idx+1).padStart(3,'0');
+      const tbl = String(o.table_no||'').startsWith('Parcel') ? o.table_no : 'Table ' + o.table_no;
+      const total = o.total || 0;
+      let taxable, c_, s_;
+      if(gstPct > 0){
+        taxable = Math.round(total * 100 / (100 + gstPct));
+        const gstAmt = total - taxable;
+        c_ = Math.round(gstAmt / 2);
+        s_ = gstAmt - c_;
+      } else {
+        taxable = total; c_ = 0; s_ = 0;
+      }
+      sumTotal+=total; sumTaxable+=taxable; sumCGST+=c_; sumSGST+=s_;
+      invRows.push([invNo, dateStr, timeStr, tbl, o.customer_name||'Walk-in', total, taxable, c_, s_, (c_+s_)]);
+    });
+    invRows.push(['TOTALS ('+gstData.length+' invoices)','','','','', sumTotal, sumTaxable, sumCGST, sumSGST, (sumCGST+sumSGST)]);
 
-  let sumTotal=0, sumTaxable=0, sumCGST=0, sumSGST=0;
-  gstData.forEach((o, idx) => {
-    const dt = new Date(o.placed_at);
-    const dateStr = dt.toLocaleDateString('en-IN', {day:'2-digit', month:'2-digit', year:'numeric'});
-    const timeStr = dt.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
-    const invNo = invoicePrefix + String(idx+1).padStart(3,'0');
-    const tbl = String(o.table_no||'').startsWith('Parcel') ? o.table_no : 'Table ' + o.table_no;
-    const total = o.total || 0;
-    let taxable, c_, s_;
-    if(gstPct > 0){
-      taxable = Math.round(total * 100 / (100 + gstPct));
-      const gstAmt = total - taxable;
-      c_ = Math.round(gstAmt / 2);
-      s_ = gstAmt - c_;
-    } else {
-      taxable = total; c_ = 0; s_ = 0;
-    }
-    sumTotal+=total; sumTaxable+=taxable; sumCGST+=c_; sumSGST+=s_;
-    out += esc(invNo) + ',' + esc(dateStr) + ',' + esc(timeStr) + ',' + esc(tbl) + ',' + esc(o.customer_name||'Walk-in') + ',' + total + ',' + taxable + ',' + c_ + ',' + s_ + ',' + (c_+s_) + NL;
-  });
-  out += esc('TOTALS (' + gstData.length + ' invoices)') + ',,,,,' + sumTotal + ',' + sumTaxable + ',' + sumCGST + ',' + sumSGST + ',' + (sumCGST+sumSGST) + NL;
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
+    ws1['!cols'] = [{wch:30},{wch:22},{wch:14},{wch:14},{wch:16},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'GSTR-3B Summary');
+    const ws2 = XLSX.utils.aoa_to_sheet(invRows);
+    ws2['!cols'] = [{wch:14},{wch:12},{wch:10},{wch:14},{wch:18},{wch:14},{wch:14},{wch:10},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Invoice Register');
 
-  const bom = '\ufeff';
-  const blob = new Blob([bom+out], {type:'application/vnd.ms-excel;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = String(rname||'Restaurant').replace(/\s+/g,'-') + '-GST-' + monthName + '-' + year + '.xls';
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    XLSX.writeFile(wb, String(rname||'Restaurant').replace(/\s+/g,'-') + '-GST-' + monthName + '-' + year + '.xlsx');
+    showToast('✅ Excel file downloaded!');
+  }catch(e){
+    console.error(e);
+    showToast('Could not generate Excel file. Check your connection and try again.', true);
+  }finally{
+    if(btn){btn.textContent=origLabel||'📊 Download GST Excel (CA Ready)';btn.disabled=false;}
+  }
 }
 
 
@@ -3011,45 +3037,58 @@ function renderStaffReport(){
   `;
 }
 
-function downloadStaffExcel(){
+async function downloadStaffExcel(){
   if(!staffReportData.length) return;
   const m = staffReportMeta;
-  const NL = '\r\n';
-  // Quoted, comma-delimited CSV (same proven format used by the Weekly/Monthly report export)
-  const esc = v => '"' + String(v??'').replace(/"/g,'""').replace(/\r?\n/g,' ') + '"';
+  const btn=document.getElementById('staffExcelBtn');
+  const origLabel=btn?btn.textContent:'';
+  try{
+    if(btn){btn.textContent='Generating...';btn.disabled=true;}
+    // Load SheetJS so we emit a genuine .xlsx binary — a CSV/text file relabelled as
+    // .xls opens in desktop Excel but is rejected as "corrupted" by Google Sheets / WPS on mobile.
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
 
-  let out = 'sep=,' + NL;
-  out += esc('STAFF PERFORMANCE REPORT - ' + m.monthName.toUpperCase() + ' ' + m.year) + NL;
-  out += esc('Restaurant') + ',' + esc(m.rname) + NL;
-  out += esc('Period') + ',' + esc(m.monthName + ' ' + m.year) + NL + NL;
+    const summaryRows = [
+      ['STAFF PERFORMANCE REPORT - ' + m.monthName.toUpperCase() + ' ' + m.year],
+      ['Restaurant', m.rname],
+      ['Period', m.monthName + ' ' + m.year],
+      [],
+      ['SUMMARY'],
+      ['Total Active Waiters', m.totalWaiters],
+      ['Total Staff Orders', m.totalOrders],
+      ['Total Staff Revenue (Rs.)', m.totalRevenue],
+      ['QR Self-Orders (for comparison)', m.qrOrders],
+      ['QR Revenue (Rs.)', m.qrRevenue],
+      [],
+      ['NOTE: Revenue figures are from paid orders only.'],
+      ['This report can be used for performance-based salary/bonus calculations.'],
+      ['Active Days = number of days the waiter had at least one paid order.'],
+    ];
 
-  out += esc('SUMMARY') + NL;
-  out += esc('Total Active Waiters') + ',' + m.totalWaiters + NL;
-  out += esc('Total Staff Orders') + ',' + m.totalOrders + NL;
-  out += esc('Total Staff Revenue (Rs.)') + ',' + m.totalRevenue + NL;
-  out += esc('QR Self-Orders (for comparison)') + ',' + m.qrOrders + NL;
-  out += esc('QR Revenue (Rs.)') + ',' + m.qrRevenue + NL + NL;
+    const breakdownRows = [
+      ['Waiter Name','Orders Served','Revenue Generated (Rs.)','Avg Order Value (Rs.)','Active Days','Avg Daily Revenue (Rs.)','Tables Served']
+    ];
+    staffReportData.forEach(w => {
+      breakdownRows.push([w.name, w.orders, w.revenue, w.avgOrderVal, w.activeDays, w.avgDailyRev, w.tables]);
+    });
+    breakdownRows.push(['TOTAL', m.totalOrders, m.totalRevenue, '', '', '', '']);
 
-  out += esc('WAITER-WISE BREAKDOWN') + NL;
-  out += esc('Waiter Name') + ',' + esc('Orders Served') + ',' + esc('Revenue Generated (Rs.)') + ',' + esc('Avg Order Value (Rs.)') + ',' + esc('Active Days') + ',' + esc('Avg Daily Revenue (Rs.)') + ',' + esc('Tables Served') + NL;
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
+    ws1['!cols'] = [{wch:34},{wch:16},{wch:14},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Summary');
+    const ws2 = XLSX.utils.aoa_to_sheet(breakdownRows);
+    ws2['!cols'] = [{wch:20},{wch:14},{wch:20},{wch:18},{wch:12},{wch:20},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Waiter Breakdown');
 
-  staffReportData.forEach(w => {
-    out += esc(w.name) + ',' + w.orders + ',' + w.revenue + ',' + w.avgOrderVal + ',' + w.activeDays + ',' + w.avgDailyRev + ',' + esc(w.tables) + NL;
-  });
-
-  out += esc('TOTAL') + ',' + m.totalOrders + ',' + m.totalRevenue + ',,,,' + NL + NL;
-  out += esc('NOTE: Revenue figures are from paid orders only.') + NL;
-  out += esc('This report can be used for performance-based salary/bonus calculations.') + NL;
-  out += esc('Active Days = number of days the waiter had at least one paid order.') + NL;
-
-  const bom = '\ufeff';
-  const blob = new Blob([bom+out], {type:'application/vnd.ms-excel;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = String(m.rname||'Restaurant').replace(/\s+/g,'-') + '-Staff-' + m.monthName + '-' + m.year + '.xls';
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    XLSX.writeFile(wb, String(m.rname||'Restaurant').replace(/\s+/g,'-') + '-Staff-' + m.monthName + '-' + m.year + '.xlsx');
+    showToast('✅ Excel file downloaded!');
+  }catch(e){
+    console.error(e);
+    showToast('Could not generate Excel file. Check your connection and try again.', true);
+  }finally{
+    if(btn){btn.textContent=origLabel||'📊 Download Staff Excel';btn.disabled=false;}
+  }
 }
 
 function downloadStaffPDF(){
