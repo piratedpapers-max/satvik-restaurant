@@ -334,6 +334,20 @@ header{background:var(--card);padding:12px 16px;border-bottom:2px solid var(--pu
 /* ── CUSTOMER FIELDS FOR PARCEL ── */
 .customer-section{background:#1A1812;border:1px solid rgba(212,160,23,.2);border-radius:10px;padding:12px 14px;margin-top:10px;}
 .customer-section .no-label{color:var(--gold);}
+/* ── CRM LOOKUP (SETTLE MODAL) ── */
+.crm-box{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.crm-box-label{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
+.crm-input-row{position:relative;margin-bottom:8px;}
+.crm-input-row:last-child{margin-bottom:0;}
+.crm-input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:.6;}
+.crm-input{width:100%;background:#111;border:1.5px solid #2A2A2A;color:var(--text);padding:10px 12px 10px 34px;border-radius:8px;font-size:14px;font-family:'Poppins',sans-serif;}
+.crm-input:focus{outline:none;border-color:var(--gold);}
+.crm-found{display:none;background:rgba(74,124,89,.12);border:1px solid rgba(74,124,89,.4);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:11.5px;color:#6FBE85;}
+.crm-found.show{display:block;}
+.crm-new{display:none;background:rgba(212,160,23,.1);border:1px solid rgba(212,160,23,.3);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:11.5px;color:var(--gold);}
+.crm-new.show{display:block;}
+[data-theme="light"] .crm-box{background:#F9F5EE;border-color:#E5DCC8;}
+[data-theme="light"] .crm-input{background:#fff;border-color:#E5DCC8;color:#1A1208;}
 </style>
 </head>
 <body>
@@ -1300,6 +1314,64 @@ function toast(text,isErr){toastEl.textContent=text;toastEl.classList.toggle('er
 /* ===== SETTLE MODAL ===== */
 let settlePending=null,selectedPayMethod=null;
 const paymentInFlight2=new Set();
+let crmLookupState={found:false};
+let crmLookupTimer=null;
+
+function onSettlePhoneInput(val){
+  clearTimeout(crmLookupTimer);
+  document.getElementById('crmFoundBox')?.classList.remove('show');
+  document.getElementById('crmNewBox')?.classList.remove('show');
+  crmLookupState={found:false};
+  const digits=(val||'').replace(/\D/g,'');
+  if(digits.length===10){ crmLookupTimer=setTimeout(()=>lookupCustomer(digits),350); }
+}
+
+async function lookupCustomer(phone){
+  try{
+    const {data,error}=await sb.from('customers').select('*').eq('restaurant_id',RESTAURANT_ID).eq('phone',phone).maybeSingle();
+    const foundBox=document.getElementById('crmFoundBox');
+    const newBox=document.getElementById('crmNewBox');
+    if(!foundBox||!newBox) return;
+    if(!error && data){
+      crmLookupState={found:true,customer:data};
+      const nameInput=document.getElementById('settleCustName');
+      if(nameInput && !nameInput.value.trim() && data.name) nameInput.value=data.name;
+      foundBox.innerHTML='&#128257; Returning customer'+(data.name?' &mdash; '+data.name:'')+'<br/>'+(data.total_orders||0)+' previous orders &middot; &#8377;'+Math.round(data.total_spent||0)+' lifetime value';
+      foundBox.classList.add('show');
+      newBox.classList.remove('show');
+    }else{
+      crmLookupState={found:false};
+      newBox.textContent='\u2728 New customer \u2014 saved after payment';
+      newBox.classList.add('show');
+      foundBox.classList.remove('show');
+    }
+  }catch(e){ console.error('Customer lookup error:',e); }
+}
+
+async function upsertCustomerRecord(phone,name,orderTotal){
+  if(!phone || phone.replace(/\D/g,'').length!==10) return;
+  const cleanPhone=phone.replace(/\D/g,'');
+  try{
+    if(crmLookupState.found && crmLookupState.customer){
+      const existing=crmLookupState.customer;
+      await sb.from('customers').update({
+        name: (name && name.trim()) ? name.trim() : existing.name,
+        total_orders: (existing.total_orders||0)+1,
+        total_spent: (existing.total_spent||0)+orderTotal,
+        last_visit: new Date().toISOString()
+      }).eq('id',existing.id);
+    }else{
+      await sb.from('customers').insert([{
+        restaurant_id: RESTAURANT_ID,
+        phone: cleanPhone,
+        name: (name && name.trim()) ? name.trim() : null,
+        total_orders: 1,
+        total_spent: orderTotal,
+        last_visit: new Date().toISOString()
+      }]);
+    }
+  }catch(e){ console.error('Customer upsert error:',e); }
+}
 
 function calcGST(total,pct){if(!pct)return{gstAmt:0,cgst:0,sgst:0};const g=Math.round(total*pct/(100+pct));return{gstAmt:g,cgst:Math.round(g/2),sgst:g-Math.round(g/2)};}
 
@@ -1342,6 +1414,19 @@ function openSettle(idsJson,tableNo,grandTotal){
       <div class="bill-line grand"><span>Grand Total</span><span>&#8377;${grandTotal}</span></div>
       ${gstSection}
     </div>
+    <div class="crm-box">
+      <div class="crm-box-label">👤 Customer (optional)</div>
+      <div class="crm-input-row">
+        <span class="crm-input-icon">📱</span>
+        <input type="tel" class="crm-input" id="settleCustPhone" placeholder="10-digit mobile" maxlength="10" inputmode="numeric" value="${custPhone}" oninput="onSettlePhoneInput(this.value)"/>
+      </div>
+      <div class="crm-input-row">
+        <span class="crm-input-icon">&#9997;</span>
+        <input type="text" class="crm-input" id="settleCustName" placeholder="Customer name" value="${custName}"/>
+      </div>
+      <div class="crm-found" id="crmFoundBox"></div>
+      <div class="crm-new" id="crmNewBox"></div>
+    </div>
     <div class="pay-method-label">Payment Method</div>
     <div class="pay-methods-grid">
       <button class="pay-method-btn" id="pmCash" onclick="selectPay('cash',${grandTotal})">&#128181;<br/>Cash</button>
@@ -1359,6 +1444,8 @@ function openSettle(idsJson,tableNo,grandTotal){
     <button class="settle-confirm-btn" id="settleConfirmBtn" disabled onclick="confirmSettle()">✓ Confirm Payment</button>
   `;
   document.getElementById('settleBg').classList.add('show');
+  crmLookupState={found:false};
+  if(custPhone && custPhone.replace(/\D/g,'').length===10){ lookupCustomer(custPhone.replace(/\D/g,'')); }
 }
 
 function selectPay(m,total){
@@ -1380,11 +1467,19 @@ async function confirmSettle(){
   const blocked=ids.some(id=>paymentInFlight2.has(id));
   if(blocked){toast('Payment already processing...',true);btn.disabled=false;btn.textContent='&#10003; Confirm Payment';return;}
   ids.forEach(id=>paymentInFlight2.add(id));
+  const settlePhone=document.getElementById('settleCustPhone')?.value.trim()||'';
+  const settleName=document.getElementById('settleCustName')?.value.trim()||'';
   try{
     for(const id of ids){
-      const {error}=await sb.from('orders').update({status:'paid',payment_status:'paid',payment_method:selectedPayMethod,paid_at:new Date().toISOString()}).eq('id',id);
+      const updatePayload={status:'paid',payment_status:'paid',payment_method:selectedPayMethod,paid_at:new Date().toISOString()};
+      if(settlePhone) updatePayload.customer_phone=settlePhone;
+      if(settleName) updatePayload.customer_name=settleName;
+      const {error}=await sb.from('orders').update(updatePayload).eq('id',id);
       if(error)throw error;
       delete orders[id];
+    }
+    if(settlePhone.replace(/\D/g,'').length===10){
+      await upsertCustomerRecord(settlePhone,settleName,grandTotal);
     }
     const lbl={cash:'Cash',upi:'UPI',card:'Card'}[selectedPayMethod]||selectedPayMethod;
     playPaymentDing();toast('\u2705 '+tableNo+' \u2014 Paid via '+lbl);
